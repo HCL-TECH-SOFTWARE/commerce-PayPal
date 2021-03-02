@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+=================================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=================================================================
+-->
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">  
+  <bean id="OrderShippingBillingView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/OrderShippingBillingDetails.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="UnregisteredCheckoutView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/UnregisteredCheckoutView.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderShippingBillingConfirmationView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/OrderShippingBillingConfirmationPage.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="EmptySnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/Empty.jsp"/> 
+  </bean>  
+  <bean id="StandardCOD" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardCOD.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardBillMeLater" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardBillMeLater.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardPayLater" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardPayLater.jsp"/>
+    <property name="https" value="1"/>  
+  </bean>  
+  <bean id="StandardAmex" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardAmex.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardMasterCard" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardMasterCard.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardVisa" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardVisa.jsp"/>
+	<property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardDiscover" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardDiscover.jsp"/>
+    <property name="https" value="1"/>  
+  </bean>  
+  <bean id="StandardBankServACH" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardBankServACH.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardCheck" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardCheck.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="StandardLOC" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardLOC.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="orderTotalAsJSON" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/OrderTotalInJSON.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="MiniShopCartDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Widgets/MiniShopCartDisplay/MiniShopCartDisplay.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+    <property name="generic" value="1"/>
+  </bean>  
+  <bean id="ShopCartDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/ShopCartDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+    <property name="generic" value="1"/>
+  </bean>  
+  <bean id="AjaxOrderItemDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/OrderItemDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/>  
+    <property name="authenticate" value="0"/> 
+    <property name="generic" value="1"/>
+  </bean>  
+  <bean id="TrackOrderStatus" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/TrackOrderStatusSubsection/OrderStatusDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="authenticate" value="1"/> 
+  </bean>  
+  <bean id="CouponWallet" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/CouponWalletSubsection/CouponWalletDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="CouponWalletTableView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Marketing/Promotions/CouponWalletTable.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderDetail" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/TrackOrderStatusSubsection/OrderDetailDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="AjaxCheckoutDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/OrderItemDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="CurrentOrderInformationView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/SingleShipmentOrderTotalsSummary.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="TraditionalAjaxShippingDetailsURL" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/OrderItemDetails.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderItemDisplayViewShiptoAssoc" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/OrderItemDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="AjaxSelectedStoreListView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/StoreLocator/SelectedStoreList.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="AjaxStoreLocatorResultsView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/StoreLocator/StoreLocatorResults.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="CheckoutStoreSelectionView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/CheckoutStoreSelection.jsp"/> 
+    <property name="https" value="1"/>
+  </bean>  
+  <bean id="CheckoutPayInStoreView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/CheckoutPayInStore.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="DOMOrderShippingBillingView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/DOMOrderShippingBillingDetails.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="BillingAddressDisplayView_1" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/BillingAddressDropDownDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="BillingAddressDisplayView_2" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/BillingAddressDropDownDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="BillingAddressDisplayView_3" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/BillingAddressDropDownDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="ShippingAddressDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/ShippingAddressSelect.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="MultipleShipmentOrderSummaryView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/MultipleShipment/MultipleShipmentSummary.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="AjaxMultipleShipmentOrderItemDetailsView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/MultipleShipment/MSOrderItemDetails.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="SingleShipmentOrderSummaryView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/SingleShipmentSummary.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>
+  <bean id="QuickOrderView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/OrderCreationSection/QuickOrderSubsection/QuickOrderForm.jsp"/>  
+    <property name="credentialsAccepted" value="P"/>  
+    <property name="authenticate" value="0"/> 
+  </bean>
+  <bean id="AnalyticsShopcartView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/AnalyticsShopcartView.jsp"/> 
+  </bean>  
+  <bean id="ListOrdersDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/SavedOrderSubsection/ListOrdersDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="authenticate" value="1"/> 
+  </bean>
+  <bean id="AjaxQuickCheckoutAddressForm" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/AccountSection/QuickCheckoutProfileSubsection/QuickCheckoutAccountAddressForm.jsp"/> 
+  </bean>  
+  <bean id="AjaxUnregisteredCheckoutAddressForm" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/UnregisteredCheckout.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutEmptySnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/Empty.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutOfflineSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/Offline.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutAmexSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/Amex.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutMastercardSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/Mastercard.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutVisaSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/Visa.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutLOCSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/LOC.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutCheckSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/Check.jsp"/> 
+  </bean>  
+  <bean id="QuickCheckoutBankServACHSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/QuickCheckoutPaymentMethods/BankServACH.jsp"/> 
+  </bean>  
+  <bean id="OrderItemDisplayViewShiptoDsp" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/OrderItemDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="ShopCartPageView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Order/Cart/OrderItemDetail.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="OrderItemPageView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/OrderItemDetailSummary.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="MSOrderItemPageView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/MultipleShipment/MSOrderItemDetailSummary.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="AjaxQuickCartDisplay" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/include/MiniShopCartDisplay.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <bean id="OrderBillingView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/OrderBillingDetails.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="BillingAddressDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/BillingAddressDropDownDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>
+  <bean id="OrderReceivedView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/EmailTemplates/Order/OrderCreateNotify.jsp"/> 
+  </bean>  
+  <bean id="OrderReceivedView-Silverpop" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/EmailTemplates/Order/SilverpopOrderCreateNotify.jsp"/>
+    <property name="skipAccessControlCheck" value="1"/>
+  </bean>    
+  <bean id="OrderCancelView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/EmailTemplates/Order/OrderCancelNotify.jsp"/> 
+  </bean>  
+  <bean id="OrderCancelView-Silverpop" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/EmailTemplates/Order/SilverpopOrderCancelNotify.jsp"/>
+    <property name="skipAccessControlCheck" value="1"/>
+  </bean> 
+  <bean id="ReleaseShipNotifyView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/EmailTemplates/Order/OrderShipmentNotify.jsp"/> 
+  </bean>
+  <bean id="ReleaseShipNotifyView-Silverpop" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/EmailTemplates/Order/SilverpopOrderShipmentNotify.jsp"/> 
+    <property name="skipAccessControlCheck" value="1"/> 
+  </bean>  
+  <bean id="AjaxCheckoutAddressDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/ReusableObjects/AddressDisplay.jsp"/> 
+  </bean>  
+  <bean id="PayInStoreSnippetView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/PayInStore.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="SimplePunchout" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/SimplePunchout.jsp"/> 
+  </bean>  
+  <bean id="PunchoutPaymentRedirectView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/PunchoutPaymentRedirect.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="PunchoutPaymentCallBackView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/PunchoutPaymentCallBack.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="AjaxShopcartAddressFormView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Member/Address/ShopcartAddressFormDisplay.jsp"/> 
+  </bean>  
+  <bean id="AjaxAddressSelectView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Member/Address/BillingAddressSelect.jsp"/> 
+  </bean>
+  <bean id="CategoryOnlyResultsDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Catalog/CategoryDisplay/CategoryOnlyResultsDisplay.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+    <property name="generic" value="1"/>
+  </bean>  
+  <bean id="SubCatListDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Catalog/CategoryDisplay/SubCategoriesListDisplay.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+    <property name="generic" value="1"/>
+  </bean>   
+  <bean id="DoPaymentErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/AccountSection/QuickCheckoutProfileSubsection/MyAccountQuickCheckoutProfileForm.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="BillingAddressView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/BillingAddressDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="BillingDetailsView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/FailedAJAXRequest.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderSummaryView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderSummaryDisplay.jsp"/> 
+  </bean> 
+  <bean id="GetCatalogEntryInventoryData" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Catalog/CatalogEntryDisplay/GetCatalogEntryInventoryData.jsp"/>  
+    <property name="credentialsAccepted" value="P"/> 
+    <property name="generic" value="1"/>
+  </bean> 
+  <bean id="DOMInventoryStatusView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/DOMInventoryStatusDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+    <property name="generic" value="1"/>
+  </bean>  
+  <bean id="AjaxSingleShipmentShipChargeView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/SingleShipment/SingleShipmentShipChargeExt.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="authenticate" value="1"/> 
+  </bean>  
+  <bean id="AjaxMultipleShipmentShipChargeView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/MultipleShipment/MultipleShipmentShipChargeExt.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="authenticate" value="1"/> 
+  </bean> 
+  <bean id="SBSOrderItemPageView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Order/SterlingIntegration/SBSOrderItemDetailSummary.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="SBSMSOrderItemPageView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Order/SterlingIntegration/SBSMSOrderItemDetailSummary.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>
+  <bean id="OrderStatusTableDetailsDisplay" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/Order/Cart/OrderStatusTableDetailsDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>   
+  <bean id="SavedOrderDetailView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/SavedOrderSubsection/SavedOrderDetailDisplay.jsp"/>  
+    <property name="https" value="1"/>  
+    <property name="authenticate" value="1"/> 
+  </bean>
+  <bean id="OrderProcessErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/GenericError.jsp"/> 
+  </bean>  
+  <bean id="OrderOptionsView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/BillingShippingDisplay.jsp"/> 
+  </bean>
+  <bean id="SingleShippingAddressView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/SingleShippingAddressDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="MultipleShippingAddressView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/MultipleShippingAddressDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="MultipleShippingMethodView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/MultipleShippingMethodDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="ShippingInstructionsView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/ShippingInstructionsDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderOKView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderConfirmationDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="CheckPOSpendingLimitErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderSubmitForm.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderDisplayPendingView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderSubmitForm.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="ResolveFulfillmentCenterErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CurrentOrderSection/CurrentOrderDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="OrderMerge" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/OrderMerge.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="CheckProductAvail" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/ProductAvailabilityDisplay.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="AllocationCheck" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/ProductAvailabilityRouter.jsp"/>  
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="BillingShippingView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/BillingShippingDisplay.jsp"/> 
+  </bean>  
+  <bean id="ValidatePONumberErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderSubmitForm.jsp"/> 
+  </bean>  
+  <bean id="OrderPendingApprovalView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderPendingApprovalDisplay.jsp"/> 
+  </bean>  
+  <bean id="OrderPendingApprovalDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderPendingApprovalDisplay.jsp"/> 
+  </bean>  
+  <bean id="CatalogItemAddErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CatalogSection/CatalogEntrySubsection/ItemAddError.jsp"/> 
+  </bean>   
+  <bean id="ProductAvailabilityDisplay" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/ProductAvailabilityDisplay.jsp"/> 
+  </bean> 
+<bean id="ListOrdersDisplay" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/SavedOrderSubsection/ListOrdersDisplay.jsp"/>  
+    <property name="authenticate" value="1"/> 
+  </bean>  
+  <bean id="OrderItemDisplayView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/OrderItemDisplay.jsp"/>  
+    <property name="authenticate" value="1"/>  
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="OrderLockStatusView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/ShopcartSection/ShopCartOnBehalfOfLock.jsp"/>  
+    <property name="authenticate" value="1"/>  
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="FindOrderView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/OrderServices/FindOrders.jsp"/>  
+    <property name="authenticate" value="1"/>  
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="CSROrderSummaryView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/CustomerService/CSROrderSummaryPage.jsp"/>  
+    <property name="authenticate" value="1"/>  
+    <property name="https" value="1"/>  
+  </bean>  
+  <bean id="badPartNumberErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/OrderCreationSection/QuickOrderSubsection/QuickOrderBadSkuError.jsp"/> 
+  </bean>  
+  <bean id="MissingProductAttributeErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/OrderCreationSection/QuickOrderSubsection/QuickOrderBadSkuError.jsp"/> 
+  </bean>  
+  <bean id="CheckSpendingLimitErrorView" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/ShoppingArea/CheckoutSection/StandardCheckoutSubsection/OrderSubmitForm.jsp"/> 
+  </bean> 
+  <bean id="GuestOrderDetail" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/UserArea/ServiceSection/TrackOrderStatusSubsection/GuestOrderDetailDisplay.jsp"/>  
+    <property name="https" value="1"/>     
+    <property name="credentialsAccepted" value="P"/> 
+  </bean>  
+  <!-- BRAINTREE START --> 
+  <bean id="StandardBrainTree" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardBrainTree.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="StandardPayPal" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardPayPal.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean> 
+  <bean id="StandardGooglePay" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardGooglePay.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>  
+   <bean id="StandardApplePay" class="com.ibm.commerce.store.mvc.view.spring.StoreInternalResourceView"> 
+    <property name="url" value="/Snippets/EDP/PaymentMethods/StandardApplePay.jsp"/> 
+    <property name="https" value="1"/> 
+  </bean>     
+  
+  <!-- BRAINTREE END -->       
+</beans>
