@@ -2,8 +2,7 @@
 
 ## PayPal Plugin Integration on HCL Commerce
 
-**HCL Commerce V9 has new storefront available. Actually, two storefronts—“Emerald” and “Aurora” are included in v9.1 to support either a B2B or B2C model.**
-**PayPal (BrainTree) payment gateway implemented using Headless REST API's can be integrated to the React storefront by following the instructions below.**
+**PayPal (BrainTree) payment gateway has been implemented using Headless REST API's and has been integrated to the React & Aurora based storefront by following the instructions below.**
 
 **DISCLAIMER:  This asset is being provided as-is to help accelerate your projects. We have provided documentation as well as any needed code artifacts for your use.**
 
