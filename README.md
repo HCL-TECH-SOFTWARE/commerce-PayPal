@@ -1,19 +1,19 @@
-# PayPal-Asset
+# PayPal-Proof of Concept
 
 ## PayPal Plugin Integration on HCL Commerce
 
 **PayPal (BrainTree) payment gateway has been implemented using Headless REST API's and has been integrated to the React & Aurora based storefront by following the instructions below.**
 
-**DISCLAIMER:  This asset is being provided as-is to help accelerate your projects. We have provided documentation as well as any needed code artifacts for your use.**
+**DISCLAIMER:  This Proof of Concept asset is being provided as-is to help accelerate your projects. We have provided documentation as well as any needed code artifacts for your use.**
 
-**Prerequisites:** HCL Commerce V9.1.x / HCL Commerce React Storefront SDK
+**Prerequisites:** HCL Commerce V9.1.7 / HCL Commerce React Storefront SDK
 
 **The implemntation includes below components**
- 1.	Integrating PayPal Backend to HCL Commerce V9.1.x.    
+ 1.	Integrating PayPal Backend to HCL Commerce V9.1.7.    
  2. Frontend - Aurora Storefront.
  3. Frontend - Emerald Storefront
  
- ### Step - 1: Integrating PayPal Backend to HCL Commerce V9.1.x
+ ### Step - 1: Integrating PayPal Backend to HCL Commerce V9.1.7
  
  Installation instructions are available in README.md file under Plugin-Files Folder. Word document [PayPal_Installation_Guide.docx](https://github.com/HCL-Commerce-Assets-Repository/HCLCommerce-Paypal-POC/tree/master/Documents) with instructions available under Documents folder.
  

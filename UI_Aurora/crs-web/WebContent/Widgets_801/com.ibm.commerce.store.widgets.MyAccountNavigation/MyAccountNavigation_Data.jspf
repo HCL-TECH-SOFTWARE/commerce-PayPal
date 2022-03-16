@@ -1,0 +1,227 @@
+<%--
+=================================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=================================================================
+--%>
+
+<!-- BEGIN MyAccountNavigation_Data.jspf -->
+<flow:ifEnabled feature="TrackingStatus">
+	<c:set var="trackingStatusEnabled" value="true" />
+</flow:ifEnabled>
+<c:if test="${!(userType eq 'G')}">
+	<%-- Determine roles played by user to hide/show functionality on pages --%>
+	<c:set var="person" value="${requestScope.person}"/>
+	<c:if test="${empty person || person==null}">
+		<wcf:rest var="person" url="store/{storeId}/person/@self" scope="request">
+			<wcf:var name="storeId" value="${storeId}" encode="true"/>
+		</wcf:rest>
+	</c:if>	
+	<wcf:rest var="userRegistrationDB" url="store/{storeId}/person/{userId}" scope="request">
+		<wcf:var name="storeId" value="${storeId}" encode="true"/>
+		<wcf:var name="userId" value="${person.userId}" encode="true"/>
+		<wcf:param name="responseFormat" value="json" />
+		<wcf:param name="profileName" value="IBM_Assigned_Roles_Details"/>
+	</wcf:rest>	
+	<c:forEach items="${userRegistrationDB.rolesWithDetails}" var="role">
+			<c:choose >
+				<c:when test="${role.roleId == -21}">
+					<c:set var="bBuyerAdmin" value="true"/>
+				</c:when>
+				<c:when test="${role.roleId == -22}">
+					<c:set var="bBuyerApprover" value="true"/>
+				</c:when>
+				<c:when test="${role.roleId == -3}">
+					<c:set var="bCSR" value="true"/>
+				</c:when>
+				<c:when test="${role.roleId == -14}">
+					<c:set var="bCSS" value="true"/>
+				</c:when>
+			</c:choose>
+	</c:forEach>
+
+	<c:if test="${bBuyerApprover == true || bBuyerAdmin == true}">
+		<wcf:url var="NumberOfOrderApprovalsView" value="NumberOfOrderApprovalsViewV2" type="Ajax">
+			<wcf:param name="langId" value="${WCParam.langId}"/>
+			<wcf:param name="storeId" value="${WCParam.storeId}"/>
+			<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+			<wcf:param name="ajaxStoreImageDir" value="${jspStoreImgDir}" />
+		</wcf:url>
+		<wcf:url var="NumberOfBuyerApprovalsView" value="NumberOfBuyerApprovalsViewV2" type="Ajax">
+			<wcf:param name="langId" value="${WCParam.langId}"/>
+			<wcf:param name="storeId" value="${WCParam.storeId}"/>
+			<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+			<wcf:param name="ajaxStoreImageDir" value="${jspStoreImgDir}" />
+		</wcf:url>
+		<wcf:url var="organizationsAndUsersViewURL" value="OrganizationsAndUsersView" >
+			<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+			<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+			<wcf:param name="langId" value="${langId}" />
+		</wcf:url>
+		<wcf:url var="buyerApprovalViewURL" value="BuyerApprovalView" >
+			<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+			<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+			<wcf:param name="langId" value="${langId}" />
+		</wcf:url>		
+		<wcf:url var="orderApprovalViewURL" value="OrderApprovalView" >
+			<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+			<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+			<wcf:param name="langId" value="${langId}" />
+		</wcf:url>		
+	</c:if>
+</c:if>
+<wcf:url var="userRegistrationFormURL" value="UserRegistrationForm">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="editRegistration" value="Y" />
+	<wcf:param name="userRegistrationStyle" value="strong"/>
+</wcf:url>
+<wcf:url var="addressBookFormURL" value="AddressBookForm">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="addressBookStyle" value="strong"/>
+</wcf:url>
+<wcf:url var="profileFormViewURL" value="ProfileFormView">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="profileFormStyle" value="strong"/>
+</wcf:url>
+
+<wcf:url var="interestItemDisplayURL" value="WishListDisplayView">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="listId" value="." />
+	<wcf:param name="wishListStyle" value="strong"/>
+</wcf:url>
+
+<wcf:url var="trackOrderStatusURL" value="TrackOrderStatus">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="orderStatusStyle" value="strong"/>
+	<flow:ifEnabled feature="contractSelection">
+		<wcf:param name="showOrderHeader" value="false"/>
+	</flow:ifEnabled>
+	<flow:ifDisabled feature="contractSelection">
+		<wcf:param name="showOrderHeader" value="true"/>
+	</flow:ifDisabled>			
+</wcf:url>
+
+<flow:ifEnabled feature="RecurringOrders">
+	<wcf:url var="trackRecurringOrderStatusURL" value="TrackOrderStatus">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+		<wcf:param name="isRecurringOrder" value="true" />
+		<wcf:param name="recurringOrderStatusStyle" value="strong"/>
+		<wcf:param name="showOrderHeader" value="true"/>
+	</wcf:url>
+</flow:ifEnabled>
+
+<flow:ifEnabled feature="Subscription">
+	<wcf:url var="trackSubscriptionStatusURL" value="TrackOrderStatus">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+		<wcf:param name="isSubscription" value="true" />
+		<wcf:param name="subscriptionStatusStyle" value="strong"/>
+		<wcf:param name="showOrderHeader" value="true"/>
+	</wcf:url>
+</flow:ifEnabled>
+
+<flow:ifEnabled feature="EnableQuotes">
+	<wcf:url var="trackQuoteStatusURL" value="TrackOrderStatus">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+		<wcf:param name="quoteStatusStyle" value="strong"/>
+		<wcf:param name="isQuote" value="true" />
+		<wcf:param name="showOrderHeader" value="true"/>
+	</wcf:url>
+</flow:ifEnabled>
+
+<wcf:url var="couponWalletURL" value="CouponWallet">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="couponWalletStyle" value="strong"/>
+</wcf:url>
+
+<wcf:url var="browsingHistoryURL" value="NonAjaxBrowsingHistoryView">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="browsingHistoryStyle" value="strong"/>
+</wcf:url>	
+
+<wcf:url var="requisitionListURL" value="RequisitionListDisplayView">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="requisitionListStyle" value="strong"/>	
+</wcf:url>
+
+<wcf:url var="SavedOrderListDisplayURL" value="ListOrdersDisplayView">
+	<wcf:param name="storeId"   value="${storeId}"  />
+	<wcf:param name="catalogId" value="${catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+	<wcf:param name="myAcctMain" value="1" />   
+	<wcf:param name="page" value="savedorder"/>
+</wcf:url>
+
+<wcf:url var="changePasswordURL" value="UserPasswordUpdate">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+</wcf:url>
+
+<!-- BRAINTREE START -->
+<wcf:url var="savedPaymentsDisplayListURL" value="SavedPaymentsDisplayView">
+	<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+	<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+	<wcf:param name="langId" value="${langId}" />
+</wcf:url>
+<!-- BRAINTREE END -->
+
+<c:if test="${bCSR == true || bCSS == true}">
+	<wcf:url var="findRegisteredCustomerURL" value="FindRegisteredCustomerView">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+	</wcf:url>
+
+	<wcf:url var="findOrderURL" value="FindOrderView">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+	</wcf:url>
+
+	<wcf:url var="addCustomerURL" value="addCustomerView">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+	</wcf:url>
+
+	<wcf:url var="shopAsGuestURL" value="shopAsGuestView">
+		<wcf:param name="storeId"   value="${WCParam.storeId}"  />
+		<wcf:param name="catalogId" value="${WCParam.catalogId}"/>
+		<wcf:param name="langId" value="${langId}" />
+	</wcf:url>
+</c:if>
+
+<!-- END MyAccountNavigation_Data.jspf -->
