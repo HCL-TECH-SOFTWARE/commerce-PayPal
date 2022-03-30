@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no" ?>
+<!--
+==================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==================================================
+-->
+<!DOCTYPE Policies SYSTEM "../dtd/accesscontrolpolicies.dtd">
+
+<Policies>
+
+ <Action Name="ExecuteCommand" CommandName="Execute"/>
+ 
+<Action Name="SavedPaymentsDisplayView" CommandName="SavedPaymentsDisplayView" />
+<Action Name="StandardBrainTree" CommandName="StandardBrainTree" />
+<Action Name="StandardPayPal" CommandName="StandardPayPal" />
+<Action Name="StandardGooglePay" CommandName="StandardGooglePay" />
+<Action Name="StandardVenmo" CommandName="StandardVenmo" />
+<Action Name="StandardApplePay" CommandName="StandardApplePay" />
+
+ <ActionGroup Name="AllSiteUsersViews" OwnerID="RootOrganization">
+	<ActionGroupAction Name="SavedPaymentsDisplayView" />
+	<ActionGroupAction Name="StandardBrainTree" />
+	<ActionGroupAction Name="StandardPayPal" />
+	<ActionGroupAction Name="StandardGooglePay" />
+	<ActionGroupAction Name="StandardVenmo" />
+	<ActionGroupAction Name="StandardApplePay" />
+ </ActionGroup>
+	
+ 	<ResourceCategory Name="com.hcl.commerce.braintree.vault.commands.HCLFetchInfoFromBTCmdResourceCategory"
+			ResourceBeanClass="com.hcl.commerce.braintree.vault.commands.HCLFetchInfoFromBTCmd">
+		<ResourceAction Name="ExecuteCommand" />
+	</ResourceCategory>	
+	<ResourceCategory Name="com.hcl.commerce.braintree.vault.commands.HCLVaultTaskCmdResourceCategory"
+			ResourceBeanClass="com.hcl.commerce.braintree.vault.commands.HCLVaultTaskCmd">
+		<ResourceAction Name="ExecuteCommand" />
+	</ResourceCategory>	
+	<ResourceCategory Name="com.hcl.commerce.integration.braintree.commands.HCLReturnFromPaypalCmdResourceCategory"
+			ResourceBeanClass="com.hcl.commerce.integration.braintree.commands.HCLReturnFromPaypalCmd">
+		<ResourceAction Name="ExecuteCommand" />
+	</ResourceCategory>	
+	<ResourceCategory Name="com.hcl.commerce.braintree.vault.commands.HCLDeletePaymentDetailsOfBTVaultCmdResourceCategory"
+			ResourceBeanClass="com.hcl.commerce.braintree.vault.commands.HCLDeletePaymentDetailsOfBTVaultCmd">
+		<ResourceAction Name="ExecuteCommand" />
+	</ResourceCategory>		
+	
+	
+<ResourceGroup Name="AllSiteUserCmdResourceGroup"  OwnerID="RootOrganization">
+	<ResourceGroupResource Name="com.hcl.commerce.braintree.vault.commands.HCLFetchInfoFromBTCmdResourceCategory" />
+	<ResourceGroupResource Name="com.hcl.commerce.braintree.vault.commands.HCLVaultTaskCmdResourceCategory" />
+	<ResourceGroupResource Name="com.hcl.commerce.integration.braintree.commands.HCLReturnFromPaypalCmdResourceCategory" />
+	<ResourceGroupResource Name="com.hcl.commerce.braintree.vault.commands.HCLDeletePaymentDetailsOfBTVaultCmdResourceCategory" />
+</ResourceGroup>
+ 
+
+ 
+</Policies>
