@@ -1,0 +1,184 @@
+<%--
+=================================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=================================================================
+--%>
+
+<c:set var="search" value='"'/>
+<c:set var="replaceStr" value="'"/>
+<!-- BRAINTREE START -->
+<c:set var="displayPalPalCheckout" value="true" />
+<!-- BRAINTREE END -->
+<c:if test="${currentOrderStatus_CSR eq 'takeOver'}">
+	<%-- have to display 3 buttons - Unlock / takeOver / Go to Cart - So increase the width of miniCart drop down --%>
+	<c:set var="miniCartDropDownOverrideWidthClass" value="class=cartDropDown_CSR"/>
+</c:if>
+<%-- START MiniShopCartContents_UI.jsp --%>
+	
+	<div id="quick_cart_container">
+	<span class="spanacce" id="quick_cart_container_ACCE_Label"><fmt:message bundle="${storeText}" key="ACCE_MSC_SHOPPING_CART_POPUP_REGION"/></span>
+		<div id="quick_cart">
+			<div id ="MiniShopCartProductsList">
+				<div id="widget_minishopcart_popup">										
+						<div id="cartDropdown" ${miniCartDropDownOverrideWidthClass}>				
+							<h3><fmt:message bundle="${storeText}" key="MSC_ITEMS_IN_CART"/></h3>
+							<a id="MiniShopCartCloseButton_1" href="#" class="closeButton"><fmt:message bundle="${storeText}" key="CLOSE"/></a>					            					            
+							<div class="content">
+								<c:choose>
+									<c:when test="${!empty orderItemsDetailsList}">
+										<div class="products">
+											<c:forEach var="itemDetails" items="${orderItemsDetailsList}" varStatus="status">
+												<div class="product">
+													<div class="product_image">
+															
+														<c:set var="altImgText">
+															<c:out value="${fn:replace(itemDetails['productName'], search, replaceStr)}" escapeXml="false"/>
+														</c:set>
+
+														<a id="MiniShopCartProdImg_${itemDetails['orderItemId']}" href="${itemDetails['productURL']}" alt="${altImgText}">
+															<img src="${itemDetails['productImage']}" alt="${altImgText}" aria-hidden="true">
+														</a>
+													</div>
+													<div class="product_name">
+														<a id="MiniShopCartProdName_${itemDetails['orderItemId']}" href="${itemDetails['productURL']}"><c:out value="${itemDetails['productName']}" escapeXml="${env_escapeXmlFlag}"/></a>
+													</div>
+													<c:if test="${itemDetails['productName'] ne itemDetails['partNumber']}">
+														<span class="product_part_number"><c:out value="${itemDetails['partNumber']}" escapeXml="${env_escapeXmlFlag}"/></span>
+													</c:if>
+													<div class="item_spacer_3px"></div>
+													<span class="product_quantity"><fmt:message bundle="${storeText}" key="MSC_QTY"/> ${itemDetails['productQty']}</span>
+													<span class="product_price">${itemDetails['productPrice']}</span>
+												</div>
+											</c:forEach>
+										</div>
+										<c:if test="${showMoreLink == 'true'}">
+											<div class="view_more">
+												<span class="view_more_items"><a id="MiniShopCartMoreLink" href="${ShoppingCartURL}"><fmt:message bundle="${storeText}" key="MSC_VIEW_MORE_ITEMS"/></a></span>
+											</div>
+										</c:if>
+										<c:forEach var="discountsIterator" items="${discountReferences}">
+											<c:set var="discounts" value="${discountsIterator.value}" />
+											<div class="subtotal adjustment_price">
+												<a class="hover_underline" href='<c:out value="${discounts['displayURL']}" />' >
+													<c:out value="${discounts['discountDescription']}" escapeXml="${env_escapeXmlFlag}"/>
+												</a>
+												<span class="product_price">
+													<c:out value="${discounts['aggregatedDiscount']}" escapeXml="false" />
+													<c:out value="${CurrencySymbol}"/>													
+												</span>
+											</div>
+										</c:forEach>
+										<c:remove var="discountReferences"/>
+										<div class="subtotal">
+											<span>
+												<fmt:message bundle="${storeText}" key="MSC_SUBTOTAL_FOR_ITEMS">
+													<fmt:param value="${orderQuantity}"/>
+												</fmt:message>
+											</span>
+											<span class="product_price">${orderSubTotal}</span>
+										</div>
+									</c:when>
+									<c:otherwise>
+										<!-- BRAINTREE START -->
+										<c:set var="displayPalPalCheckout" value="false" />
+										<!-- BRAINTREE END -->
+										<div><fmt:message bundle="${storeText}" key="MSC_EMPTY_SHOP_CART"/></div>
+									</c:otherwise>
+								</c:choose>
+							</div>
+							
+							<div class="footer">
+								<c:if test = "${env_shopOnBehalfSessionEstablished eq 'true' && !empty order.orderId}">
+									<%-- Lock / Unlock is applicable only for registered users. --%>
+									<%@ include file="../../ShoppingArea/ShopcartSection/ShopCartOnBehalfOfLock_Data.jspf"%>
+									<c:choose>
+										<c:when test="${currentOrderStatus_CSR eq 'unLocked'}">
+											<%-- On-behalf session. But order is un-locked. Allow CSR option to lock the order --%>
+											<a id="GotoCartButton_CSR_1" href="#" class="basicButton" onclick="JavaScript:setCurrentId('GotoCartButton_CSR_1');onBehalfUtilitiesJS.lockOrder(${order.orderId});return false;" tabindex="0">
+												<span><fmt:message bundle="${storeText}" key='LOCK_ORDER'/></span>
+											</a>
+										</c:when>
+										<c:when test="${currentOrderStatus_CSR eq 'locked'}">
+											<%-- On-behalf session. Order is locked. Allow CSR option to un-lock the order and hand it over to shopper. --%>
+											<a id="GotoCartButton_CSR_2" href="#" class="basicButton" onclick="JavaScript:setCurrentId('GotoCartButton_CSR_2');onBehalfUtilitiesJS.unLockOrder(${order.orderId});return false;" tabindex="0">
+												<span><fmt:message bundle="${storeText}" key='UNLOCK_ORDER'/></span>
+											</a>
+										</c:when>
+										<c:when test="${currentOrderStatus_CSR eq 'takeOver'}">
+											<%-- On-behalf session. Order is locked by someone else. Allow CSR option to takeOver the lock or unLock and hand it over to shopper.--%>
+											<a id="GotoCartButton_CSR_3" href="#" onclick="JavaScript:setCurrentId('GotoCartButton_CSR_3');onBehalfUtilitiesJS.unLockOrder(${order.orderId}, 'true');return false;" tabindex="0" class="basicButton">
+												<span><fmt:message bundle="${storeText}" key='UNLOCK_ORDER'/></span>
+											</a>
+											<a id="GotoCartButton_CSR_4" href="#" onclick="JavaScript:setCurrentId('GotoCartButton_CSR_4');onBehalfUtilitiesJS.takeOverLock(${order.orderId});return false;" tabindex="0" class="basicButton">
+												<span><fmt:message bundle="${storeText}" key='TAKE_OVER_ORDER'/></span>
+											</a>
+										</c:when>
+									</c:choose>
+								</c:if>
+								
+								<%-- APPLEPAY BEGIN --%>
+								<flow:ifEnabled feature="ApplePay">
+									<div class="left">
+										<a class="apple-pay-button apple-pay-minicart" id="applePayButtonDiv_minishopcart" wairole="button" role="button" aria-label="<fmt:message bundle="${storeText}" key='APPLE_PAY_BUTTON'/>" onclick="javascript: applePayButtonClicked();" href="javascript:void(0);"></a>
+									</div>
+								</flow:ifEnabled>
+								<%-- APPLEPAY END --%>
+								<!-- BRAINTREE START -->
+								<c:if test="${paypalEnableInCart eq 'true' && displayPalPalCheckout eq 'true'}" >
+										<div id="paypalCheckout" class="paypalCheckout" style="<c:if test="${userType ne 'G'}">display: grid; margin-left: 10px; float: left; position: initial; margin-bottom: 10px; </c:if> ">
+											<div id="paypal-button1" style="float: left; padding-left:5px;"></div>
+											<c:if test="${isPayPalCreditEnable eq 'true'}">
+												<div id="paypal-credit-button1" style="float: left; padding-left:5px; padding-top: 20px; display:none;"></div>
+											</c:if>
+										<script type="text/javascript">
+											var advancedFraudTools= '${advancedFraudTools}';
+											var paypalMerchantName='${paypalMerchantName}';
+											var paypalFlow='${paypalFlow}';
+											var paypalIntent='${paypalIntent}';
+											var localeVal = '${locale}';
+											var billingAgreementDescription ='${billingAgreementDescription}';
+											var paypalBillingAddressEnable ='${paypalBillingAddressEnable}';
+											var paymentEnvironment ='${paymentEnvironment}';
+											var isMobileBrowsing = false;
+											var userAgent = navigator.userAgent ;
+											if(userAgent.indexOf("Mobile") != -1) {
+											 	isMobileBrowsing = true;
+											 }
+											 if(! isMobileBrowsing)
+												BrainTreePayments.payPalVaultPaymentFromExpressCheckout('paypal-button1','paypal-credit-button1','${getTokenResult.clientToken}','${order.orderItem[0].orderItemId}','${OrderCalculateURL}','${orderTotalAmount}', '${userType}' , false ,'${isPayPalCreditEnable}','${useVaultForAuth}');
+										</script>
+										</div>
+								</c:if>
+								<!-- BRAINTREE END -->
+								
+								<a id="GotoCartButton1" href="${fn:escapeXml(ShoppingCartURL)}" class="basicButton">
+									<span><fmt:message bundle="${storeText}" key="MSC_GO_TO_CART"/></span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<input type="hidden" id="currentOrderQuantity" value="<c:out value='${orderQuantity}'/>"/>
+			<input type="hidden" id="currentOrderAmount" value="<c:out value='${orderAmountValue}'/>"/>
+			<input type="hidden" id="currentOrderCurrency" value="<c:out value='${orderAmountCurrency}'/>"/>
+			<input type="hidden" id="currentOrderLanguage" value="<c:out value='${langId}'/>"/>
+			<input type="hidden" id="currentOrderId" value="<c:out value='${orderInCart.orderId}'/>"/>
+			<input type="hidden" id="currentOrderLocked" value="<c:out value='${currentOrderLocked}'/>"/>	
+		</div>
+
+
+
+<%-- END MiniShopCartContents_UI.jsp --%>		

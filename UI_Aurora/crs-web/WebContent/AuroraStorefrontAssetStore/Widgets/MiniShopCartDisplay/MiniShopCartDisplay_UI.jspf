@@ -1,0 +1,150 @@
+<%--
+=================================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=================================================================
+--%>
+
+<%-- START MiniShopCartDisplay_UI.jsp --%>
+
+ <!-- BRAINTREE START--> 
+<script src="https://js.braintreegateway.com/web/3.38.0/js/client.min.js"></script>
+<!-- paypal -->
+<script src="https://www.paypalobjects.com/api/checkout.js" data-version-4 log-level="warn"></script>
+<script src="https://js.braintreegateway.com/web/3.38.0/js/paypal-checkout.min.js"></script>
+<script src="https://js.braintreegateway.com/web/3.38.0/js/data-collector.min.js"></script>
+<!-- BRAINTREE END -->
+<c:choose>
+<c:when test="${!env_useExternalCart}">
+<c:set var="search" value='"'/>
+<c:set var="replaceStr" value="'"/>
+<c:set var="cartTotalDisplayAttribute" value=""/>
+<c:set var="lockDisplayAttribute">class="nodisplay"</c:set>
+<c:if test="${currentOrderLocked == 'true' }">
+	<c:set var="cartTotalDisplayAttribute">class="nodisplay"</c:set>
+	<c:set var="lockDisplayAttribute" value=""/>
+</c:if>
+<a id="widget_minishopcart" href="#" role="button"
+		onclick="javascript:toggleMiniShopCartDropDown('widget_minishopcart','quick_cart_container','orderItemsList');"
+		aria-label="<fmt:message bundle="${storeText}" key="MINI_SHOPCART_SHOPPING_CART"/>">
+	<div id="minishopcart_total" ${cartTotalDisplayAttribute}>
+		${orderQuantity}
+	</div>
+	<img id="minishopcart_lock" ${lockDisplayAttribute} src="${jspStoreImgDir}images/icon_lock_shopping_cart.png" alt=""/>
+	<div class="arrow_button_icon"></div>
+</a>
+
+<div id="placeHolder"></div>
+<div id="MiniShopCartProductAdded">
+	<div id="MiniShopCartProductAddedWrapper" style="display:none;" aria-labelledby="cartDropdownMessage">
+		<div id="widget_minishopcart_popup_1">
+			<div id="cartDropdown">
+				<h3 id="cartDropdownMessage"><fmt:message bundle="${storeText}" key="MSC_ITEM_ADDED"/></h3>
+				<a id="MiniShopCartCloseButton_2" href="#" class="closeButton"><fmt:message bundle="${storeText}" key="CLOSE"/></a>
+				<div class="content">
+					<div class="products added">
+						<c:forEach var="orderItemRecentlyAddedMap" items="${orderItemsRecentlyAddedList}">
+							<div class="product">
+								<div class="product_image">
+									<a id="MiniShopCartAddedProdImg_${orderItemRecentlyAddedMap['catEntryId']}" href="${orderItemRecentlyAddedMap['productURL']}" title="${orderItemRecentlyAddedMap['productName']}" alt="${orderItemRecentlyAddedMap['productName']}">
+										<c:set var="altImgText">
+											<c:out value="${fn:replace(orderItemRecentlyAddedMap['productName'], search, replaceStr)}" escapeXml="false"/>
+										</c:set>
+										<c:choose>
+											<c:when test="${empty orderItemRecentlyAddedMap['productImage']}">
+												<img id="MiniShopCartAddedProdImgSrc_${orderItemRecentlyAddedMap['catEntryId']}" src="<c:out value='${jspStoreImgDir}'/>images/NoImageIcon_sm.jpg" alt="${altImgText}" aria-hidden="true">
+											</c:when>
+											<c:otherwise>
+												<img id="MiniShopCartAddedProdImgSrc_${orderItemRecentlyAddedMap['catEntryId']}" src="${orderItemRecentlyAddedMap['productImage']}" alt="${altImgText}" aria-hidden="true">
+											</c:otherwise>
+										</c:choose>
+									</a>
+								</div>
+								<div class="product_name">
+									<a id="MiniShopCartAddedProdName_${orderItemRecentlyAddedMap['catEntryId']}" href="${orderItemRecentlyAddedMap['productURL']}">${orderItemRecentlyAddedMap['productName']}</a>
+								</div>
+								<c:if test="${!addedFromSKUList eq 'true'}">
+									<div class="item_spacer_7px"></div>
+									<div id="MiniShopCartAddedProdAttr_${orderItemRecentlyAddedMap['catEntryId']}" class="product_color">
+									<c:forEach var="attribute" items="${orderItemRecentlyAddedMap['productAttributes']}">
+										<div>
+										<fmt:message bundle="${storeText}" key="ATTRNAMEKEY">
+											<fmt:param value="${attribute['attributeName']}"/>
+										</fmt:message>
+										${attribute['attributeValue']}</div>
+									</c:forEach>
+									</div>
+									<div class="item_spacer_3px"></div>
+									<span class="product_quantity"><fmt:message bundle="${storeText}" key="MSC_QTY"/> <span id="MiniShopCartAddedProdQty_${orderItemRecentlyAddedMap['catEntryId']}">${orderItemRecentlyAddedMap['productQty']}</span></span>
+									<span id="MiniShopCartAddedProdPrice_${orderItemRecentlyAddedMap['catEntryId']}" class="product_price">${orderItemRecentlyAddedMap['productPrice']}</span>
+								</c:if>								
+							</div>
+						</c:forEach>
+					</div>
+				</div>
+				<div class="footer">
+								<!-- BRAINTREE START -->
+								<c:if test="${paypalEnableInCart eq 'true' && ! empty addedOrderItemId}" >
+									<div id="paypalCheckout" class="paypalCheckout" style=" <c:if test="${userType ne 'G'}">display: grid; margin-left: 10px; float: left; position: initial; margin-bottom: 10px;</c:if>">
+										<div id="paypal-button_<c:out value='${addedOrderItemId}'/>"  style="float: left; padding-left:5px;"></div>
+										<c:if test="${isPayPalCreditEnable eq 'true'}">
+											<div id="paypal-credit-button2" style="float: left; padding-left:5px; padding-top: 20px; display:none;"></div>
+										</c:if>
+										<script type="text/javascript">
+											var advancedFraudTools= '${advancedFraudTools}';
+											var paypalMerchantName='${paypalMerchantName}';
+											var paypalFlow='${paypalFlow}';
+											var paypalIntent='${paypalIntent}';
+											var localeVal = '${locale}';
+											var billingAgreementDescription ='${billingAgreementDescription}';
+											var paypalBillingAddressEnable ='${paypalBillingAddressEnable}';
+											var paymentEnvironment ='${paymentEnvironment}';
+											var isMobileBrowsing = false;
+											var userAgent = navigator.userAgent ;
+											if(userAgent.indexOf("Mobile") != -1) {
+											 	isMobileBrowsing = true;
+											 }
+											 if(! isMobileBrowsing && populatePayPal){
+												BrainTreePayments.payPalVaultPaymentFromExpressCheckout('paypal-button_<c:out value='${addedOrderItemId}'/>','paypal-credit-button2','${getTokenResult.clientToken}','${order.orderItem[0].orderItemId}','${OrderCalculateURL}','${orderTotalAmount}', '${userType}' , false ,'${isPayPalCreditEnable}','${useVaultForAuth}');
+												populatePayPal = false;
+											}
+										</script>
+										</div>
+								</c:if>
+								<!-- BRAINTREE END -->
+					<a id="GotoCartButton2" href="${fn:escapeXml(ShoppingCartURL)}" class="basicButton">
+						<span><fmt:message bundle="${storeText}" key="MSC_GO_TO_CART"/></span>
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<c:if test="${!empty orderInCart}">
+	<input type="hidden" id="currentOrderQuantity" value="<c:out value='${orderQuantity}'/>"/>
+	<input type="hidden" id="currentOrderAmount" value="<c:out value='${orderAmountValue}'/>"/>
+	<input type="hidden" id="currentOrderCurrency" value="<c:out value='${orderAmountCurrency}'/>"/>
+	<input type="hidden" id="currentOrderLanguage" value="<c:out value='${langId}'/>"/>
+	<input type="hidden" id="currentOrderId" value="<c:out value='${orderInCart.orderId}'/>"/>
+	<input type="hidden" id="currentOrderLocked" value="<c:out value='${currentOrderLocked}'/>"/>
+</c:if>
+</c:when>
+<c:otherwise>
+<a id="widget_minishopcart" role="button" class="nohover default_cursor" aria-disabled="true"
+		aria-label="<fmt:message bundle="${storeText}" key="MINI_SHOPCART_SHOPPING_CART"/>">
+</a>
+</c:otherwise>
+</c:choose>
+<%-- END MiniShopCartDisplay_UI.jsp --%>

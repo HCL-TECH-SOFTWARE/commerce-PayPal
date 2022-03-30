@@ -1,0 +1,322 @@
+<%--
+=================================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=================================================================
+--%>
+<%--
+  *****
+  * This JSP file renders a read only billing information section in the checkout flow. It is being used in the
+  * order summary and order confirmation pages.
+  *****
+--%>
+<!-- BEGIN CheckoutPaymentAndBillingAddressSummary.jspf -->
+
+<c:set var="knownProtocolData" value="display_value,payment_token,account,expire_month,expire_year,cc_cvc,check_routing_number,applepay_paymentMethod_displayName" />
+<div class="body" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_1">
+<%@ include file="POSnippet.jspf" %>
+	<div id="billing_summary">
+	<!-- BRAINTREE START -->
+	<c:set var="isPayPal" value="false"/>
+	<!-- BRAINTREE END -->
+		<input type="hidden" name="authToken" id="PaymentsAndBill_authToken" value="<c:out value='${authToken}'/>"/>
+		<c:set var="isOrderUsingPunchout" value="false"/>
+		<c:forEach var="paymentInstance" items="${paymentInstruction.paymentInstruction}" varStatus="paymentCount">
+			<c:if test="${paymentInstance.payMethodId == 'PayInStore'}">
+			<c:set var="isPayInStore" value="true"/>
+		</c:if>
+		<!-- BRAINTREE START -->
+		<c:if test="${paymentInstance.payMethodId == 'BT_PayPal' || paymentInstance.payMethodId == 'BT_PayPalCredit'}">
+			<c:set var="isPayPal" value="true"/>
+		</c:if>
+		<!-- BRAINTREE END -->
+			<div class="billing_summary" >
+			<c:if test="${numberOfPaymentMethods > 1}">	
+				<div <c:if test="${paymentCount.count >= 2}">class="billing_border"</c:if> id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_1_${paymentCount.count}">
+					<c:if test="${paymentCount.count >= 2}"> <br /> </c:if> 
+					<p class="title"><fmt:message bundle="${storeText}" key="PAYMENT_CAPS"/><span> <c:out value="${paymentCount.count}:"/></span></p>
+				</div>
+				<br />
+			 </c:if>	
+						 <!-- BRAINTREE START -->
+					<div class="billing_address" style="<c:if test="${isPayPal && (order.orderItem[0].shipModeCode eq 'PickupInStore')}" >display:none;</c:if>" valign="top" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_2_<c:out value='${paymentCount.count}'/>">
+						<!-- BRAINTREE END -->
+						<p class="title"><fmt:message bundle="${storeText}" key="BILL_BILLING_ADDRESS"/></p>
+						
+							<c:set var="billingAddressId" value=""/>
+							<c:forEach var="protocolData" items="${paymentInstance.protocolData}">
+								<c:if test="${protocolData.name eq 'billing_address_id'}">
+									<c:set var="billingAddressId" value="${protocolData.value}"/>
+								</c:if>
+							</c:forEach>
+							<c:if test="${!empty billingAddressId}">
+								<c:set var="shownAddress" value="false"/>
+								<c:set var="contact" value="${person}"/>
+								<c:if test="${contact.addressId eq billingAddressId}" >
+									<p class="profile"><c:choose><c:when test="${contact.nickName eq  profileShippingNickname}"><fmt:message bundle="${storeText}" key="QC_DEFAULT_SHIPPING"/></c:when>
+									<c:when test="${contact.nickName eq  profileBillingNickname}"><fmt:message bundle="${storeText}" key="QC_DEFAULT_BILLING"/></c:when>
+									<c:otherwise><c:out value="${contact.nickName}"/></c:otherwise></c:choose></p>
+									<c:import url="/${sdb.jspStoreDir}/Snippets/Member/Address/AddressDisplay.jsp">
+										<c:param name="addressId" value= "${billingAddressId}"/>
+									</c:import>
+									<c:set var="shownAddress" value="true"/>
+									<c:set var="addressListForMailNotification" value="${contact.email1} ${addressListForMailNotification}"/>
+								</c:if>
+								<c:if test="${!shownAddress}">
+									<c:forEach items="${personAddresses.contact}" var="contact">
+										<c:if test="${contact.addressId eq billingAddressId}" >
+											<p class="profile"><c:choose><c:when test="${contact.nickName eq  profileShippingNickname}"><fmt:message bundle="${storeText}" key="QC_DEFAULT_SHIPPING"/></c:when>
+											<c:when test="${contact.nickName eq  profileBillingNickname}"><fmt:message bundle="${storeText}" key="QC_DEFAULT_BILLING"/></c:when>
+											<c:otherwise><c:out value="${contact.nickName}"/></c:otherwise></c:choose></p>
+											<c:import url="/${sdb.jspStoreDir}/Snippets/Member/Address/AddressDisplay.jsp">
+												<c:param name="addressId" value= "${billingAddressId}"/>
+											</c:import>
+											<c:set var="addressListForMailNotification" value="${contact.email1} ${addressListForMailNotification}"/>
+											<c:set var="shownAddress" value="true"/>
+										</c:if>
+									</c:forEach>
+								</c:if>
+								<c:if test="${!shownAddress}">
+									
+									<%@ include file="../../Snippets/ReusableObjects/AddressDisplayByParams.jspf"%> 
+								</c:if>
+							</c:if>
+							<c:if test="${empty billingAddressId}">
+								<fmt:message bundle="${storeText}" key="MO_NOT_AVAILABLE"/>
+							</c:if>
+						<br />
+					</div>
+				
+				<div class="billing_method" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_3_<c:out value='${paymentCount.count}'/>">
+					<p class="title"><fmt:message bundle="${storeText}" key="BILL_BILLING_METHOD"/></p>
+					<jsp:useBean id="protocolDataMap" class="java.util.HashMap" type="java.util.Map"/>
+						<c:forEach var="protocolDataItem" items="${paymentInstance.protocolData}">
+							<c:set target="${protocolDataMap}" property="${protocolDataItem.name}" value="${protocolDataItem.value}"/>
+						</c:forEach>
+						<p>
+						<c:choose>
+							<c:when test = "${paymentInstance.piDescription == null}">
+								<fmt:message bundle="${storeText}" key="MO_NOT_AVAILABLE"/>
+							</c:when>
+							<c:otherwise>
+								<!-- BRAINTREE START -->
+								<c:set var="payMethodName" value="${paymentInstance.piDescription}" />
+								<c:if test="${payMethodName == 'CreditCard'}" >
+									<c:set var="payMethodName" value="${protocolDataMap['pay_type']}" />
+								</c:if>
+								<c:out value="${payMethodName}"/>
+								<!-- BRAINTREE END -->
+							</c:otherwise>
+						</c:choose>
+						</p>
+						<br/>
+						
+						<jsp:useBean id="protocolDataMap" class="java.util.HashMap" type="java.util.Map"/>
+						<c:forEach var="protocolDataItem" items="${paymentInstance.protocolData}">
+							<c:set target="${protocolDataMap}" property="${protocolDataItem.name}" value="${protocolDataItem.value}"/>
+						</c:forEach>
+						
+						<c:forTokens var="knowProtocolDataItem" delims="," items="${knownProtocolData}">
+							<c:if test="${!empty protocolDataMap[knowProtocolDataItem]}">
+							  <c:if test="${paymentInstance.payMethodId !='LineOfCredit'}">
+								<c:choose>
+									<c:when test="${knowProtocolDataItem eq 'applepay_paymentMethod_displayName'}">
+										<p><fmt:message bundle="${storeText}" key="PAYMENT_NUMBER_OF_METHODS"/></p>
+										<p><c:out value="${protocolDataMap[knowProtocolDataItem]}"/></p>
+									</c:when>
+									<c:when test="${knowProtocolDataItem eq 'display_value'}">
+									    <c:set var="display_value" value="${protocolDataMap[knowProtocolDataItem]}" />									
+										 <wcf:rest var="edpMaskBean" url="store/{storeId}/cart/@self/payment_instruction/sensitive_data_mask_by_plain_string">
+					                        <wcf:var name="storeId" value="${WCParam.storeId}" encode="true"/>
+					                        <wcf:param name="plainString" value="${display_value}"/>
+				                         </wcf:rest>
+				                        <c:set var="account" value="${edpMaskBean.resultList[0].maskedString}" />
+										<p><fmt:message bundle="${storeText}" key="account"/></p>
+										<p><c:out value="${account}"/></p>
+									</c:when>
+									<c:when test="${knowProtocolDataItem eq 'payment_token'}">
+									    <c:if test="${empty display_value}">
+									       <wcf:rest var="tokenData" url="store/{storeId}/cart/@self/payment_instruction/payment_token">
+					                        <wcf:var name="storeId" value="${WCParam.storeId}" encode="true" />
+					                        <wcf:param name="payment_token" value="${protocolDataMap[knowProtocolDataItem]}" />
+					                        <wcf:param name="payment_method" value="${paymentInstance.payMethodId}" />								
+				                         </wcf:rest>						
+				                         <wcf:rest var="edpMaskBean" url="store/{storeId}/cart/@self/payment_instruction/sensitive_data_mask_by_plain_string">
+					                        <wcf:var name="storeId" value="${WCParam.storeId}" encode="true"/>
+					                        <wcf:param name="plainString" value="${tokenData.payment_token_data.display_value}"/>
+				                         </wcf:rest>
+				                        <c:set var="account" value="${edpMaskBean.resultList[0].maskedString}" />
+										<p><fmt:message bundle="${storeText}" key="account"/></p>
+										<p><c:out value="${account}"/></p>
+									    </c:if>
+									</c:when>
+									<c:otherwise> <%-- Output Madisons store text  --%>
+										<p><fmt:message bundle="${storeText}" key="${knowProtocolDataItem}"/></p>
+										<p><c:out value="${protocolDataMap[knowProtocolDataItem]}"/></p>
+									</c:otherwise>
+								</c:choose>
+							  </c:if>
+							</c:if>
+						</c:forTokens>
+						<%-- Remove the map, otherwise a previous paymentInstances' values still exists in a later paymentIntance --%>
+						<c:remove var="protocolDataMap"/>
+						
+						<p class="payment_amount"><fmt:message bundle="${storeText}" key="AMOUNT"/></p>
+						<p class="price">
+							<c:choose>
+								<c:when test = "${paymentInstance.piAmount == null}">
+									<fmt:message bundle="${storeText}" key="MO_NOT_AVAILABLE"/>
+								</c:when>
+								<c:otherwise>
+									<fmt:formatNumber value="${paymentInstance.piAmount}" type="currency" maxFractionDigits="${env_currencyDecimal}" currencySymbol="${env_CurrencySymbolToFormat}"/>
+									<c:out value="${CurrencySymbol}"/>
+								</c:otherwise>
+							</c:choose>	
+						</p>
+						<c:if test="${order.orderStatus eq 'M' and (paymentInstance.payMethodId eq 'SimplePunchout' or paymentInstance.xpaym_punchoutPayment eq 'true') and (!empty payInstMap[paymentInstance.piId]) and payInstMap[paymentInstance.piId] eq 'Pending'}">
+							<c:set var="isOrderUsingPunchout" value="true"/>
+							<div id="punchout_pay_button_div_${paymentCount.count}" class="punchout_pay_button_div">
+								<form id="punchout_${paymentCount.count}" action="PunchoutPaymentRedirectView" target="_blank" method="POST">
+									<input type="hidden" name="orderId" value="${order.orderId}" />
+									<input type="hidden" name="piId" value="${paymentInstance.piId}" />
+									<input type="hidden" name="storeId" value="${WCParam.storeId}" />
+								</form>
+								<span id="punchout_link_${paymentCount.count}_ACCE_Label" class="spanacce"><fmt:message bundle="${storeText}" key="PAY_ACCE_LABEL"/></span>
+								<a aria-labelledby="punchout_link_${paymentCount.count}_ACCE_Label" id="punchout_link_${paymentCount.count}" class="button_primary" href="JavaScript:submitSpecifiedForm($('#punchout_${paymentCount.count}').get(0));PunchoutJS.displayPopup();">
+									<div class="left_border"></div>
+									<div class="button_text"><fmt:message bundle="${storeText}" key="PAY"/></div>
+									<div class="right_border"></div>														
+								</a>
+							</div>
+						</c:if>
+					
+				</div>
+			</div>
+		
+		<br clear="all"/>
+		</c:forEach>
+		
+		<br clear="all" />
+		<flow:ifEnabled feature="PunchoutPayment">
+			<c:if test="${isOrderUsingPunchout}">
+                <c:set var="dialogOptions" value='{"close_button_selector": "#punchout_popup_close_icon", "secondary_button_selector": "#punchout_popup_close_button"}' /> 
+				<div id="punchout_popup_container" data-widget-type="wc.WCDialog" data-widget-options="${fn:escapeXml(dialogOptions)}" title="<fmt:message bundle="${storeText}" key='PUNCHOUT_PAYMENT_HEADING'/>">
+					<div class="widget_site_popup">
+						<div class="top">
+							<div class="left_border"></div>
+							<div class="middle"></div>
+							<div class="right_border"></div>
+						</div>
+						<div class="clear_float"></div>
+						<div class="middle">
+							<div class="content_left_border">
+								<div class="content_right_border">
+									<div class="content">
+										<div class="header">
+											<span><fmt:message bundle="${storeText}" key="PUNCHOUT_PAYMENT_HEADING" /></span>
+											<a role="button" id="punchout_popup_close_icon" href="javascript:location.reload();" class="close" tabindex="4" title="<fmt:message bundle="${storeText}" key="SL_CLOSE" />"></a>
+											<div class="clear_float"></div>
+										</div>
+										<div class="body">
+											<div class="item_spacer_10px"></div>
+											<div class="item_spacer_10px"></div>
+											<p><fmt:message bundle="${storeText}" key="PUNCHOUT_PAYMENT_MESSAGE" /></p>
+											<div class="item_spacer_10px"></div>
+											<div class="item_spacer_10px"></div>
+											<div class="item_spacer_10px"></div>
+											<div class="item_spacer_10px"></div>
+										</div>
+										<div class="footer">
+											<div class="button_container">
+												<a id="punchout_popup_close_button" href="javascript:location.reload();" class="button_primary" tabindex="3">
+													<div class="left_border"></div>
+													<span class="button_text"><fmt:message bundle="${storeText}" key="CLOSE" /></span>
+													<div class="right_border"></div>
+												</a>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clear_float"></div>
+						<div class="bottom">
+							<div class="left_border"></div>
+							<div class="middle"></div>
+							<div class="right_border"></div>
+						</div>
+						<div class="clear_float"></div>
+					</div>
+				</div>
+				
+			</c:if>
+		</flow:ifEnabled>
+	</div>
+</div>
+<c:if test="${!hidePayInStoreEmailAddress && userType == 'G' && guestOrderDetails ne 'true'}">
+	<%@ include file="../../Snippets/Member/Address/AddressHelperCountrySelection.jspf" %>
+	<div class="contentline" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_4"></div>
+	<div class="body" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_5">
+		<div id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_6">
+			<input class="checkbox" type="checkbox" name="sendMeSMSNotification" id="sendMeSMSNotification" onclick="javascript: CheckoutHelperJS.showHideCheckoutSMS('sendMeSMSNotification','checkoutsms_notificationsection');"/>
+	  	<label for="sendMeSMSNotification"><fmt:message bundle="${storeText}" key="SMS_OPT_IN"/></label>
+	  </div>
+	</div>
+	<div class="body" id="checkoutsms_notificationsection" style="display: none">
+	  <div id="checkoutsms">
+			  <div class="countryselect" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_8" >
+					<div id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_9">
+						<div id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_10">
+							<fmt:message bundle="${storeText}" key="MOBILE_COUNTRY"/>
+						</div>
+						<label for="mobilePhone1Country" class="nodisplay"><fmt:message bundle="${storeText}" key="MOBILE_PHONE_NUMBER_COUNTRY_NODISPLAY"/></label>
+						<select class="drop_down_country" id="mobilePhone1Country" name="mobilePhone1Country" onchange="javascript: CheckoutHelperJS.loadCountryCode('mobilePhone1Country','mobileCountryCode')">
+							<c:forEach var="mobileCountry" items="${countryBean.countries}">
+								<option value="<c:out value="${mobileCountry.code}"/>"
+									<c:if test="${mobileCountry.code eq mobilePhoneNumber1Country || mobileCountry.displayName eq mobilePhoneNumber1Country}">
+										selected="selected"
+										<c:set var="mobilePhoneNumber1CountryCode" value="${mobileCountry.callingCode}"/>
+									</c:if>
+								><c:out value="${mobileCountry.displayName}"/></option>
+							</c:forEach>
+						</select>
+					</div>
+				</div>
+				<div class="smsphone_number" id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_11" >
+					<div id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_12">
+						<div id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_13">
+							<label for="mobilePhone1">
+							<fmt:message bundle="${storeText}" key="MOBILE_PHONE_NUMBER"/></label>
+						</div>
+						<c:set var="countryCode" value="${mobilePhoneNumber1CountryCode}"/>
+						<c:if test="${mobilePhoneNumber1CountryCode==null || mobilePhoneNumber1CountryCode==''}">
+							<c:set var="countryCode" value="+93"/>
+						</c:if>
+						<input type="text" size="6" maxlength="6" id="mobileCountryCode" name="mobileCountryCode" value="<c:out value="${countryCode}"/>" readonly="readonly" class="text" tabindex="-1"/>
+						<label for="mobileCountryCode" class="nodisplay"><fmt:message bundle="${storeText}" key="MOBILE_COUNTRY"/></label>
+						<input type="text" size="20" maxlength="20" id="mobilePhone1" name="mobilePhone1" value="<c:out value="${mobilePhoneNumber1}"/>"/>
+						<div id="WC_CheckoutPaymentAndBillingAddressSummaryf_div_14">
+							<fmt:message bundle="${storeText}" key="MOBILE_PHONE_EXAMPLE"/>
+						</div>
+					</div>
+				</div>
+				<br clear="all" />
+		</div>
+	</div>
+</c:if>
+<!-- END CheckoutPaymentAndBillingAddressSummary.jspf -->
+
+
+
+
