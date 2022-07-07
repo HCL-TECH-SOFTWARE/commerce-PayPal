@@ -6,14 +6,14 @@
 
 **DISCLAIMER:  This Proof of Concept asset is being provided as-is to help accelerate your projects. We have provided documentation as well as any needed code artifacts for your use.**
 
-**Prerequisites:** HCL Commerce V9.1.7 / HCL Commerce React Storefront SDK
+**Prerequisites:** HCL Commerce V9.1.9 / HCL Commerce React Storefront SDK
 
 **The implemntation includes below components**
- 1.	Integrating PayPal Backend to HCL Commerce V9.1.7.    
+ 1.	Integrating PayPal Backend to HCL Commerce V9.1.9.    
  2. Frontend - Aurora Storefront.
  3. Frontend - Emerald Storefront
  
- ### Step - 1: Integrating PayPal Backend to HCL Commerce V9.1.7
+ ### Step - 1: Integrating PayPal Backend to HCL Commerce V9.1.9
  
  Installation instructions are available in README.md file under Plugin-Files Folder. Word document [PayPal_Installation_Guide.docx](https://github.com/HCL-Commerce-Assets-Repository/HCLCommerce-Paypal-POC/tree/master/Documents) with instructions available under Documents folder.
  
