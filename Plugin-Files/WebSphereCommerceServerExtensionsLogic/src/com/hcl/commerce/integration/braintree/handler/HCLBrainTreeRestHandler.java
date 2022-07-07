@@ -31,7 +31,7 @@ import com.ibm.commerce.rest.classic.core.AbstractConfigBasedClassicHandler;
 import com.ibm.commerce.rest.javadoc.ResponseSchema;
 
 @Path("braintree/{storeId}")
-public class HCLBrainTreeRestHandler extends AbstractConfigBasedClassicHandler {
+public class HCLBrainTreeRestHandler extends AbstractConfigBasedClassicHandler { 
 	private static final String RESOURCE_NAME = "braintree";
 	private static final String GET_CLIENT_TOKEN_PATH = "clienttoken";
 	private static final String GET_PAYMENT_OPTIONS = "paymentOptions";

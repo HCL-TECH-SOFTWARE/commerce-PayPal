@@ -26,6 +26,7 @@ import com.hcl.commerce.braintree.vault.commands.HCLVaultTaskCmd;
 import com.ibm.commerce.command.CommandFactory;
 import com.ibm.commerce.datatype.TypedProperty;
 import com.ibm.commerce.edp.commands.PIAddCmdImpl;
+import com.ibm.commerce.exception.ECApplicationException;
 import com.ibm.commerce.exception.ECException;
 import com.ibm.commerce.user.objects.AddressAccessBean;
 
@@ -47,23 +48,31 @@ public class HCLExtPIAddCmdImpl extends PIAddCmdImpl {
 
 		Integer store_Id = getStoreId();
 		TypedProperty properties = getRequestProperties();
-
+		try {
 		String payMethodIdval  = properties.getString(PAYMNET_METHOD_ID, null);
-		if(payMethodIdval != null && (payMethodIdval.equals("ZPayPal") || payMethodIdval.equals("ZPayPalCredit"))) {
+		if(payMethodIdval != null && (payMethodIdval.equals("BT_PayPal") || payMethodIdval.equals("BT_PayPalCredit"))) {
 			String fromSavedPaymentFlag = getRequestProperties().getString(HCLBrainTreeConstants.FROM_VAULT_PAYMENT, null);
-		
+			System.out.println("getRequestProperties():::: "+getRequestProperties());
 			String savePaymentFlag = properties.getString(HCLBrainTreeConstants.SAVE_CARD_FLAG, null);
 			String billingAddressId = properties.getString(BILLING_ADDRESS_ID, null);
 			String paypalPaymentMethod = HCLBrainTreeUtility.getInstance(new Integer(store_Id)).getConfProperty(HCLBrainTreeConstants.PAYPAL_PAYMENT_METHOD, new Integer(store_Id));
 			String paypalcreditPaymentMethod = HCLBrainTreeUtility.getInstance(new Integer(store_Id)).getConfProperty(HCLBrainTreeConstants.PAYPAL_CREDIT_PAYMENT_METHOD, new Integer(store_Id));	
 			String paypalFlow = HCLBrainTreeUtility.getInstance(new Integer(store_Id)).getConfProperty(HCLBrainTreeConstants.PAYPAL_FLOW, new Integer(store_Id));
-		
+			System.out.println("payMethodIdval:::: "+payMethodIdval);
+			System.out.println("fromSavedPaymentFlag:::: "+fromSavedPaymentFlag);
+			System.out.println("billingAddressId:::: "+billingAddressId);
+			System.out.println("paypalPaymentMethod:::: "+paypalPaymentMethod);
+			System.out.println("paypalcreditPaymentMethod:::: "+paypalcreditPaymentMethod);
+			System.out.println("paypalFlow:::: "+paypalFlow);
+			System.out.println("store_Id:::: "+store_Id);
+			
+			//System.out.println("payMethodIdval:::: "+payMethodIdval);
 			//create token using paynonce when payment checkout with paypal floe:checkout , intent : order 
 			if(! fromSavedPaymentFlag.equals("true") && (paypalPaymentMethod.equals(payMethodIdval) || paypalcreditPaymentMethod.equals(payMethodIdval)) ){
 				if(paypalFlow.equals(HCLBrainTreeConstants.PAYPAL_FLOW_CHEKCOUT)){
 					String paypalCheckoutIntent = HCLBrainTreeUtility.getInstance(new Integer(store_Id)).getConfProperty(HCLBrainTreeConstants.PAYPAL_CHECKOUT_INTENT, new Integer(store_Id));
 					if(paypalCheckoutIntent.equals(HCLBrainTreeConstants.PAYPAL_INTNET_ORDER)){
-						
+						System.out.println("paypalCheckoutIntent:::: "+paypalCheckoutIntent);
 						HCLVaultTaskCmd cmd = (HCLVaultTaskCmd) CommandFactory.createCommand("com.hcl.commerce.braintree.vault.commands.HCLVaultTaskCmd", getStoreId());
 						cmd.setCommandContext(getCommandContext());
 						cmd.setRequestProperties(getRequestProperties());
@@ -91,9 +100,15 @@ public class HCLExtPIAddCmdImpl extends PIAddCmdImpl {
 		}
 		else {
 			if (LOGGER.isLoggable(Level.FINEST))
-				LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD_NAME, " HCLExtPIAddCmdImpl payMethodIdval:: " + payMethodIdval);
+				LOGGER.logp(Level.FINEST, CLASSNAME, METHOD_NAME, " HCLExtPIAddCmdImpl payMethodIdval:: " + payMethodIdval);
 		}
 		super.performExecute();
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new ECApplicationException(ex);
+			
+		}
 	}
 	
 }

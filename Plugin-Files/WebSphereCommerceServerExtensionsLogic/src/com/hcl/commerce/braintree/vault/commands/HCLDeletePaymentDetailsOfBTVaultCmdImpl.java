@@ -18,15 +18,14 @@ limitations under the License.
 package com.hcl.commerce.braintree.vault.commands;
 
 import java.sql.Connection;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import com.braintreegateway.BraintreeGateway;
 import com.braintreegateway.PaymentMethod;
 import com.braintreegateway.Result;
@@ -35,13 +34,10 @@ import com.hcl.commerce.braintree.objects.SavedPayments;
 import com.hcl.commerce.braintree.persistence.SavedPaymentsDaoImpl;
 import com.hcl.commerce.payments.braintree.util.HCLBrainTreeUtility;
 import com.ibm.commerce.base.helpers.BaseJDBCHelper;
-import com.ibm.commerce.command.CommandContext;
 import com.ibm.commerce.command.ControllerCommandImpl;
 import com.ibm.commerce.datatype.TypedProperty;
-import com.ibm.commerce.exception.ECApplicationException;
 import com.ibm.commerce.exception.ECException;
 import com.ibm.commerce.foundation.persistence.EntityDao;
-import com.ibm.commerce.ras.ECMessage;
 import com.ibm.commerce.ras.ECTrace;
 import com.ibm.commerce.ras.ECTraceIdentifiers;
 
