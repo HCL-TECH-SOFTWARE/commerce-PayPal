@@ -1,20 +1,11 @@
-/**
-*==================================================
-Copyright [2021] [HCL Technologies]
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*==================================================
-**/
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
+//
+// HCL Commerce
+//
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
+//
+//-----------------------------------------------------------------
 
 /**
 * @fileOverview This JavaScript file contains functions used by the payment section of the checkout pages.
@@ -212,12 +203,20 @@ CheckoutPayments = {
 		var formObj = document.forms['PaymentForm'+paymentAreaNumber];
 		this.clearPaymentFormData(formObj);
 
-		var selectBoxValueArray = paymentMethodSelectBox.value.split("_");
+		/*var selectBoxValueArray = paymentMethodSelectBox.value.split("_");
 		var paymentMethodName = selectBoxValueArray[0];
 		var paymentTCId = '';
 		if(selectBoxValueArray[1] != null){
 			paymentTCId = selectBoxValueArray[1];
-		}
+		}*/
+		
+		var selectBoxValueArray = paymentMethodSelectBox.value;
+		var paymentMethodName = selectBoxValueArray;
+		var paymentTCId = '';
+		//if(selectBoxValueArray[1] != null){
+		//	paymentTCId = selectBoxValueArray[1];
+		//} 
+		
 
 		if(this.paymentSpecificAddress){
 			wcRenderContext.getRenderContextProperties("billingAddressDropDownBoxContext")["payment"+paymentAreaNumber] = paymentMethodName;
@@ -583,6 +582,7 @@ CheckoutPayments = {
 		}
 		/*BRAINTREE END*/
 		return params;
+
 	},
 
 	/**

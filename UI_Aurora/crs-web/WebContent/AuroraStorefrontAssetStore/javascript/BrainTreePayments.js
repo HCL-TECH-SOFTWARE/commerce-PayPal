@@ -1352,12 +1352,13 @@ BrainTreePayments = {
 				if(displayCardsFlag=="true"){
 					if(id=="newPayments"){
 						
-						$(section_list_savedPayments).attr("aria-expanded", "false");
-						$(section_list_savedPayments).css("display", "none");
+						$("#section_list_savedPayments").attr("aria-expanded", "false");
+						$("#section_list_savedPayments").css("display", "none");
 						
 						// hide otherfield set
-						var iconOther = byId("icon_savedPayments");
-						iconOther.className="arrow arrow_collapsed";
+						//var iconOther = byId("icon_savedPayments");
+						$("#icon_savedPayments").attr('class', 'arrow arrow_collapsed');
+						//iconOther.className="arrow arrow_collapsed";
 						document.querySelector('#fromSavedPaymentFlag').value = false;
 
 						$(".paypalCheckoutdiv").css("display", "block"); 

@@ -1,20 +1,3 @@
-<!--
-=================================================================
-Copyright [2021] [HCL Technologies]
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
--->
 <beans xmlns="http://www.springframework.org/schema/beans" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <import resource="classpath:/WEB-INF/spring/member-controllers.xml"/>
   <import resource="classpath:/WEB-INF/spring/order-controllers.xml"/>
@@ -34,6 +17,8 @@ limitations under the License.
       <props>
         <prop key="/Logon">logon</prop>
         <prop key="/AjaxLogon">ajaxLogon</prop>
+       	<prop key="/OauthLogon">oauthLogon</prop>
+        <prop key="/ValidateOauthToken">validateOauthToken</prop>  
         <prop key="/PersonChangeServicePasswordReset">personChangeServicePasswordReset</prop>
         <prop key="/PersonChangeServicePasswordForgottenReset">personChangeServicePasswordForgottenReset</prop>
         <prop key="/UnauthenticatedPersonPasswordReset">unauthenticatedPersonPasswordReset</prop>
@@ -59,6 +44,7 @@ limitations under the License.
         <prop key="/PersonChangeServicePersonUpdate">personChangeServicePersonUpdate</prop>
         <prop key="/AjaxRESTOrderItemAdd">ajaxOrderItemAdd</prop>
         <prop key="/RESTOrderItemAdd">orderItemAdd</prop>
+        <prop key="/AddOrderItemWithPromotionCodeOrCoupon">orderItemAddWithPromotion</prop>
         <prop key="/OrderCalculate">orderCalculate</prop>
         <prop key="/OrderItemDisplay">orderItemDisplay</prop>
         <prop key="/RESTOrderItemUpdate">orderItemUpdate</prop>
@@ -188,6 +174,7 @@ limitations under the License.
         <prop key="/RESTOrderAddConfigurationToCart">orderAddConfigurationToCart</prop>
         <prop key="/RESTOrderAddPreConfigurationToCart">orderAddPreConfigurationToCart</prop>
         <prop key="/RESTOrderUpdateConfigurationInCart">orderUpdateConfigurationInCart</prop>
+        <prop key="/AjaxRESTOrderUpdateConfigurationInCart">ajaxOrderUpdateConfigurationInCart</prop>
         <prop key="/RESTOrderRewardOptionUpdate">orderRewardOptionUpdate</prop>
         <prop key="/AjaxRESTOrderLockOnBehalf">ajaxRESTOrderLockOnBehalf</prop>
         <prop key="/AjaxRESTOrderLockTakeOverOnBehalf">ajaxRESTOrderLockTakeOverOnBehalf</prop>
@@ -285,11 +272,13 @@ limitations under the License.
         <prop key="/RESTTakeOverlock">restTakeOverlock</prop>
         <prop key="/RESTAddOrderComment">restAddOrderComment</prop>
         <prop key="/AjaxRESTAddOrderComment">ajaxRESTAddOrderComment</prop>
-        <!-- BRAINTREE START  -->
+	<!-- BRAINTREE START  -->
         <prop key="/AjaxRESTDeleteCardFromBraintreeVault">ajaxDeleteCardFromBraintreeVault</prop>
         <prop key="/AjaxRESTUpdateShippingAddressFromPaypalCheckout">ajaxUpdateShippingAddressFromPaypalCheckout</prop>
         <prop key="/AjaxRESTVaultedCreditCardVerification">ajaxVaultedCreditCardVerification</prop>
         <!-- BRAINTREE END  -->
+        <prop key="/AjaxRESTUpdatePrivacyAndMarketingConsent">ajaxRESTUpdatePrivacyAndMarketingConsent</prop>
+        <prop key="/AjaxRESTUpdateMarketingTrackingConsent">ajaxRESTUpdateMarketingTrackingConsent</prop>
       </props>
     </property>
   </bean>
@@ -304,4 +293,5 @@ limitations under the License.
     </property>
   </bean>
   <import resource="classpath:/WEB-INF/spring/AuroraStorefrontAssetStore/controllers-ext.xml"/>
+  <import resource="classpath:/WEB-INF/spring/AuroraB2BStorefrontAssetStore/controllers-ext.xml"/>
 </beans>

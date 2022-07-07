@@ -1,18 +1,11 @@
 <%--
  =================================================================
-Copyright [2021] [HCL Technologies]
+  Licensed Materials - Property of HCL Technologies
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  HCL Commerce
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  (C) Copyright HCL Technologies Limited 1996, 2020
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
  =================================================================
 --%>
 <%-- 
@@ -117,6 +110,7 @@ limitations under the License.
 									<!-- BRAINTREE END -->
 									<option <c:out value="${selectStr}" escapeXml='false'/> value="${addressInPayment.addressId}"><c:choose><c:when test="${addressInPayment.nickName eq  profileShippingNickname}"><fmt:message bundle="${storeText}" key="QC_DEFAULT_SHIPPING" /></c:when>
 									<c:when test="${addressInPayment.nickName eq  profileBillingNickname}"><fmt:message bundle="${storeText}" key="QC_DEFAULT_BILLING" /></c:when><c:otherwise><c:out value="${addressInPayment.nickName}"/></c:otherwise></c:choose></option>
+									
 									<c:set var="selectStr" value="" />
 								</c:forEach>
 						 	</c:when>
@@ -159,6 +153,7 @@ limitations under the License.
 					<fmt:message bundle="${storeText}" key="ADDR_EDIT_ADDRESS" />
 					</a>
 			</div>
+			
 		</c:if>
 		
 		<!--  create a new address  -->

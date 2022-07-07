@@ -1,20 +1,16 @@
-/**
-*==================================================
-Copyright [2021] [HCL Technologies]
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*==================================================
-**/
+/*!
+ * jQuery JavaScript Library v3.6.0
+ * https://jquery.com/
+ *
+ * Includes Sizzle.js
+ * https://sizzlejs.com/
+ *
+ * Copyright OpenJS Foundation and other contributors
+ * Released under the MIT license
+ * https://jquery.org/license
+ *
+ * Date: 2021-03-02T17:08Z
+ */
 ( function( global, factory ) {
 
 	"use strict";
@@ -51,13 +47,16 @@ limitations under the License.
 
 var arr = [];
 
-var document = window.document;
-
 var getProto = Object.getPrototypeOf;
 
 var slice = arr.slice;
 
-var concat = arr.concat;
+var flat = arr.flat ? function( array ) {
+	return arr.flat.call( array );
+} : function( array ) {
+	return arr.concat.apply( [], array );
+};
+
 
 var push = arr.push;
 
@@ -75,24 +74,84 @@ var ObjectFunctionString = fnToString.call( Object );
 
 var support = {};
 
+var isFunction = function isFunction( obj ) {
+
+		// Support: Chrome <=57, Firefox <=52
+		// In some browsers, typeof returns "function" for HTML <object> elements
+		// (i.e., `typeof document.createElement( "object" ) === "function"`).
+		// We don't want to classify *any* DOM node as a function.
+		// Support: QtWeb <=3.8.5, WebKit <=534.34, wkhtmltopdf tool <=0.12.5
+		// Plus for old WebKit, typeof returns "function" for HTML collections
+		// (e.g., `typeof document.getElementsByTagName("div") === "function"`). (gh-4756)
+		return typeof obj === "function" && typeof obj.nodeType !== "number" &&
+			typeof obj.item !== "function";
+	};
 
 
-	function DOMEval( code, doc ) {
+var isWindow = function isWindow( obj ) {
+		return obj != null && obj === obj.window;
+	};
+
+
+var document = window.document;
+
+
+
+	var preservedScriptAttributes = {
+		type: true,
+		src: true,
+		nonce: true,
+		noModule: true
+	};
+
+	function DOMEval( code, node, doc ) {
 		doc = doc || document;
 
-		var script = doc.createElement( "script" );
+		var i, val,
+			script = doc.createElement( "script" );
 
 		script.text = code;
+		if ( node ) {
+			for ( i in preservedScriptAttributes ) {
+
+				// Support: Firefox 64+, Edge 18+
+				// Some browsers don't support the "nonce" property on scripts.
+				// On the other hand, just using `getAttribute` is not enough as
+				// the `nonce` attribute is reset to an empty string whenever it
+				// becomes browsing-context connected.
+				// See https://github.com/whatwg/html/issues/2369
+				// See https://html.spec.whatwg.org/#nonce-attributes
+				// The `node.getAttribute` check was added for the sake of
+				// `jQuery.globalEval` so that it can fake a nonce-containing node
+				// via an object.
+				val = node[ i ] || node.getAttribute && node.getAttribute( i );
+				if ( val ) {
+					script.setAttribute( i, val );
+				}
+			}
+		}
 		doc.head.appendChild( script ).parentNode.removeChild( script );
 	}
+
+
+function toType( obj ) {
+	if ( obj == null ) {
+		return obj + "";
+	}
+
+	// Support: Android <=2.3 only (functionish RegExp)
+	return typeof obj === "object" || typeof obj === "function" ?
+		class2type[ toString.call( obj ) ] || "object" :
+		typeof obj;
+}
 /* global Symbol */
-// Defining this global in .eslintrc would create a danger of using the global
+// Defining this global in .eslintrc.json would create a danger of using the global
 // unguarded in another place, it seems safer to define global only for this module
 
 
 
 var
-	version = "3.1.0",
+	version = "3.6.0",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -100,19 +159,6 @@ var
 		// The jQuery object is actually just the init constructor 'enhanced'
 		// Need init if jQuery is called (just allow error to be thrown if not included)
 		return new jQuery.fn.init( selector, context );
-	},
-
-	// Support: Android <=4.0 only
-	// Make sure we trim BOM and NBSP
-	rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,
-
-	// Matches dashed string for camelizing
-	rmsPrefix = /^-ms-/,
-	rdashAlpha = /-([a-z])/g,
-
-	// Used by jQuery.camelCase as callback to replace()
-	fcamelCase = function( all, letter ) {
-		return letter.toUpperCase();
 	};
 
 jQuery.fn = jQuery.prototype = {
@@ -132,13 +178,14 @@ jQuery.fn = jQuery.prototype = {
 	// Get the Nth element in the matched element set OR
 	// Get the whole matched element set as a clean array
 	get: function( num ) {
-		return num != null ?
 
-			// Return just the one element from the set
-			( num < 0 ? this[ num + this.length ] : this[ num ] ) :
+		// Return all the elements in a clean array
+		if ( num == null ) {
+			return slice.call( this );
+		}
 
-			// Return all the elements in a clean array
-			slice.call( this );
+		// Return just the one element from the set
+		return num < 0 ? this[ num + this.length ] : this[ num ];
 	},
 
 	// Take an array of elements and push it onto the stack
@@ -178,6 +225,18 @@ jQuery.fn = jQuery.prototype = {
 		return this.eq( -1 );
 	},
 
+	even: function() {
+		return this.pushStack( jQuery.grep( this, function( _elem, i ) {
+			return ( i + 1 ) % 2;
+		} ) );
+	},
+
+	odd: function() {
+		return this.pushStack( jQuery.grep( this, function( _elem, i ) {
+			return i % 2;
+		} ) );
+	},
+
 	eq: function( i ) {
 		var len = this.length,
 			j = +i + ( i < 0 ? len : 0 );
@@ -212,7 +271,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 	}
 
 	// Handle case when target is a string or something (possible in deep copy)
-	if ( typeof target !== "object" && !jQuery.isFunction( target ) ) {
+	if ( typeof target !== "object" && !isFunction( target ) ) {
 		target = {};
 	}
 
@@ -229,25 +288,28 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 			// Extend the base object
 			for ( name in options ) {
-				src = target[ name ];
 				copy = options[ name ];
 
+				// Prevent Object.prototype pollution
 				// Prevent never-ending loop
-				if ( target === copy ) {
+				if ( name === "__proto__" || target === copy ) {
 					continue;
 				}
 
 				// Recurse if we're merging plain objects or arrays
 				if ( deep && copy && ( jQuery.isPlainObject( copy ) ||
-					( copyIsArray = jQuery.isArray( copy ) ) ) ) {
+					( copyIsArray = Array.isArray( copy ) ) ) ) {
+					src = target[ name ];
 
-					if ( copyIsArray ) {
-						copyIsArray = false;
-						clone = src && jQuery.isArray( src ) ? src : [];
-
+					// Ensure proper type for the source value
+					if ( copyIsArray && !Array.isArray( src ) ) {
+						clone = [];
+					} else if ( !copyIsArray && !jQuery.isPlainObject( src ) ) {
+						clone = {};
 					} else {
-						clone = src && jQuery.isPlainObject( src ) ? src : {};
+						clone = src;
 					}
+					copyIsArray = false;
 
 					// Never move original objects, clone them
 					target[ name ] = jQuery.extend( deep, clone, copy );
@@ -278,30 +340,6 @@ jQuery.extend( {
 
 	noop: function() {},
 
-	isFunction: function( obj ) {
-		return jQuery.type( obj ) === "function";
-	},
-
-	isArray: Array.isArray,
-
-	isWindow: function( obj ) {
-		return obj != null && obj === obj.window;
-	},
-
-	isNumeric: function( obj ) {
-
-		// As of jQuery 3.0, isNumeric is limited to
-		// strings and numbers (primitives or objects)
-		// that can be coerced to finite numbers (gh-2662)
-		var type = jQuery.type( obj );
-		return ( type === "number" || type === "string" ) &&
-
-			// parseFloat NaNs numeric-cast false positives ("")
-			// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
-			// subtraction forces infinities to NaN
-			!isNaN( obj - parseFloat( obj ) );
-	},
-
 	isPlainObject: function( obj ) {
 		var proto, Ctor;
 
@@ -324,9 +362,6 @@ jQuery.extend( {
 	},
 
 	isEmptyObject: function( obj ) {
-
-		/* eslint-disable no-unused-vars */
-		// See https://github.com/eslint/eslint/issues/6125
 		var name;
 
 		for ( name in obj ) {
@@ -335,31 +370,10 @@ jQuery.extend( {
 		return true;
 	},
 
-	type: function( obj ) {
-		if ( obj == null ) {
-			return obj + "";
-		}
-
-		// Support: Android <=2.3 only (functionish RegExp)
-		return typeof obj === "object" || typeof obj === "function" ?
-			class2type[ toString.call( obj ) ] || "object" :
-			typeof obj;
-	},
-
-	// Evaluates a script in a global context
-	globalEval: function( code ) {
-		DOMEval( code );
-	},
-
-	// Convert dashed to camelCase; used by the css and data modules
-	// Support: IE <=9 - 11, Edge 12 - 13
-	// Microsoft forgot to hump their vendor prefix (#9572)
-	camelCase: function( string ) {
-		return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
-	},
-
-	nodeName: function( elem, name ) {
-		return elem.nodeName && elem.nodeName.toLowerCase() === name.toLowerCase();
+	// Evaluates a script in a provided context; falls back to the global one
+	// if not specified.
+	globalEval: function( code, options, doc ) {
+		DOMEval( code, { nonce: options && options.nonce }, doc );
 	},
 
 	each: function( obj, callback ) {
@@ -383,13 +397,6 @@ jQuery.extend( {
 		return obj;
 	},
 
-	// Support: Android <=4.0 only
-	trim: function( text ) {
-		return text == null ?
-			"" :
-			( text + "" ).replace( rtrim, "" );
-	},
-
 	// results is for internal usage only
 	makeArray: function( arr, results ) {
 		var ret = results || [];
@@ -398,7 +405,7 @@ jQuery.extend( {
 			if ( isArrayLike( Object( arr ) ) ) {
 				jQuery.merge( ret,
 					typeof arr === "string" ?
-					[ arr ] : arr
+						[ arr ] : arr
 				);
 			} else {
 				push.call( ret, arr );
@@ -476,42 +483,11 @@ jQuery.extend( {
 		}
 
 		// Flatten any nested arrays
-		return concat.apply( [], ret );
+		return flat( ret );
 	},
 
 	// A global GUID counter for objects
 	guid: 1,
-
-	// Bind a function to a context, optionally partially applying any
-	// arguments.
-	proxy: function( fn, context ) {
-		var tmp, args, proxy;
-
-		if ( typeof context === "string" ) {
-			tmp = fn[ context ];
-			context = fn;
-			fn = tmp;
-		}
-
-		// Quick check to determine if target is callable, in the spec
-		// this throws a TypeError, but we will just return undefined.
-		if ( !jQuery.isFunction( fn ) ) {
-			return undefined;
-		}
-
-		// Simulated bind
-		args = slice.call( arguments, 2 );
-		proxy = function() {
-			return fn.apply( context || this, args.concat( slice.call( arguments ) ) );
-		};
-
-		// Set the guid of unique handler to the same of original handler, so it can be removed
-		proxy.guid = fn.guid = fn.guid || jQuery.guid++;
-
-		return proxy;
-	},
-
-	now: Date.now,
 
 	// jQuery.support is not used in Core but other projects attach their
 	// properties to it so it needs to exist.
@@ -524,9 +500,9 @@ if ( typeof Symbol === "function" ) {
 
 // Populate the class2type map
 jQuery.each( "Boolean Number String Function Array Date RegExp Object Error Symbol".split( " " ),
-function( i, name ) {
-	class2type[ "[object " + name + "]" ] = name.toLowerCase();
-} );
+	function( _i, name ) {
+		class2type[ "[object " + name + "]" ] = name.toLowerCase();
+	} );
 
 function isArrayLike( obj ) {
 
@@ -535,9 +511,9 @@ function isArrayLike( obj ) {
 	// hasOwn isn't used here due to false negatives
 	// regarding Nodelist length in IE
 	var length = !!obj && "length" in obj && obj.length,
-		type = jQuery.type( obj );
+		type = toType( obj );
 
-	if ( type === "function" || jQuery.isWindow( obj ) ) {
+	if ( isFunction( obj ) || isWindow( obj ) ) {
 		return false;
 	}
 
@@ -546,17 +522,16 @@ function isArrayLike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v2.3.0
+ * Sizzle CSS Selector Engine v2.3.6
  * https://sizzlejs.com/
  *
- * Copyright jQuery Foundation and other contributors
+ * Copyright JS Foundation and other contributors
  * Released under the MIT license
- * http://jquery.org/license
+ * https://js.foundation/
  *
- * Date: 2016-01-04
+ * Date: 2021-02-16
  */
-(function( window ) {
-
+( function( window ) {
 var i,
 	support,
 	Expr,
@@ -587,6 +562,7 @@ var i,
 	classCache = createCache(),
 	tokenCache = createCache(),
 	compilerCache = createCache(),
+	nonnativeSelectorCache = createCache(),
 	sortOrder = function( a, b ) {
 		if ( a === b ) {
 			hasDuplicate = true;
@@ -595,61 +571,71 @@ var i,
 	},
 
 	// Instance methods
-	hasOwn = ({}).hasOwnProperty,
+	hasOwn = ( {} ).hasOwnProperty,
 	arr = [],
 	pop = arr.pop,
-	push_native = arr.push,
+	pushNative = arr.push,
 	push = arr.push,
 	slice = arr.slice,
+
 	// Use a stripped-down indexOf as it's faster than native
 	// https://jsperf.com/thor-indexof-vs-for/5
 	indexOf = function( list, elem ) {
 		var i = 0,
 			len = list.length;
 		for ( ; i < len; i++ ) {
-			if ( list[i] === elem ) {
+			if ( list[ i ] === elem ) {
 				return i;
 			}
 		}
 		return -1;
 	},
 
-	booleans = "checked|selected|async|autofocus|autoplay|controls|defer|disabled|hidden|ismap|loop|multiple|open|readonly|required|scoped",
+	booleans = "checked|selected|async|autofocus|autoplay|controls|defer|disabled|hidden|" +
+		"ismap|loop|multiple|open|readonly|required|scoped",
 
 	// Regular expressions
 
 	// http://www.w3.org/TR/css3-selectors/#whitespace
 	whitespace = "[\\x20\\t\\r\\n\\f]",
 
-	// http://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
-	identifier = "(?:\\\\.|[\\w-]|[^\0-\\xa0])+",
+	// https://www.w3.org/TR/css-syntax-3/#ident-token-diagram
+	identifier = "(?:\\\\[\\da-fA-F]{1,6}" + whitespace +
+		"?|\\\\[^\\r\\n\\f]|[\\w-]|[^\0-\\x7f])+",
 
 	// Attribute selectors: http://www.w3.org/TR/selectors/#attribute-selectors
 	attributes = "\\[" + whitespace + "*(" + identifier + ")(?:" + whitespace +
+
 		// Operator (capture 2)
 		"*([*^$|!~]?=)" + whitespace +
-		// "Attribute values must be CSS identifiers [capture 5] or strings [capture 3 or capture 4]"
-		"*(?:'((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\"|(" + identifier + "))|)" + whitespace +
-		"*\\]",
+
+		// "Attribute values must be CSS identifiers [capture 5]
+		// or strings [capture 3 or capture 4]"
+		"*(?:'((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\"|(" + identifier + "))|)" +
+		whitespace + "*\\]",
 
 	pseudos = ":(" + identifier + ")(?:\\((" +
+
 		// To reduce the number of selectors needing tokenize in the preFilter, prefer arguments:
 		// 1. quoted (capture 3; capture 4 or capture 5)
 		"('((?:\\\\.|[^\\\\'])*)'|\"((?:\\\\.|[^\\\\\"])*)\")|" +
+
 		// 2. simple (capture 6)
 		"((?:\\\\.|[^\\\\()[\\]]|" + attributes + ")*)|" +
+
 		// 3. anything else (capture 2)
 		".*" +
 		")\\)|)",
 
 	// Leading and non-escaped trailing whitespace, capturing some non-whitespace characters preceding the latter
 	rwhitespace = new RegExp( whitespace + "+", "g" ),
-	rtrim = new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$", "g" ),
+	rtrim = new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" +
+		whitespace + "+$", "g" ),
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
-	rcombinators = new RegExp( "^" + whitespace + "*([>+~]|" + whitespace + ")" + whitespace + "*" ),
-
-	rattributeQuotes = new RegExp( "=" + whitespace + "*([^\\]'\"]*?)" + whitespace + "*\\]", "g" ),
+	rcombinators = new RegExp( "^" + whitespace + "*([>+~]|" + whitespace + ")" + whitespace +
+		"*" ),
+	rdescend = new RegExp( whitespace + "|>" ),
 
 	rpseudo = new RegExp( pseudos ),
 	ridentifier = new RegExp( "^" + identifier + "$" ),
@@ -660,16 +646,19 @@ var i,
 		"TAG": new RegExp( "^(" + identifier + "|[*])" ),
 		"ATTR": new RegExp( "^" + attributes ),
 		"PSEUDO": new RegExp( "^" + pseudos ),
-		"CHILD": new RegExp( "^:(only|first|last|nth|nth-last)-(child|of-type)(?:\\(" + whitespace +
-			"*(even|odd|(([+-]|)(\\d*)n|)" + whitespace + "*(?:([+-]|)" + whitespace +
-			"*(\\d+)|))" + whitespace + "*\\)|)", "i" ),
+		"CHILD": new RegExp( "^:(only|first|last|nth|nth-last)-(child|of-type)(?:\\(" +
+			whitespace + "*(even|odd|(([+-]|)(\\d*)n|)" + whitespace + "*(?:([+-]|)" +
+			whitespace + "*(\\d+)|))" + whitespace + "*\\)|)", "i" ),
 		"bool": new RegExp( "^(?:" + booleans + ")$", "i" ),
+
 		// For use in libraries implementing .is()
 		// We use this for POS matching in `select`
-		"needsContext": new RegExp( "^" + whitespace + "*[>+~]|:(even|odd|eq|gt|lt|nth|first|last)(?:\\(" +
-			whitespace + "*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
+		"needsContext": new RegExp( "^" + whitespace +
+			"*[>+~]|:(even|odd|eq|gt|lt|nth|first|last)(?:\\(" + whitespace +
+			"*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
 	},
 
+	rhtml = /HTML$/i,
 	rinputs = /^(?:input|select|textarea|button)$/i,
 	rheader = /^h\d$/i,
 
@@ -682,24 +671,27 @@ var i,
 
 	// CSS escapes
 	// http://www.w3.org/TR/CSS21/syndata.html#escaped-characters
-	runescape = new RegExp( "\\\\([\\da-f]{1,6}" + whitespace + "?|(" + whitespace + ")|.)", "ig" ),
-	funescape = function( _, escaped, escapedWhitespace ) {
-		var high = "0x" + escaped - 0x10000;
-		// NaN means non-codepoint
-		// Support: Firefox<24
-		// Workaround erroneous numeric interpretation of +"0x"
-		return high !== high || escapedWhitespace ?
-			escaped :
+	runescape = new RegExp( "\\\\[\\da-fA-F]{1,6}" + whitespace + "?|\\\\([^\\r\\n\\f])", "g" ),
+	funescape = function( escape, nonHex ) {
+		var high = "0x" + escape.slice( 1 ) - 0x10000;
+
+		return nonHex ?
+
+			// Strip the backslash prefix from a non-hex escape sequence
+			nonHex :
+
+			// Replace a hexadecimal escape sequence with the encoded Unicode code point
+			// Support: IE <=11+
+			// For values outside the Basic Multilingual Plane (BMP), manually construct a
+			// surrogate pair
 			high < 0 ?
-				// BMP codepoint
 				String.fromCharCode( high + 0x10000 ) :
-				// Supplemental Plane codepoint (surrogate pair)
 				String.fromCharCode( high >> 10 | 0xD800, high & 0x3FF | 0xDC00 );
 	},
 
 	// CSS string/identifier serialization
 	// https://drafts.csswg.org/cssom/#common-serializing-idioms
-	rcssescape = /([\0-\x1f\x7f]|^-?\d)|^-$|[^\x80-\uFFFF\w-]/g,
+	rcssescape = /([\0-\x1f\x7f]|^-?\d)|^-$|[^\0-\x1f\x7f-\uFFFF\w-]/g,
 	fcssescape = function( ch, asCodePoint ) {
 		if ( asCodePoint ) {
 
@@ -709,7 +701,8 @@ var i,
 			}
 
 			// Control characters and (dependent upon position) numbers get escaped as code points
-			return ch.slice( 0, -1 ) + "\\" + ch.charCodeAt( ch.length - 1 ).toString( 16 ) + " ";
+			return ch.slice( 0, -1 ) + "\\" +
+				ch.charCodeAt( ch.length - 1 ).toString( 16 ) + " ";
 		}
 
 		// Other potentially-special ASCII characters get backslash-escaped
@@ -724,9 +717,9 @@ var i,
 		setDocument();
 	},
 
-	disabledAncestor = addCombinator(
+	inDisabledFieldset = addCombinator(
 		function( elem ) {
-			return elem.disabled === true;
+			return elem.disabled === true && elem.nodeName.toLowerCase() === "fieldset";
 		},
 		{ dir: "parentNode", next: "legend" }
 	);
@@ -734,18 +727,20 @@ var i,
 // Optimize for push.apply( _, NodeList )
 try {
 	push.apply(
-		(arr = slice.call( preferredDoc.childNodes )),
+		( arr = slice.call( preferredDoc.childNodes ) ),
 		preferredDoc.childNodes
 	);
+
 	// Support: Android<4.0
 	// Detect silently failing push.apply
+	// eslint-disable-next-line no-unused-expressions
 	arr[ preferredDoc.childNodes.length ].nodeType;
 } catch ( e ) {
 	push = { apply: arr.length ?
 
 		// Leverage slice if possible
 		function( target, els ) {
-			push_native.apply( target, slice.call(els) );
+			pushNative.apply( target, slice.call( els ) );
 		} :
 
 		// Support: IE<9
@@ -753,8 +748,9 @@ try {
 		function( target, els ) {
 			var j = target.length,
 				i = 0;
+
 			// Can't trust NodeList.length
-			while ( (target[j++] = els[i++]) ) {}
+			while ( ( target[ j++ ] = els[ i++ ] ) ) {}
 			target.length = j - 1;
 		}
 	};
@@ -778,24 +774,21 @@ function Sizzle( selector, context, results, seed ) {
 
 	// Try to shortcut find operations (as opposed to filters) in HTML documents
 	if ( !seed ) {
-
-		if ( ( context ? context.ownerDocument || context : preferredDoc ) !== document ) {
-			setDocument( context );
-		}
+		setDocument( context );
 		context = context || document;
 
 		if ( documentIsHTML ) {
 
 			// If the selector is sufficiently simple, try using a "get*By*" DOM method
 			// (excepting DocumentFragment context, where the methods don't exist)
-			if ( nodeType !== 11 && (match = rquickExpr.exec( selector )) ) {
+			if ( nodeType !== 11 && ( match = rquickExpr.exec( selector ) ) ) {
 
 				// ID selector
-				if ( (m = match[1]) ) {
+				if ( ( m = match[ 1 ] ) ) {
 
 					// Document context
 					if ( nodeType === 9 ) {
-						if ( (elem = context.getElementById( m )) ) {
+						if ( ( elem = context.getElementById( m ) ) ) {
 
 							// Support: IE, Opera, Webkit
 							// TODO: identify versions
@@ -814,7 +807,7 @@ function Sizzle( selector, context, results, seed ) {
 						// Support: IE, Opera, Webkit
 						// TODO: identify versions
 						// getElementById can match elements by name instead of ID
-						if ( newContext && (elem = newContext.getElementById( m )) &&
+						if ( newContext && ( elem = newContext.getElementById( m ) ) &&
 							contains( context, elem ) &&
 							elem.id === m ) {
 
@@ -824,12 +817,12 @@ function Sizzle( selector, context, results, seed ) {
 					}
 
 				// Type selector
-				} else if ( match[2] ) {
+				} else if ( match[ 2 ] ) {
 					push.apply( results, context.getElementsByTagName( selector ) );
 					return results;
 
 				// Class selector
-				} else if ( (m = match[3]) && support.getElementsByClassName &&
+				} else if ( ( m = match[ 3 ] ) && support.getElementsByClassName &&
 					context.getElementsByClassName ) {
 
 					push.apply( results, context.getElementsByClassName( m ) );
@@ -839,50 +832,62 @@ function Sizzle( selector, context, results, seed ) {
 
 			// Take advantage of querySelectorAll
 			if ( support.qsa &&
-				!compilerCache[ selector + " " ] &&
-				(!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
+				!nonnativeSelectorCache[ selector + " " ] &&
+				( !rbuggyQSA || !rbuggyQSA.test( selector ) ) &&
 
-				if ( nodeType !== 1 ) {
-					newContext = context;
-					newSelector = selector;
-
-				// qSA looks outside Element context, which is not what we want
-				// Thanks to Andrew Dupont for this workaround technique
-				// Support: IE <=8
+				// Support: IE 8 only
 				// Exclude object elements
-				} else if ( context.nodeName.toLowerCase() !== "object" ) {
+				( nodeType !== 1 || context.nodeName.toLowerCase() !== "object" ) ) {
 
-					// Capture the context ID, setting it first if necessary
-					if ( (nid = context.getAttribute( "id" )) ) {
-						nid = nid.replace( rcssescape, fcssescape );
-					} else {
-						context.setAttribute( "id", (nid = expando) );
+				newSelector = selector;
+				newContext = context;
+
+				// qSA considers elements outside a scoping root when evaluating child or
+				// descendant combinators, which is not what we want.
+				// In such cases, we work around the behavior by prefixing every selector in the
+				// list with an ID selector referencing the scope context.
+				// The technique has to be used as well when a leading combinator is used
+				// as such selectors are not recognized by querySelectorAll.
+				// Thanks to Andrew Dupont for this technique.
+				if ( nodeType === 1 &&
+					( rdescend.test( selector ) || rcombinators.test( selector ) ) ) {
+
+					// Expand context for sibling selectors
+					newContext = rsibling.test( selector ) && testContext( context.parentNode ) ||
+						context;
+
+					// We can use :scope instead of the ID hack if the browser
+					// supports it & if we're not changing the context.
+					if ( newContext !== context || !support.scope ) {
+
+						// Capture the context ID, setting it first if necessary
+						if ( ( nid = context.getAttribute( "id" ) ) ) {
+							nid = nid.replace( rcssescape, fcssescape );
+						} else {
+							context.setAttribute( "id", ( nid = expando ) );
+						}
 					}
 
 					// Prefix every selector in the list
 					groups = tokenize( selector );
 					i = groups.length;
 					while ( i-- ) {
-						groups[i] = "#" + nid + " " + toSelector( groups[i] );
+						groups[ i ] = ( nid ? "#" + nid : ":scope" ) + " " +
+							toSelector( groups[ i ] );
 					}
 					newSelector = groups.join( "," );
-
-					// Expand context for sibling selectors
-					newContext = rsibling.test( selector ) && testContext( context.parentNode ) ||
-						context;
 				}
 
-				if ( newSelector ) {
-					try {
-						push.apply( results,
-							newContext.querySelectorAll( newSelector )
-						);
-						return results;
-					} catch ( qsaError ) {
-					} finally {
-						if ( nid === expando ) {
-							context.removeAttribute( "id" );
-						}
+				try {
+					push.apply( results,
+						newContext.querySelectorAll( newSelector )
+					);
+					return results;
+				} catch ( qsaError ) {
+					nonnativeSelectorCache( selector, true );
+				} finally {
+					if ( nid === expando ) {
+						context.removeAttribute( "id" );
 					}
 				}
 			}
@@ -903,12 +908,14 @@ function createCache() {
 	var keys = [];
 
 	function cache( key, value ) {
+
 		// Use (key + " ") to avoid collision with native prototype properties (see Issue #157)
 		if ( keys.push( key + " " ) > Expr.cacheLength ) {
+
 			// Only keep the most recent entries
 			delete cache[ keys.shift() ];
 		}
-		return (cache[ key + " " ] = value);
+		return ( cache[ key + " " ] = value );
 	}
 	return cache;
 }
@@ -927,17 +934,19 @@ function markFunction( fn ) {
  * @param {Function} fn Passed the created element and returns a boolean result
  */
 function assert( fn ) {
-	var el = document.createElement("fieldset");
+	var el = document.createElement( "fieldset" );
 
 	try {
 		return !!fn( el );
-	} catch (e) {
+	} catch ( e ) {
 		return false;
 	} finally {
+
 		// Remove from its parent by default
 		if ( el.parentNode ) {
 			el.parentNode.removeChild( el );
 		}
+
 		// release memory in IE
 		el = null;
 	}
@@ -949,11 +958,11 @@ function assert( fn ) {
  * @param {Function} handler The method that will be applied
  */
 function addHandle( attrs, handler ) {
-	var arr = attrs.split("|"),
+	var arr = attrs.split( "|" ),
 		i = arr.length;
 
 	while ( i-- ) {
-		Expr.attrHandle[ arr[i] ] = handler;
+		Expr.attrHandle[ arr[ i ] ] = handler;
 	}
 }
 
@@ -975,7 +984,7 @@ function siblingCheck( a, b ) {
 
 	// Check if b follows a
 	if ( cur ) {
-		while ( (cur = cur.nextSibling) ) {
+		while ( ( cur = cur.nextSibling ) ) {
 			if ( cur === b ) {
 				return -1;
 			}
@@ -1003,7 +1012,7 @@ function createInputPseudo( type ) {
 function createButtonPseudo( type ) {
 	return function( elem ) {
 		var name = elem.nodeName.toLowerCase();
-		return (name === "input" || name === "button") && elem.type === type;
+		return ( name === "input" || name === "button" ) && elem.type === type;
 	};
 }
 
@@ -1012,26 +1021,54 @@ function createButtonPseudo( type ) {
  * @param {Boolean} disabled true for :disabled; false for :enabled
  */
 function createDisabledPseudo( disabled ) {
-	// Known :disabled false positives:
-	// IE: *[disabled]:not(button, input, select, textarea, optgroup, option, menuitem, fieldset)
-	// not IE: fieldset[disabled] > legend:nth-of-type(n+2) :can-disable
+
+	// Known :disabled false positives: fieldset[disabled] > legend:nth-of-type(n+2) :can-disable
 	return function( elem ) {
 
-		// Check form elements and option elements for explicit disabling
-		return "label" in elem && elem.disabled === disabled ||
-			"form" in elem && elem.disabled === disabled ||
+		// Only certain elements can match :enabled or :disabled
+		// https://html.spec.whatwg.org/multipage/scripting.html#selector-enabled
+		// https://html.spec.whatwg.org/multipage/scripting.html#selector-disabled
+		if ( "form" in elem ) {
 
-			// Check non-disabled form elements for fieldset[disabled] ancestors
-			"form" in elem && elem.disabled === false && (
-				// Support: IE6-11+
-				// Ancestry is covered for us
-				elem.isDisabled === disabled ||
+			// Check for inherited disabledness on relevant non-disabled elements:
+			// * listed form-associated elements in a disabled fieldset
+			//   https://html.spec.whatwg.org/multipage/forms.html#category-listed
+			//   https://html.spec.whatwg.org/multipage/forms.html#concept-fe-disabled
+			// * option elements in a disabled optgroup
+			//   https://html.spec.whatwg.org/multipage/forms.html#concept-option-disabled
+			// All such elements have a "form" property.
+			if ( elem.parentNode && elem.disabled === false ) {
 
-				// Otherwise, assume any non-<option> under fieldset[disabled] is disabled
-				/* jshint -W018 */
-				elem.isDisabled !== !disabled &&
-					("label" in elem || !disabledAncestor( elem )) !== disabled
-			);
+				// Option elements defer to a parent optgroup if present
+				if ( "label" in elem ) {
+					if ( "label" in elem.parentNode ) {
+						return elem.parentNode.disabled === disabled;
+					} else {
+						return elem.disabled === disabled;
+					}
+				}
+
+				// Support: IE 6 - 11
+				// Use the isDisabled shortcut property to check for disabled fieldset ancestors
+				return elem.isDisabled === disabled ||
+
+					// Where there is no isDisabled, check manually
+					/* jshint -W018 */
+					elem.isDisabled !== !disabled &&
+					inDisabledFieldset( elem ) === disabled;
+			}
+
+			return elem.disabled === disabled;
+
+		// Try to winnow out elements that can't be disabled before trusting the disabled property.
+		// Some victims get caught in our net (label, legend, menu, track), but it shouldn't
+		// even exist on them, let alone have a boolean value.
+		} else if ( "label" in elem ) {
+			return elem.disabled === disabled;
+		}
+
+		// Remaining elements are neither :enabled nor :disabled
+		return false;
 	};
 }
 
@@ -1040,21 +1077,21 @@ function createDisabledPseudo( disabled ) {
  * @param {Function} fn
  */
 function createPositionalPseudo( fn ) {
-	return markFunction(function( argument ) {
+	return markFunction( function( argument ) {
 		argument = +argument;
-		return markFunction(function( seed, matches ) {
+		return markFunction( function( seed, matches ) {
 			var j,
 				matchIndexes = fn( [], seed.length, argument ),
 				i = matchIndexes.length;
 
 			// Match elements found at the specified indexes
 			while ( i-- ) {
-				if ( seed[ (j = matchIndexes[i]) ] ) {
-					seed[j] = !(matches[j] = seed[j]);
+				if ( seed[ ( j = matchIndexes[ i ] ) ] ) {
+					seed[ j ] = !( matches[ j ] = seed[ j ] );
 				}
 			}
-		});
-	});
+		} );
+	} );
 }
 
 /**
@@ -1075,10 +1112,13 @@ support = Sizzle.support = {};
  * @returns {Boolean} True iff elem is a non-HTML XML node
  */
 isXML = Sizzle.isXML = function( elem ) {
-	// documentElement is verified for cases where it doesn't yet exist
-	// (such as loading iframes in IE - #4833)
-	var documentElement = elem && (elem.ownerDocument || elem).documentElement;
-	return documentElement ? documentElement.nodeName !== "HTML" : false;
+	var namespace = elem && elem.namespaceURI,
+		docElem = elem && ( elem.ownerDocument || elem ).documentElement;
+
+	// Support: IE <=8
+	// Assume HTML when documentElement doesn't yet exist, such as inside loading iframes
+	// https://bugs.jquery.com/ticket/4833
+	return !rhtml.test( namespace || docElem && docElem.nodeName || "HTML" );
 };
 
 /**
@@ -1091,7 +1131,11 @@ setDocument = Sizzle.setDocument = function( node ) {
 		doc = node ? node.ownerDocument || node : preferredDoc;
 
 	// Return early if doc is invalid or already selected
-	if ( doc === document || doc.nodeType !== 9 || !doc.documentElement ) {
+	// Support: IE 11+, Edge 17 - 18+
+	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+	// two documents; shallow comparisons work.
+	// eslint-disable-next-line eqeqeq
+	if ( doc == document || doc.nodeType !== 9 || !doc.documentElement ) {
 		return document;
 	}
 
@@ -1100,10 +1144,14 @@ setDocument = Sizzle.setDocument = function( node ) {
 	docElem = document.documentElement;
 	documentIsHTML = !isXML( document );
 
-	// Support: IE 9-11, Edge
+	// Support: IE 9 - 11+, Edge 12 - 18+
 	// Accessing iframe documents after unload throws "permission denied" errors (jQuery #13936)
-	if ( preferredDoc !== document &&
-		(subWindow = document.defaultView) && subWindow.top !== subWindow ) {
+	// Support: IE 11+, Edge 17 - 18+
+	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+	// two documents; shallow comparisons work.
+	// eslint-disable-next-line eqeqeq
+	if ( preferredDoc != document &&
+		( subWindow = document.defaultView ) && subWindow.top !== subWindow ) {
 
 		// Support: IE 11, Edge
 		if ( subWindow.addEventListener ) {
@@ -1115,25 +1163,36 @@ setDocument = Sizzle.setDocument = function( node ) {
 		}
 	}
 
+	// Support: IE 8 - 11+, Edge 12 - 18+, Chrome <=16 - 25 only, Firefox <=3.6 - 31 only,
+	// Safari 4 - 5 only, Opera <=11.6 - 12.x only
+	// IE/Edge & older browsers don't support the :scope pseudo-class.
+	// Support: Safari 6.0 only
+	// Safari 6.0 supports :scope but it's an alias of :root there.
+	support.scope = assert( function( el ) {
+		docElem.appendChild( el ).appendChild( document.createElement( "div" ) );
+		return typeof el.querySelectorAll !== "undefined" &&
+			!el.querySelectorAll( ":scope fieldset div" ).length;
+	} );
+
 	/* Attributes
 	---------------------------------------------------------------------- */
 
 	// Support: IE<8
 	// Verify that getAttribute really returns attributes and not properties
 	// (excepting IE8 booleans)
-	support.attributes = assert(function( el ) {
+	support.attributes = assert( function( el ) {
 		el.className = "i";
-		return !el.getAttribute("className");
-	});
+		return !el.getAttribute( "className" );
+	} );
 
 	/* getElement(s)By*
 	---------------------------------------------------------------------- */
 
 	// Check if getElementsByTagName("*") returns only elements
-	support.getElementsByTagName = assert(function( el ) {
-		el.appendChild( document.createComment("") );
-		return !el.getElementsByTagName("*").length;
-	});
+	support.getElementsByTagName = assert( function( el ) {
+		el.appendChild( document.createComment( "" ) );
+		return !el.getElementsByTagName( "*" ).length;
+	} );
 
 	// Support: IE<9
 	support.getElementsByClassName = rnative.test( document.getElementsByClassName );
@@ -1142,42 +1201,68 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Check if getElementById returns elements by name
 	// The broken getElementById methods don't pick up programmatically-set names,
 	// so use a roundabout getElementsByName test
-	support.getById = assert(function( el ) {
+	support.getById = assert( function( el ) {
 		docElem.appendChild( el ).id = expando;
 		return !document.getElementsByName || !document.getElementsByName( expando ).length;
-	});
+	} );
 
-	// ID find and filter
+	// ID filter and find
 	if ( support.getById ) {
-		Expr.find["ID"] = function( id, context ) {
-			if ( typeof context.getElementById !== "undefined" && documentIsHTML ) {
-				var m = context.getElementById( id );
-				return m ? [ m ] : [];
-			}
-		};
-		Expr.filter["ID"] = function( id ) {
+		Expr.filter[ "ID" ] = function( id ) {
 			var attrId = id.replace( runescape, funescape );
 			return function( elem ) {
-				return elem.getAttribute("id") === attrId;
+				return elem.getAttribute( "id" ) === attrId;
 			};
 		};
+		Expr.find[ "ID" ] = function( id, context ) {
+			if ( typeof context.getElementById !== "undefined" && documentIsHTML ) {
+				var elem = context.getElementById( id );
+				return elem ? [ elem ] : [];
+			}
+		};
 	} else {
-		// Support: IE6/7
-		// getElementById is not reliable as a find shortcut
-		delete Expr.find["ID"];
-
-		Expr.filter["ID"] =  function( id ) {
+		Expr.filter[ "ID" ] =  function( id ) {
 			var attrId = id.replace( runescape, funescape );
 			return function( elem ) {
 				var node = typeof elem.getAttributeNode !== "undefined" &&
-					elem.getAttributeNode("id");
+					elem.getAttributeNode( "id" );
 				return node && node.value === attrId;
 			};
+		};
+
+		// Support: IE 6 - 7 only
+		// getElementById is not reliable as a find shortcut
+		Expr.find[ "ID" ] = function( id, context ) {
+			if ( typeof context.getElementById !== "undefined" && documentIsHTML ) {
+				var node, i, elems,
+					elem = context.getElementById( id );
+
+				if ( elem ) {
+
+					// Verify the id attribute
+					node = elem.getAttributeNode( "id" );
+					if ( node && node.value === id ) {
+						return [ elem ];
+					}
+
+					// Fall back on getElementsByName
+					elems = context.getElementsByName( id );
+					i = 0;
+					while ( ( elem = elems[ i++ ] ) ) {
+						node = elem.getAttributeNode( "id" );
+						if ( node && node.value === id ) {
+							return [ elem ];
+						}
+					}
+				}
+
+				return [];
+			}
 		};
 	}
 
 	// Tag
-	Expr.find["TAG"] = support.getElementsByTagName ?
+	Expr.find[ "TAG" ] = support.getElementsByTagName ?
 		function( tag, context ) {
 			if ( typeof context.getElementsByTagName !== "undefined" ) {
 				return context.getElementsByTagName( tag );
@@ -1192,12 +1277,13 @@ setDocument = Sizzle.setDocument = function( node ) {
 			var elem,
 				tmp = [],
 				i = 0,
+
 				// By happy coincidence, a (broken) gEBTN appears on DocumentFragment nodes too
 				results = context.getElementsByTagName( tag );
 
 			// Filter out possible comments
 			if ( tag === "*" ) {
-				while ( (elem = results[i++]) ) {
+				while ( ( elem = results[ i++ ] ) ) {
 					if ( elem.nodeType === 1 ) {
 						tmp.push( elem );
 					}
@@ -1209,7 +1295,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 		};
 
 	// Class
-	Expr.find["CLASS"] = support.getElementsByClassName && function( className, context ) {
+	Expr.find[ "CLASS" ] = support.getElementsByClassName && function( className, context ) {
 		if ( typeof context.getElementsByClassName !== "undefined" && documentIsHTML ) {
 			return context.getElementsByClassName( className );
 		}
@@ -1230,10 +1316,14 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// See https://bugs.jquery.com/ticket/13378
 	rbuggyQSA = [];
 
-	if ( (support.qsa = rnative.test( document.querySelectorAll )) ) {
+	if ( ( support.qsa = rnative.test( document.querySelectorAll ) ) ) {
+
 		// Build QSA regex
 		// Regex strategy adopted from Diego Perini
-		assert(function( el ) {
+		assert( function( el ) {
+
+			var input;
+
 			// Select is set to empty string on purpose
 			// This is to test IE's treatment of not explicitly
 			// setting a boolean content attribute,
@@ -1247,78 +1337,98 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// Nothing should be selected when empty strings follow ^= or $= or *=
 			// The test attribute must be unknown in Opera but "safe" for WinRT
 			// https://msdn.microsoft.com/en-us/library/ie/hh465388.aspx#attribute_section
-			if ( el.querySelectorAll("[msallowcapture^='']").length ) {
+			if ( el.querySelectorAll( "[msallowcapture^='']" ).length ) {
 				rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
 			}
 
 			// Support: IE8
 			// Boolean attributes and "value" are not treated correctly
-			if ( !el.querySelectorAll("[selected]").length ) {
+			if ( !el.querySelectorAll( "[selected]" ).length ) {
 				rbuggyQSA.push( "\\[" + whitespace + "*(?:value|" + booleans + ")" );
 			}
 
 			// Support: Chrome<29, Android<4.4, Safari<7.0+, iOS<7.0+, PhantomJS<1.9.8+
 			if ( !el.querySelectorAll( "[id~=" + expando + "-]" ).length ) {
-				rbuggyQSA.push("~=");
+				rbuggyQSA.push( "~=" );
+			}
+
+			// Support: IE 11+, Edge 15 - 18+
+			// IE 11/Edge don't find elements on a `[name='']` query in some cases.
+			// Adding a temporary attribute to the document before the selection works
+			// around the issue.
+			// Interestingly, IE 10 & older don't seem to have the issue.
+			input = document.createElement( "input" );
+			input.setAttribute( "name", "" );
+			el.appendChild( input );
+			if ( !el.querySelectorAll( "[name='']" ).length ) {
+				rbuggyQSA.push( "\\[" + whitespace + "*name" + whitespace + "*=" +
+					whitespace + "*(?:''|\"\")" );
 			}
 
 			// Webkit/Opera - :checked should return selected option elements
 			// http://www.w3.org/TR/2011/REC-css3-selectors-20110929/#checked
 			// IE8 throws error here and will not see later tests
-			if ( !el.querySelectorAll(":checked").length ) {
-				rbuggyQSA.push(":checked");
+			if ( !el.querySelectorAll( ":checked" ).length ) {
+				rbuggyQSA.push( ":checked" );
 			}
 
 			// Support: Safari 8+, iOS 8+
 			// https://bugs.webkit.org/show_bug.cgi?id=136851
 			// In-page `selector#id sibling-combinator selector` fails
 			if ( !el.querySelectorAll( "a#" + expando + "+*" ).length ) {
-				rbuggyQSA.push(".#.+[+~]");
+				rbuggyQSA.push( ".#.+[+~]" );
 			}
-		});
 
-		assert(function( el ) {
+			// Support: Firefox <=3.6 - 5 only
+			// Old Firefox doesn't throw on a badly-escaped identifier.
+			el.querySelectorAll( "\\\f" );
+			rbuggyQSA.push( "[\\r\\n\\f]" );
+		} );
+
+		assert( function( el ) {
 			el.innerHTML = "<a href='' disabled='disabled'></a>" +
 				"<select disabled='disabled'><option/></select>";
 
 			// Support: Windows 8 Native Apps
 			// The type and name attributes are restricted during .innerHTML assignment
-			var input = document.createElement("input");
+			var input = document.createElement( "input" );
 			input.setAttribute( "type", "hidden" );
 			el.appendChild( input ).setAttribute( "name", "D" );
 
 			// Support: IE8
 			// Enforce case-sensitivity of name attribute
-			if ( el.querySelectorAll("[name=d]").length ) {
+			if ( el.querySelectorAll( "[name=d]" ).length ) {
 				rbuggyQSA.push( "name" + whitespace + "*[*^$|!~]?=" );
 			}
 
 			// FF 3.5 - :enabled/:disabled and hidden elements (hidden elements are still enabled)
 			// IE8 throws error here and will not see later tests
-			if ( el.querySelectorAll(":enabled").length !== 2 ) {
+			if ( el.querySelectorAll( ":enabled" ).length !== 2 ) {
 				rbuggyQSA.push( ":enabled", ":disabled" );
 			}
 
 			// Support: IE9-11+
 			// IE's :disabled selector does not pick up the children of disabled fieldsets
 			docElem.appendChild( el ).disabled = true;
-			if ( el.querySelectorAll(":disabled").length !== 2 ) {
+			if ( el.querySelectorAll( ":disabled" ).length !== 2 ) {
 				rbuggyQSA.push( ":enabled", ":disabled" );
 			}
 
+			// Support: Opera 10 - 11 only
 			// Opera 10-11 does not throw on post-comma invalid pseudos
-			el.querySelectorAll("*,:x");
-			rbuggyQSA.push(",.*:");
-		});
+			el.querySelectorAll( "*,:x" );
+			rbuggyQSA.push( ",.*:" );
+		} );
 	}
 
-	if ( (support.matchesSelector = rnative.test( (matches = docElem.matches ||
+	if ( ( support.matchesSelector = rnative.test( ( matches = docElem.matches ||
 		docElem.webkitMatchesSelector ||
 		docElem.mozMatchesSelector ||
 		docElem.oMatchesSelector ||
-		docElem.msMatchesSelector) )) ) {
+		docElem.msMatchesSelector ) ) ) ) {
 
-		assert(function( el ) {
+		assert( function( el ) {
+
 			// Check to see if it's possible to do matchesSelector
 			// on a disconnected node (IE 9)
 			support.disconnectedMatch = matches.call( el, "*" );
@@ -1327,11 +1437,11 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// Gecko does not error, returns false instead
 			matches.call( el, "[s!='']:x" );
 			rbuggyMatches.push( "!=", pseudos );
-		});
+		} );
 	}
 
-	rbuggyQSA = rbuggyQSA.length && new RegExp( rbuggyQSA.join("|") );
-	rbuggyMatches = rbuggyMatches.length && new RegExp( rbuggyMatches.join("|") );
+	rbuggyQSA = rbuggyQSA.length && new RegExp( rbuggyQSA.join( "|" ) );
+	rbuggyMatches = rbuggyMatches.length && new RegExp( rbuggyMatches.join( "|" ) );
 
 	/* Contains
 	---------------------------------------------------------------------- */
@@ -1348,11 +1458,11 @@ setDocument = Sizzle.setDocument = function( node ) {
 				adown.contains ?
 					adown.contains( bup ) :
 					a.compareDocumentPosition && a.compareDocumentPosition( bup ) & 16
-			));
+			) );
 		} :
 		function( a, b ) {
 			if ( b ) {
-				while ( (b = b.parentNode) ) {
+				while ( ( b = b.parentNode ) ) {
 					if ( b === a ) {
 						return true;
 					}
@@ -1381,7 +1491,11 @@ setDocument = Sizzle.setDocument = function( node ) {
 		}
 
 		// Calculate position if both inputs belong to the same document
-		compare = ( a.ownerDocument || a ) === ( b.ownerDocument || b ) ?
+		// Support: IE 11+, Edge 17 - 18+
+		// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+		// two documents; shallow comparisons work.
+		// eslint-disable-next-line eqeqeq
+		compare = ( a.ownerDocument || a ) == ( b.ownerDocument || b ) ?
 			a.compareDocumentPosition( b ) :
 
 			// Otherwise we know they are disconnected
@@ -1389,13 +1503,24 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 		// Disconnected nodes
 		if ( compare & 1 ||
-			(!support.sortDetached && b.compareDocumentPosition( a ) === compare) ) {
+			( !support.sortDetached && b.compareDocumentPosition( a ) === compare ) ) {
 
 			// Choose the first element that is related to our preferred document
-			if ( a === document || a.ownerDocument === preferredDoc && contains(preferredDoc, a) ) {
+			// Support: IE 11+, Edge 17 - 18+
+			// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+			// two documents; shallow comparisons work.
+			// eslint-disable-next-line eqeqeq
+			if ( a == document || a.ownerDocument == preferredDoc &&
+				contains( preferredDoc, a ) ) {
 				return -1;
 			}
-			if ( b === document || b.ownerDocument === preferredDoc && contains(preferredDoc, b) ) {
+
+			// Support: IE 11+, Edge 17 - 18+
+			// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+			// two documents; shallow comparisons work.
+			// eslint-disable-next-line eqeqeq
+			if ( b == document || b.ownerDocument == preferredDoc &&
+				contains( preferredDoc, b ) ) {
 				return 1;
 			}
 
@@ -1408,6 +1533,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 		return compare & 4 ? -1 : 1;
 	} :
 	function( a, b ) {
+
 		// Exit early if the nodes are identical
 		if ( a === b ) {
 			hasDuplicate = true;
@@ -1423,8 +1549,14 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 		// Parentless nodes are either documents or disconnected
 		if ( !aup || !bup ) {
-			return a === document ? -1 :
-				b === document ? 1 :
+
+			// Support: IE 11+, Edge 17 - 18+
+			// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+			// two documents; shallow comparisons work.
+			/* eslint-disable eqeqeq */
+			return a == document ? -1 :
+				b == document ? 1 :
+				/* eslint-enable eqeqeq */
 				aup ? -1 :
 				bup ? 1 :
 				sortInput ?
@@ -1438,26 +1570,32 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 		// Otherwise we need full lists of their ancestors for comparison
 		cur = a;
-		while ( (cur = cur.parentNode) ) {
+		while ( ( cur = cur.parentNode ) ) {
 			ap.unshift( cur );
 		}
 		cur = b;
-		while ( (cur = cur.parentNode) ) {
+		while ( ( cur = cur.parentNode ) ) {
 			bp.unshift( cur );
 		}
 
 		// Walk down the tree looking for a discrepancy
-		while ( ap[i] === bp[i] ) {
+		while ( ap[ i ] === bp[ i ] ) {
 			i++;
 		}
 
 		return i ?
+
 			// Do a sibling check if the nodes have a common ancestor
-			siblingCheck( ap[i], bp[i] ) :
+			siblingCheck( ap[ i ], bp[ i ] ) :
 
 			// Otherwise nodes in our document sort first
-			ap[i] === preferredDoc ? -1 :
-			bp[i] === preferredDoc ? 1 :
+			// Support: IE 11+, Edge 17 - 18+
+			// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+			// two documents; shallow comparisons work.
+			/* eslint-disable eqeqeq */
+			ap[ i ] == preferredDoc ? -1 :
+			bp[ i ] == preferredDoc ? 1 :
+			/* eslint-enable eqeqeq */
 			0;
 	};
 
@@ -1469,16 +1607,10 @@ Sizzle.matches = function( expr, elements ) {
 };
 
 Sizzle.matchesSelector = function( elem, expr ) {
-	// Set document vars if needed
-	if ( ( elem.ownerDocument || elem ) !== document ) {
-		setDocument( elem );
-	}
-
-	// Make sure that attribute selectors are quoted
-	expr = expr.replace( rattributeQuotes, "='$1']" );
+	setDocument( elem );
 
 	if ( support.matchesSelector && documentIsHTML &&
-		!compilerCache[ expr + " " ] &&
+		!nonnativeSelectorCache[ expr + " " ] &&
 		( !rbuggyMatches || !rbuggyMatches.test( expr ) ) &&
 		( !rbuggyQSA     || !rbuggyQSA.test( expr ) ) ) {
 
@@ -1487,32 +1619,46 @@ Sizzle.matchesSelector = function( elem, expr ) {
 
 			// IE 9's matchesSelector returns false on disconnected nodes
 			if ( ret || support.disconnectedMatch ||
-					// As well, disconnected nodes are said to be in a document
-					// fragment in IE 9
-					elem.document && elem.document.nodeType !== 11 ) {
+
+				// As well, disconnected nodes are said to be in a document
+				// fragment in IE 9
+				elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch (e) {}
+		} catch ( e ) {
+			nonnativeSelectorCache( expr, true );
+		}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
 };
 
 Sizzle.contains = function( context, elem ) {
+
 	// Set document vars if needed
-	if ( ( context.ownerDocument || context ) !== document ) {
+	// Support: IE 11+, Edge 17 - 18+
+	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+	// two documents; shallow comparisons work.
+	// eslint-disable-next-line eqeqeq
+	if ( ( context.ownerDocument || context ) != document ) {
 		setDocument( context );
 	}
 	return contains( context, elem );
 };
 
 Sizzle.attr = function( elem, name ) {
+
 	// Set document vars if needed
-	if ( ( elem.ownerDocument || elem ) !== document ) {
+	// Support: IE 11+, Edge 17 - 18+
+	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+	// two documents; shallow comparisons work.
+	// eslint-disable-next-line eqeqeq
+	if ( ( elem.ownerDocument || elem ) != document ) {
 		setDocument( elem );
 	}
 
 	var fn = Expr.attrHandle[ name.toLowerCase() ],
+
 		// Don't get fooled by Object.prototype properties (jQuery #13807)
 		val = fn && hasOwn.call( Expr.attrHandle, name.toLowerCase() ) ?
 			fn( elem, name, !documentIsHTML ) :
@@ -1522,13 +1668,13 @@ Sizzle.attr = function( elem, name ) {
 		val :
 		support.attributes || !documentIsHTML ?
 			elem.getAttribute( name ) :
-			(val = elem.getAttributeNode(name)) && val.specified ?
+			( val = elem.getAttributeNode( name ) ) && val.specified ?
 				val.value :
 				null;
 };
 
 Sizzle.escape = function( sel ) {
-	return (sel + "").replace( rcssescape, fcssescape );
+	return ( sel + "" ).replace( rcssescape, fcssescape );
 };
 
 Sizzle.error = function( msg ) {
@@ -1551,7 +1697,7 @@ Sizzle.uniqueSort = function( results ) {
 	results.sort( sortOrder );
 
 	if ( hasDuplicate ) {
-		while ( (elem = results[i++]) ) {
+		while ( ( elem = results[ i++ ] ) ) {
 			if ( elem === results[ i ] ) {
 				j = duplicates.push( i );
 			}
@@ -1579,17 +1725,21 @@ getText = Sizzle.getText = function( elem ) {
 		nodeType = elem.nodeType;
 
 	if ( !nodeType ) {
+
 		// If no nodeType, this is expected to be an array
-		while ( (node = elem[i++]) ) {
+		while ( ( node = elem[ i++ ] ) ) {
+
 			// Do not traverse comment nodes
 			ret += getText( node );
 		}
 	} else if ( nodeType === 1 || nodeType === 9 || nodeType === 11 ) {
+
 		// Use textContent for elements
 		// innerText usage removed for consistency of new lines (jQuery #11153)
 		if ( typeof elem.textContent === "string" ) {
 			return elem.textContent;
 		} else {
+
 			// Traverse its children
 			for ( elem = elem.firstChild; elem; elem = elem.nextSibling ) {
 				ret += getText( elem );
@@ -1598,6 +1748,7 @@ getText = Sizzle.getText = function( elem ) {
 	} else if ( nodeType === 3 || nodeType === 4 ) {
 		return elem.nodeValue;
 	}
+
 	// Do not include comment or processing instruction nodes
 
 	return ret;
@@ -1625,19 +1776,21 @@ Expr = Sizzle.selectors = {
 
 	preFilter: {
 		"ATTR": function( match ) {
-			match[1] = match[1].replace( runescape, funescape );
+			match[ 1 ] = match[ 1 ].replace( runescape, funescape );
 
 			// Move the given value to match[3] whether quoted or unquoted
-			match[3] = ( match[3] || match[4] || match[5] || "" ).replace( runescape, funescape );
+			match[ 3 ] = ( match[ 3 ] || match[ 4 ] ||
+				match[ 5 ] || "" ).replace( runescape, funescape );
 
-			if ( match[2] === "~=" ) {
-				match[3] = " " + match[3] + " ";
+			if ( match[ 2 ] === "~=" ) {
+				match[ 3 ] = " " + match[ 3 ] + " ";
 			}
 
 			return match.slice( 0, 4 );
 		},
 
 		"CHILD": function( match ) {
+
 			/* matches from matchExpr["CHILD"]
 				1 type (only|nth|...)
 				2 what (child|of-type)
@@ -1648,22 +1801,25 @@ Expr = Sizzle.selectors = {
 				7 sign of y-component
 				8 y of y-component
 			*/
-			match[1] = match[1].toLowerCase();
+			match[ 1 ] = match[ 1 ].toLowerCase();
 
-			if ( match[1].slice( 0, 3 ) === "nth" ) {
+			if ( match[ 1 ].slice( 0, 3 ) === "nth" ) {
+
 				// nth-* requires argument
-				if ( !match[3] ) {
-					Sizzle.error( match[0] );
+				if ( !match[ 3 ] ) {
+					Sizzle.error( match[ 0 ] );
 				}
 
 				// numeric x and y parameters for Expr.filter.CHILD
 				// remember that false/true cast respectively to 0/1
-				match[4] = +( match[4] ? match[5] + (match[6] || 1) : 2 * ( match[3] === "even" || match[3] === "odd" ) );
-				match[5] = +( ( match[7] + match[8] ) || match[3] === "odd" );
+				match[ 4 ] = +( match[ 4 ] ?
+					match[ 5 ] + ( match[ 6 ] || 1 ) :
+					2 * ( match[ 3 ] === "even" || match[ 3 ] === "odd" ) );
+				match[ 5 ] = +( ( match[ 7 ] + match[ 8 ] ) || match[ 3 ] === "odd" );
 
-			// other types prohibit arguments
-			} else if ( match[3] ) {
-				Sizzle.error( match[0] );
+				// other types prohibit arguments
+			} else if ( match[ 3 ] ) {
+				Sizzle.error( match[ 0 ] );
 			}
 
 			return match;
@@ -1671,26 +1827,28 @@ Expr = Sizzle.selectors = {
 
 		"PSEUDO": function( match ) {
 			var excess,
-				unquoted = !match[6] && match[2];
+				unquoted = !match[ 6 ] && match[ 2 ];
 
-			if ( matchExpr["CHILD"].test( match[0] ) ) {
+			if ( matchExpr[ "CHILD" ].test( match[ 0 ] ) ) {
 				return null;
 			}
 
 			// Accept quoted arguments as-is
-			if ( match[3] ) {
-				match[2] = match[4] || match[5] || "";
+			if ( match[ 3 ] ) {
+				match[ 2 ] = match[ 4 ] || match[ 5 ] || "";
 
 			// Strip excess characters from unquoted arguments
 			} else if ( unquoted && rpseudo.test( unquoted ) &&
+
 				// Get excess from tokenize (recursively)
-				(excess = tokenize( unquoted, true )) &&
+				( excess = tokenize( unquoted, true ) ) &&
+
 				// advance to the next closing parenthesis
-				(excess = unquoted.indexOf( ")", unquoted.length - excess ) - unquoted.length) ) {
+				( excess = unquoted.indexOf( ")", unquoted.length - excess ) - unquoted.length ) ) {
 
 				// excess is a negative index
-				match[0] = match[0].slice( 0, excess );
-				match[2] = unquoted.slice( 0, excess );
+				match[ 0 ] = match[ 0 ].slice( 0, excess );
+				match[ 2 ] = unquoted.slice( 0, excess );
 			}
 
 			// Return only captures needed by the pseudo filter method (type and argument)
@@ -1703,7 +1861,9 @@ Expr = Sizzle.selectors = {
 		"TAG": function( nodeNameSelector ) {
 			var nodeName = nodeNameSelector.replace( runescape, funescape ).toLowerCase();
 			return nodeNameSelector === "*" ?
-				function() { return true; } :
+				function() {
+					return true;
+				} :
 				function( elem ) {
 					return elem.nodeName && elem.nodeName.toLowerCase() === nodeName;
 				};
@@ -1713,10 +1873,16 @@ Expr = Sizzle.selectors = {
 			var pattern = classCache[ className + " " ];
 
 			return pattern ||
-				(pattern = new RegExp( "(^|" + whitespace + ")" + className + "(" + whitespace + "|$)" )) &&
-				classCache( className, function( elem ) {
-					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== "undefined" && elem.getAttribute("class") || "" );
-				});
+				( pattern = new RegExp( "(^|" + whitespace +
+					")" + className + "(" + whitespace + "|$)" ) ) && classCache(
+						className, function( elem ) {
+							return pattern.test(
+								typeof elem.className === "string" && elem.className ||
+								typeof elem.getAttribute !== "undefined" &&
+									elem.getAttribute( "class" ) ||
+								""
+							);
+				} );
 		},
 
 		"ATTR": function( name, operator, check ) {
@@ -1732,6 +1898,8 @@ Expr = Sizzle.selectors = {
 
 				result += "";
 
+				/* eslint-disable max-len */
+
 				return operator === "=" ? result === check :
 					operator === "!=" ? result !== check :
 					operator === "^=" ? check && result.indexOf( check ) === 0 :
@@ -1740,10 +1908,12 @@ Expr = Sizzle.selectors = {
 					operator === "~=" ? ( " " + result.replace( rwhitespace, " " ) + " " ).indexOf( check ) > -1 :
 					operator === "|=" ? result === check || result.slice( 0, check.length + 1 ) === check + "-" :
 					false;
+				/* eslint-enable max-len */
+
 			};
 		},
 
-		"CHILD": function( type, what, argument, first, last ) {
+		"CHILD": function( type, what, _argument, first, last ) {
 			var simple = type.slice( 0, 3 ) !== "nth",
 				forward = type.slice( -4 ) !== "last",
 				ofType = what === "of-type";
@@ -1755,7 +1925,7 @@ Expr = Sizzle.selectors = {
 					return !!elem.parentNode;
 				} :
 
-				function( elem, context, xml ) {
+				function( elem, _context, xml ) {
 					var cache, uniqueCache, outerCache, node, nodeIndex, start,
 						dir = simple !== forward ? "nextSibling" : "previousSibling",
 						parent = elem.parentNode,
@@ -1769,7 +1939,7 @@ Expr = Sizzle.selectors = {
 						if ( simple ) {
 							while ( dir ) {
 								node = elem;
-								while ( (node = node[ dir ]) ) {
+								while ( ( node = node[ dir ] ) ) {
 									if ( ofType ?
 										node.nodeName.toLowerCase() === name :
 										node.nodeType === 1 ) {
@@ -1777,6 +1947,7 @@ Expr = Sizzle.selectors = {
 										return false;
 									}
 								}
+
 								// Reverse direction for :only-* (if we haven't yet done so)
 								start = dir = type === "only" && !start && "nextSibling";
 							}
@@ -1792,22 +1963,22 @@ Expr = Sizzle.selectors = {
 
 							// ...in a gzip-friendly way
 							node = parent;
-							outerCache = node[ expando ] || (node[ expando ] = {});
+							outerCache = node[ expando ] || ( node[ expando ] = {} );
 
 							// Support: IE <9 only
 							// Defend against cloned attroperties (jQuery gh-1709)
 							uniqueCache = outerCache[ node.uniqueID ] ||
-								(outerCache[ node.uniqueID ] = {});
+								( outerCache[ node.uniqueID ] = {} );
 
 							cache = uniqueCache[ type ] || [];
 							nodeIndex = cache[ 0 ] === dirruns && cache[ 1 ];
 							diff = nodeIndex && cache[ 2 ];
 							node = nodeIndex && parent.childNodes[ nodeIndex ];
 
-							while ( (node = ++nodeIndex && node && node[ dir ] ||
+							while ( ( node = ++nodeIndex && node && node[ dir ] ||
 
 								// Fallback to seeking `elem` from the start
-								(diff = nodeIndex = 0) || start.pop()) ) {
+								( diff = nodeIndex = 0 ) || start.pop() ) ) {
 
 								// When found, cache indexes on `parent` and break
 								if ( node.nodeType === 1 && ++diff && node === elem ) {
@@ -1817,16 +1988,18 @@ Expr = Sizzle.selectors = {
 							}
 
 						} else {
+
 							// Use previously-cached element index if available
 							if ( useCache ) {
+
 								// ...in a gzip-friendly way
 								node = elem;
-								outerCache = node[ expando ] || (node[ expando ] = {});
+								outerCache = node[ expando ] || ( node[ expando ] = {} );
 
 								// Support: IE <9 only
 								// Defend against cloned attroperties (jQuery gh-1709)
 								uniqueCache = outerCache[ node.uniqueID ] ||
-									(outerCache[ node.uniqueID ] = {});
+									( outerCache[ node.uniqueID ] = {} );
 
 								cache = uniqueCache[ type ] || [];
 								nodeIndex = cache[ 0 ] === dirruns && cache[ 1 ];
@@ -1836,9 +2009,10 @@ Expr = Sizzle.selectors = {
 							// xml :nth-child(...)
 							// or :nth-last-child(...) or :nth(-last)?-of-type(...)
 							if ( diff === false ) {
+
 								// Use the same loop as above to seek `elem` from the start
-								while ( (node = ++nodeIndex && node && node[ dir ] ||
-									(diff = nodeIndex = 0) || start.pop()) ) {
+								while ( ( node = ++nodeIndex && node && node[ dir ] ||
+									( diff = nodeIndex = 0 ) || start.pop() ) ) {
 
 									if ( ( ofType ?
 										node.nodeName.toLowerCase() === name :
@@ -1847,12 +2021,13 @@ Expr = Sizzle.selectors = {
 
 										// Cache the index of each encountered element
 										if ( useCache ) {
-											outerCache = node[ expando ] || (node[ expando ] = {});
+											outerCache = node[ expando ] ||
+												( node[ expando ] = {} );
 
 											// Support: IE <9 only
 											// Defend against cloned attroperties (jQuery gh-1709)
 											uniqueCache = outerCache[ node.uniqueID ] ||
-												(outerCache[ node.uniqueID ] = {});
+												( outerCache[ node.uniqueID ] = {} );
 
 											uniqueCache[ type ] = [ dirruns, diff ];
 										}
@@ -1873,6 +2048,7 @@ Expr = Sizzle.selectors = {
 		},
 
 		"PSEUDO": function( pseudo, argument ) {
+
 			// pseudo-class names are case-insensitive
 			// http://www.w3.org/TR/selectors/#pseudo-classes
 			// Prioritize by case sensitivity in case custom pseudos are added with uppercase letters
@@ -1892,15 +2068,15 @@ Expr = Sizzle.selectors = {
 			if ( fn.length > 1 ) {
 				args = [ pseudo, pseudo, "", argument ];
 				return Expr.setFilters.hasOwnProperty( pseudo.toLowerCase() ) ?
-					markFunction(function( seed, matches ) {
+					markFunction( function( seed, matches ) {
 						var idx,
 							matched = fn( seed, argument ),
 							i = matched.length;
 						while ( i-- ) {
-							idx = indexOf( seed, matched[i] );
-							seed[ idx ] = !( matches[ idx ] = matched[i] );
+							idx = indexOf( seed, matched[ i ] );
+							seed[ idx ] = !( matches[ idx ] = matched[ i ] );
 						}
-					}) :
+					} ) :
 					function( elem ) {
 						return fn( elem, 0, args );
 					};
@@ -1911,8 +2087,10 @@ Expr = Sizzle.selectors = {
 	},
 
 	pseudos: {
+
 		// Potentially complex pseudos
-		"not": markFunction(function( selector ) {
+		"not": markFunction( function( selector ) {
+
 			// Trim the selector passed to compile
 			// to avoid treating leading and trailing
 			// spaces as combinators
@@ -1921,39 +2099,40 @@ Expr = Sizzle.selectors = {
 				matcher = compile( selector.replace( rtrim, "$1" ) );
 
 			return matcher[ expando ] ?
-				markFunction(function( seed, matches, context, xml ) {
+				markFunction( function( seed, matches, _context, xml ) {
 					var elem,
 						unmatched = matcher( seed, null, xml, [] ),
 						i = seed.length;
 
 					// Match elements unmatched by `matcher`
 					while ( i-- ) {
-						if ( (elem = unmatched[i]) ) {
-							seed[i] = !(matches[i] = elem);
+						if ( ( elem = unmatched[ i ] ) ) {
+							seed[ i ] = !( matches[ i ] = elem );
 						}
 					}
-				}) :
-				function( elem, context, xml ) {
-					input[0] = elem;
+				} ) :
+				function( elem, _context, xml ) {
+					input[ 0 ] = elem;
 					matcher( input, null, xml, results );
+
 					// Don't keep the element (issue #299)
-					input[0] = null;
+					input[ 0 ] = null;
 					return !results.pop();
 				};
-		}),
+		} ),
 
-		"has": markFunction(function( selector ) {
+		"has": markFunction( function( selector ) {
 			return function( elem ) {
 				return Sizzle( selector, elem ).length > 0;
 			};
-		}),
+		} ),
 
-		"contains": markFunction(function( text ) {
+		"contains": markFunction( function( text ) {
 			text = text.replace( runescape, funescape );
 			return function( elem ) {
-				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
+				return ( elem.textContent || getText( elem ) ).indexOf( text ) > -1;
 			};
-		}),
+		} ),
 
 		// "Whether an element is represented by a :lang() selector
 		// is based solely on the element's language value
@@ -1963,25 +2142,26 @@ Expr = Sizzle.selectors = {
 		// The identifier C does not have to be a valid language name."
 		// http://www.w3.org/TR/selectors/#lang-pseudo
 		"lang": markFunction( function( lang ) {
+
 			// lang value must be a valid identifier
-			if ( !ridentifier.test(lang || "") ) {
+			if ( !ridentifier.test( lang || "" ) ) {
 				Sizzle.error( "unsupported lang: " + lang );
 			}
 			lang = lang.replace( runescape, funescape ).toLowerCase();
 			return function( elem ) {
 				var elemLang;
 				do {
-					if ( (elemLang = documentIsHTML ?
+					if ( ( elemLang = documentIsHTML ?
 						elem.lang :
-						elem.getAttribute("xml:lang") || elem.getAttribute("lang")) ) {
+						elem.getAttribute( "xml:lang" ) || elem.getAttribute( "lang" ) ) ) {
 
 						elemLang = elemLang.toLowerCase();
 						return elemLang === lang || elemLang.indexOf( lang + "-" ) === 0;
 					}
-				} while ( (elem = elem.parentNode) && elem.nodeType === 1 );
+				} while ( ( elem = elem.parentNode ) && elem.nodeType === 1 );
 				return false;
 			};
-		}),
+		} ),
 
 		// Miscellaneous
 		"target": function( elem ) {
@@ -1994,7 +2174,9 @@ Expr = Sizzle.selectors = {
 		},
 
 		"focus": function( elem ) {
-			return elem === document.activeElement && (!document.hasFocus || document.hasFocus()) && !!(elem.type || elem.href || ~elem.tabIndex);
+			return elem === document.activeElement &&
+				( !document.hasFocus || document.hasFocus() ) &&
+				!!( elem.type || elem.href || ~elem.tabIndex );
 		},
 
 		// Boolean properties
@@ -2002,16 +2184,20 @@ Expr = Sizzle.selectors = {
 		"disabled": createDisabledPseudo( true ),
 
 		"checked": function( elem ) {
+
 			// In CSS3, :checked should return both checked and selected elements
 			// http://www.w3.org/TR/2011/REC-css3-selectors-20110929/#checked
 			var nodeName = elem.nodeName.toLowerCase();
-			return (nodeName === "input" && !!elem.checked) || (nodeName === "option" && !!elem.selected);
+			return ( nodeName === "input" && !!elem.checked ) ||
+				( nodeName === "option" && !!elem.selected );
 		},
 
 		"selected": function( elem ) {
+
 			// Accessing this property makes selected-by-default
 			// options in Safari work properly
 			if ( elem.parentNode ) {
+				// eslint-disable-next-line no-unused-expressions
 				elem.parentNode.selectedIndex;
 			}
 
@@ -2020,6 +2206,7 @@ Expr = Sizzle.selectors = {
 
 		// Contents
 		"empty": function( elem ) {
+
 			// http://www.w3.org/TR/selectors/#empty-pseudo
 			// :empty is negated by element (1) or content nodes (text: 3; cdata: 4; entity ref: 5),
 			//   but not by others (comment: 8; processing instruction: 7; etc.)
@@ -2033,7 +2220,7 @@ Expr = Sizzle.selectors = {
 		},
 
 		"parent": function( elem ) {
-			return !Expr.pseudos["empty"]( elem );
+			return !Expr.pseudos[ "empty" ]( elem );
 		},
 
 		// Element/input types
@@ -2057,57 +2244,62 @@ Expr = Sizzle.selectors = {
 
 				// Support: IE<8
 				// New HTML5 attribute values (e.g., "search") appear with elem.type === "text"
-				( (attr = elem.getAttribute("type")) == null || attr.toLowerCase() === "text" );
+				( ( attr = elem.getAttribute( "type" ) ) == null ||
+					attr.toLowerCase() === "text" );
 		},
 
 		// Position-in-collection
-		"first": createPositionalPseudo(function() {
+		"first": createPositionalPseudo( function() {
 			return [ 0 ];
-		}),
+		} ),
 
-		"last": createPositionalPseudo(function( matchIndexes, length ) {
+		"last": createPositionalPseudo( function( _matchIndexes, length ) {
 			return [ length - 1 ];
-		}),
+		} ),
 
-		"eq": createPositionalPseudo(function( matchIndexes, length, argument ) {
+		"eq": createPositionalPseudo( function( _matchIndexes, length, argument ) {
 			return [ argument < 0 ? argument + length : argument ];
-		}),
+		} ),
 
-		"even": createPositionalPseudo(function( matchIndexes, length ) {
+		"even": createPositionalPseudo( function( matchIndexes, length ) {
 			var i = 0;
 			for ( ; i < length; i += 2 ) {
 				matchIndexes.push( i );
 			}
 			return matchIndexes;
-		}),
+		} ),
 
-		"odd": createPositionalPseudo(function( matchIndexes, length ) {
+		"odd": createPositionalPseudo( function( matchIndexes, length ) {
 			var i = 1;
 			for ( ; i < length; i += 2 ) {
 				matchIndexes.push( i );
 			}
 			return matchIndexes;
-		}),
+		} ),
 
-		"lt": createPositionalPseudo(function( matchIndexes, length, argument ) {
-			var i = argument < 0 ? argument + length : argument;
+		"lt": createPositionalPseudo( function( matchIndexes, length, argument ) {
+			var i = argument < 0 ?
+				argument + length :
+				argument > length ?
+					length :
+					argument;
 			for ( ; --i >= 0; ) {
 				matchIndexes.push( i );
 			}
 			return matchIndexes;
-		}),
+		} ),
 
-		"gt": createPositionalPseudo(function( matchIndexes, length, argument ) {
+		"gt": createPositionalPseudo( function( matchIndexes, length, argument ) {
 			var i = argument < 0 ? argument + length : argument;
 			for ( ; ++i < length; ) {
 				matchIndexes.push( i );
 			}
 			return matchIndexes;
-		})
+		} )
 	}
 };
 
-Expr.pseudos["nth"] = Expr.pseudos["eq"];
+Expr.pseudos[ "nth" ] = Expr.pseudos[ "eq" ];
 
 // Add button/input type pseudos
 for ( i in { radio: true, checkbox: true, file: true, password: true, image: true } ) {
@@ -2138,37 +2330,39 @@ tokenize = Sizzle.tokenize = function( selector, parseOnly ) {
 	while ( soFar ) {
 
 		// Comma and first run
-		if ( !matched || (match = rcomma.exec( soFar )) ) {
+		if ( !matched || ( match = rcomma.exec( soFar ) ) ) {
 			if ( match ) {
+
 				// Don't consume trailing commas as valid
-				soFar = soFar.slice( match[0].length ) || soFar;
+				soFar = soFar.slice( match[ 0 ].length ) || soFar;
 			}
-			groups.push( (tokens = []) );
+			groups.push( ( tokens = [] ) );
 		}
 
 		matched = false;
 
 		// Combinators
-		if ( (match = rcombinators.exec( soFar )) ) {
+		if ( ( match = rcombinators.exec( soFar ) ) ) {
 			matched = match.shift();
-			tokens.push({
+			tokens.push( {
 				value: matched,
+
 				// Cast descendant combinators to space
-				type: match[0].replace( rtrim, " " )
-			});
+				type: match[ 0 ].replace( rtrim, " " )
+			} );
 			soFar = soFar.slice( matched.length );
 		}
 
 		// Filters
 		for ( type in Expr.filter ) {
-			if ( (match = matchExpr[ type ].exec( soFar )) && (!preFilters[ type ] ||
-				(match = preFilters[ type ]( match ))) ) {
+			if ( ( match = matchExpr[ type ].exec( soFar ) ) && ( !preFilters[ type ] ||
+				( match = preFilters[ type ]( match ) ) ) ) {
 				matched = match.shift();
-				tokens.push({
+				tokens.push( {
 					value: matched,
 					type: type,
 					matches: match
-				});
+				} );
 				soFar = soFar.slice( matched.length );
 			}
 		}
@@ -2185,6 +2379,7 @@ tokenize = Sizzle.tokenize = function( selector, parseOnly ) {
 		soFar.length :
 		soFar ?
 			Sizzle.error( selector ) :
+
 			// Cache the tokens
 			tokenCache( selector, groups ).slice( 0 );
 };
@@ -2194,7 +2389,7 @@ function toSelector( tokens ) {
 		len = tokens.length,
 		selector = "";
 	for ( ; i < len; i++ ) {
-		selector += tokens[i].value;
+		selector += tokens[ i ].value;
 	}
 	return selector;
 }
@@ -2207,13 +2402,15 @@ function addCombinator( matcher, combinator, base ) {
 		doneName = done++;
 
 	return combinator.first ?
+
 		// Check against closest ancestor/preceding element
 		function( elem, context, xml ) {
-			while ( (elem = elem[ dir ]) ) {
+			while ( ( elem = elem[ dir ] ) ) {
 				if ( elem.nodeType === 1 || checkNonElements ) {
 					return matcher( elem, context, xml );
 				}
 			}
+			return false;
 		} :
 
 		// Check against all ancestor/preceding elements
@@ -2223,7 +2420,7 @@ function addCombinator( matcher, combinator, base ) {
 
 			// We can't set arbitrary data on XML nodes, so they don't benefit from combinator caching
 			if ( xml ) {
-				while ( (elem = elem[ dir ]) ) {
+				while ( ( elem = elem[ dir ] ) ) {
 					if ( elem.nodeType === 1 || checkNonElements ) {
 						if ( matcher( elem, context, xml ) ) {
 							return true;
@@ -2231,33 +2428,36 @@ function addCombinator( matcher, combinator, base ) {
 					}
 				}
 			} else {
-				while ( (elem = elem[ dir ]) ) {
+				while ( ( elem = elem[ dir ] ) ) {
 					if ( elem.nodeType === 1 || checkNonElements ) {
-						outerCache = elem[ expando ] || (elem[ expando ] = {});
+						outerCache = elem[ expando ] || ( elem[ expando ] = {} );
 
 						// Support: IE <9 only
 						// Defend against cloned attroperties (jQuery gh-1709)
-						uniqueCache = outerCache[ elem.uniqueID ] || (outerCache[ elem.uniqueID ] = {});
+						uniqueCache = outerCache[ elem.uniqueID ] ||
+							( outerCache[ elem.uniqueID ] = {} );
 
 						if ( skip && skip === elem.nodeName.toLowerCase() ) {
 							elem = elem[ dir ] || elem;
-						} else if ( (oldCache = uniqueCache[ key ]) &&
+						} else if ( ( oldCache = uniqueCache[ key ] ) &&
 							oldCache[ 0 ] === dirruns && oldCache[ 1 ] === doneName ) {
 
 							// Assign to newCache so results back-propagate to previous elements
-							return (newCache[ 2 ] = oldCache[ 2 ]);
+							return ( newCache[ 2 ] = oldCache[ 2 ] );
 						} else {
+
 							// Reuse newcache so results back-propagate to previous elements
 							uniqueCache[ key ] = newCache;
 
 							// A match means we're done; a fail means we have to keep checking
-							if ( (newCache[ 2 ] = matcher( elem, context, xml )) ) {
+							if ( ( newCache[ 2 ] = matcher( elem, context, xml ) ) ) {
 								return true;
 							}
 						}
 					}
 				}
 			}
+			return false;
 		};
 }
 
@@ -2266,20 +2466,20 @@ function elementMatcher( matchers ) {
 		function( elem, context, xml ) {
 			var i = matchers.length;
 			while ( i-- ) {
-				if ( !matchers[i]( elem, context, xml ) ) {
+				if ( !matchers[ i ]( elem, context, xml ) ) {
 					return false;
 				}
 			}
 			return true;
 		} :
-		matchers[0];
+		matchers[ 0 ];
 }
 
 function multipleContexts( selector, contexts, results ) {
 	var i = 0,
 		len = contexts.length;
 	for ( ; i < len; i++ ) {
-		Sizzle( selector, contexts[i], results );
+		Sizzle( selector, contexts[ i ], results );
 	}
 	return results;
 }
@@ -2292,7 +2492,7 @@ function condense( unmatched, map, filter, context, xml ) {
 		mapped = map != null;
 
 	for ( ; i < len; i++ ) {
-		if ( (elem = unmatched[i]) ) {
+		if ( ( elem = unmatched[ i ] ) ) {
 			if ( !filter || filter( elem, context, xml ) ) {
 				newUnmatched.push( elem );
 				if ( mapped ) {
@@ -2312,14 +2512,18 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 	if ( postFinder && !postFinder[ expando ] ) {
 		postFinder = setMatcher( postFinder, postSelector );
 	}
-	return markFunction(function( seed, results, context, xml ) {
+	return markFunction( function( seed, results, context, xml ) {
 		var temp, i, elem,
 			preMap = [],
 			postMap = [],
 			preexisting = results.length,
 
 			// Get initial elements from seed or context
-			elems = seed || multipleContexts( selector || "*", context.nodeType ? [ context ] : context, [] ),
+			elems = seed || multipleContexts(
+				selector || "*",
+				context.nodeType ? [ context ] : context,
+				[]
+			),
 
 			// Prefilter to get matcher input, preserving a map for seed-results synchronization
 			matcherIn = preFilter && ( seed || !selector ) ?
@@ -2327,6 +2531,7 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 				elems,
 
 			matcherOut = matcher ?
+
 				// If we have a postFinder, or filtered seed, or non-seed postFilter or preexisting results,
 				postFinder || ( seed ? preFilter : preexisting || postFilter ) ?
 
@@ -2350,8 +2555,8 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 			// Un-match failing elements by moving them back to matcherIn
 			i = temp.length;
 			while ( i-- ) {
-				if ( (elem = temp[i]) ) {
-					matcherOut[ postMap[i] ] = !(matcherIn[ postMap[i] ] = elem);
+				if ( ( elem = temp[ i ] ) ) {
+					matcherOut[ postMap[ i ] ] = !( matcherIn[ postMap[ i ] ] = elem );
 				}
 			}
 		}
@@ -2359,25 +2564,27 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 		if ( seed ) {
 			if ( postFinder || preFilter ) {
 				if ( postFinder ) {
+
 					// Get the final matcherOut by condensing this intermediate into postFinder contexts
 					temp = [];
 					i = matcherOut.length;
 					while ( i-- ) {
-						if ( (elem = matcherOut[i]) ) {
+						if ( ( elem = matcherOut[ i ] ) ) {
+
 							// Restore matcherIn since elem is not yet a final match
-							temp.push( (matcherIn[i] = elem) );
+							temp.push( ( matcherIn[ i ] = elem ) );
 						}
 					}
-					postFinder( null, (matcherOut = []), temp, xml );
+					postFinder( null, ( matcherOut = [] ), temp, xml );
 				}
 
 				// Move matched elements from seed to results to keep them synchronized
 				i = matcherOut.length;
 				while ( i-- ) {
-					if ( (elem = matcherOut[i]) &&
-						(temp = postFinder ? indexOf( seed, elem ) : preMap[i]) > -1 ) {
+					if ( ( elem = matcherOut[ i ] ) &&
+						( temp = postFinder ? indexOf( seed, elem ) : preMap[ i ] ) > -1 ) {
 
-						seed[temp] = !(results[temp] = elem);
+						seed[ temp ] = !( results[ temp ] = elem );
 					}
 				}
 			}
@@ -2395,14 +2602,14 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 				push.apply( results, matcherOut );
 			}
 		}
-	});
+	} );
 }
 
 function matcherFromTokens( tokens ) {
 	var checkContext, matcher, j,
 		len = tokens.length,
-		leadingRelative = Expr.relative[ tokens[0].type ],
-		implicitRelative = leadingRelative || Expr.relative[" "],
+		leadingRelative = Expr.relative[ tokens[ 0 ].type ],
+		implicitRelative = leadingRelative || Expr.relative[ " " ],
 		i = leadingRelative ? 1 : 0,
 
 		// The foundational matcher ensures that elements are reachable from top-level context(s)
@@ -2414,38 +2621,43 @@ function matcherFromTokens( tokens ) {
 		}, implicitRelative, true ),
 		matchers = [ function( elem, context, xml ) {
 			var ret = ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
-				(checkContext = context).nodeType ?
+				( checkContext = context ).nodeType ?
 					matchContext( elem, context, xml ) :
 					matchAnyContext( elem, context, xml ) );
+
 			// Avoid hanging onto element (issue #299)
 			checkContext = null;
 			return ret;
 		} ];
 
 	for ( ; i < len; i++ ) {
-		if ( (matcher = Expr.relative[ tokens[i].type ]) ) {
-			matchers = [ addCombinator(elementMatcher( matchers ), matcher) ];
+		if ( ( matcher = Expr.relative[ tokens[ i ].type ] ) ) {
+			matchers = [ addCombinator( elementMatcher( matchers ), matcher ) ];
 		} else {
-			matcher = Expr.filter[ tokens[i].type ].apply( null, tokens[i].matches );
+			matcher = Expr.filter[ tokens[ i ].type ].apply( null, tokens[ i ].matches );
 
 			// Return special upon seeing a positional matcher
 			if ( matcher[ expando ] ) {
+
 				// Find the next relative operator (if any) for proper handling
 				j = ++i;
 				for ( ; j < len; j++ ) {
-					if ( Expr.relative[ tokens[j].type ] ) {
+					if ( Expr.relative[ tokens[ j ].type ] ) {
 						break;
 					}
 				}
 				return setMatcher(
 					i > 1 && elementMatcher( matchers ),
 					i > 1 && toSelector(
-						// If the preceding token was a descendant combinator, insert an implicit any-element `*`
-						tokens.slice( 0, i - 1 ).concat({ value: tokens[ i - 2 ].type === " " ? "*" : "" })
+
+					// If the preceding token was a descendant combinator, insert an implicit any-element `*`
+					tokens
+						.slice( 0, i - 1 )
+						.concat( { value: tokens[ i - 2 ].type === " " ? "*" : "" } )
 					).replace( rtrim, "$1" ),
 					matcher,
 					i < j && matcherFromTokens( tokens.slice( i, j ) ),
-					j < len && matcherFromTokens( (tokens = tokens.slice( j )) ),
+					j < len && matcherFromTokens( ( tokens = tokens.slice( j ) ) ),
 					j < len && toSelector( tokens )
 				);
 			}
@@ -2466,28 +2678,40 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 				unmatched = seed && [],
 				setMatched = [],
 				contextBackup = outermostContext,
+
 				// We must always have either seed elements or outermost context
-				elems = seed || byElement && Expr.find["TAG"]( "*", outermost ),
+				elems = seed || byElement && Expr.find[ "TAG" ]( "*", outermost ),
+
 				// Use integer dirruns iff this is the outermost matcher
-				dirrunsUnique = (dirruns += contextBackup == null ? 1 : Math.random() || 0.1),
+				dirrunsUnique = ( dirruns += contextBackup == null ? 1 : Math.random() || 0.1 ),
 				len = elems.length;
 
 			if ( outermost ) {
-				outermostContext = context === document || context || outermost;
+
+				// Support: IE 11+, Edge 17 - 18+
+				// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+				// two documents; shallow comparisons work.
+				// eslint-disable-next-line eqeqeq
+				outermostContext = context == document || context || outermost;
 			}
 
 			// Add elements passing elementMatchers directly to results
 			// Support: IE<9, Safari
 			// Tolerate NodeList properties (IE: "length"; Safari: <number>) matching elements by id
-			for ( ; i !== len && (elem = elems[i]) != null; i++ ) {
+			for ( ; i !== len && ( elem = elems[ i ] ) != null; i++ ) {
 				if ( byElement && elem ) {
 					j = 0;
-					if ( !context && elem.ownerDocument !== document ) {
+
+					// Support: IE 11+, Edge 17 - 18+
+					// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+					// two documents; shallow comparisons work.
+					// eslint-disable-next-line eqeqeq
+					if ( !context && elem.ownerDocument != document ) {
 						setDocument( elem );
 						xml = !documentIsHTML;
 					}
-					while ( (matcher = elementMatchers[j++]) ) {
-						if ( matcher( elem, context || document, xml) ) {
+					while ( ( matcher = elementMatchers[ j++ ] ) ) {
+						if ( matcher( elem, context || document, xml ) ) {
 							results.push( elem );
 							break;
 						}
@@ -2499,8 +2723,9 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 
 				// Track unmatched elements for set filters
 				if ( bySet ) {
+
 					// They will have gone through all possible matchers
-					if ( (elem = !matcher && elem) ) {
+					if ( ( elem = !matcher && elem ) ) {
 						matchedCount--;
 					}
 
@@ -2524,16 +2749,17 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 			// numerically zero.
 			if ( bySet && i !== matchedCount ) {
 				j = 0;
-				while ( (matcher = setMatchers[j++]) ) {
+				while ( ( matcher = setMatchers[ j++ ] ) ) {
 					matcher( unmatched, setMatched, context, xml );
 				}
 
 				if ( seed ) {
+
 					// Reintegrate element matches to eliminate the need for sorting
 					if ( matchedCount > 0 ) {
 						while ( i-- ) {
-							if ( !(unmatched[i] || setMatched[i]) ) {
-								setMatched[i] = pop.call( results );
+							if ( !( unmatched[ i ] || setMatched[ i ] ) ) {
+								setMatched[ i ] = pop.call( results );
 							}
 						}
 					}
@@ -2574,13 +2800,14 @@ compile = Sizzle.compile = function( selector, match /* Internal Use Only */ ) {
 		cached = compilerCache[ selector + " " ];
 
 	if ( !cached ) {
+
 		// Generate a function of recursive functions that can be used to check each element
 		if ( !match ) {
 			match = tokenize( selector );
 		}
 		i = match.length;
 		while ( i-- ) {
-			cached = matcherFromTokens( match[i] );
+			cached = matcherFromTokens( match[ i ] );
 			if ( cached[ expando ] ) {
 				setMatchers.push( cached );
 			} else {
@@ -2589,7 +2816,10 @@ compile = Sizzle.compile = function( selector, match /* Internal Use Only */ ) {
 		}
 
 		// Cache the compiled function
-		cached = compilerCache( selector, matcherFromGroupMatchers( elementMatchers, setMatchers ) );
+		cached = compilerCache(
+			selector,
+			matcherFromGroupMatchers( elementMatchers, setMatchers )
+		);
 
 		// Save selector and tokenization
 		cached.selector = selector;
@@ -2609,7 +2839,7 @@ compile = Sizzle.compile = function( selector, match /* Internal Use Only */ ) {
 select = Sizzle.select = function( selector, context, results, seed ) {
 	var i, tokens, token, type, find,
 		compiled = typeof selector === "function" && selector,
-		match = !seed && tokenize( (selector = compiled.selector || selector) );
+		match = !seed && tokenize( ( selector = compiled.selector || selector ) );
 
 	results = results || [];
 
@@ -2618,12 +2848,12 @@ select = Sizzle.select = function( selector, context, results, seed ) {
 	if ( match.length === 1 ) {
 
 		// Reduce context if the leading compound selector is an ID
-		tokens = match[0] = match[0].slice( 0 );
-		if ( tokens.length > 2 && (token = tokens[0]).type === "ID" &&
-				support.getById && context.nodeType === 9 && documentIsHTML &&
-				Expr.relative[ tokens[1].type ] ) {
+		tokens = match[ 0 ] = match[ 0 ].slice( 0 );
+		if ( tokens.length > 2 && ( token = tokens[ 0 ] ).type === "ID" &&
+			context.nodeType === 9 && documentIsHTML && Expr.relative[ tokens[ 1 ].type ] ) {
 
-			context = ( Expr.find["ID"]( token.matches[0].replace(runescape, funescape), context ) || [] )[0];
+			context = ( Expr.find[ "ID" ]( token.matches[ 0 ]
+				.replace( runescape, funescape ), context ) || [] )[ 0 ];
 			if ( !context ) {
 				return results;
 
@@ -2636,20 +2866,22 @@ select = Sizzle.select = function( selector, context, results, seed ) {
 		}
 
 		// Fetch a seed set for right-to-left matching
-		i = matchExpr["needsContext"].test( selector ) ? 0 : tokens.length;
+		i = matchExpr[ "needsContext" ].test( selector ) ? 0 : tokens.length;
 		while ( i-- ) {
-			token = tokens[i];
+			token = tokens[ i ];
 
 			// Abort if we hit a combinator
-			if ( Expr.relative[ (type = token.type) ] ) {
+			if ( Expr.relative[ ( type = token.type ) ] ) {
 				break;
 			}
-			if ( (find = Expr.find[ type ]) ) {
+			if ( ( find = Expr.find[ type ] ) ) {
+
 				// Search, expanding context for leading sibling combinators
-				if ( (seed = find(
-					token.matches[0].replace( runescape, funescape ),
-					rsibling.test( tokens[0].type ) && testContext( context.parentNode ) || context
-				)) ) {
+				if ( ( seed = find(
+					token.matches[ 0 ].replace( runescape, funescape ),
+					rsibling.test( tokens[ 0 ].type ) && testContext( context.parentNode ) ||
+						context
+				) ) ) {
 
 					// If seed is empty or no tokens remain, we can return early
 					tokens.splice( i, 1 );
@@ -2680,7 +2912,7 @@ select = Sizzle.select = function( selector, context, results, seed ) {
 // One-time assignments
 
 // Sort stability
-support.sortStable = expando.split("").sort( sortOrder ).join("") === expando;
+support.sortStable = expando.split( "" ).sort( sortOrder ).join( "" ) === expando;
 
 // Support: Chrome 14-35+
 // Always assume duplicates if they aren't passed to the comparison function
@@ -2691,58 +2923,59 @@ setDocument();
 
 // Support: Webkit<537.32 - Safari 6.0.3/Chrome 25 (fixed in Chrome 27)
 // Detached nodes confoundingly follow *each other*
-support.sortDetached = assert(function( el ) {
+support.sortDetached = assert( function( el ) {
+
 	// Should return 1, but returns 4 (following)
-	return el.compareDocumentPosition( document.createElement("fieldset") ) & 1;
-});
+	return el.compareDocumentPosition( document.createElement( "fieldset" ) ) & 1;
+} );
 
 // Support: IE<8
 // Prevent attribute/property "interpolation"
 // https://msdn.microsoft.com/en-us/library/ms536429%28VS.85%29.aspx
-if ( !assert(function( el ) {
+if ( !assert( function( el ) {
 	el.innerHTML = "<a href='#'></a>";
-	return el.firstChild.getAttribute("href") === "#" ;
-}) ) {
+	return el.firstChild.getAttribute( "href" ) === "#";
+} ) ) {
 	addHandle( "type|href|height|width", function( elem, name, isXML ) {
 		if ( !isXML ) {
 			return elem.getAttribute( name, name.toLowerCase() === "type" ? 1 : 2 );
 		}
-	});
+	} );
 }
 
 // Support: IE<9
 // Use defaultValue in place of getAttribute("value")
-if ( !support.attributes || !assert(function( el ) {
+if ( !support.attributes || !assert( function( el ) {
 	el.innerHTML = "<input/>";
 	el.firstChild.setAttribute( "value", "" );
 	return el.firstChild.getAttribute( "value" ) === "";
-}) ) {
-	addHandle( "value", function( elem, name, isXML ) {
+} ) ) {
+	addHandle( "value", function( elem, _name, isXML ) {
 		if ( !isXML && elem.nodeName.toLowerCase() === "input" ) {
 			return elem.defaultValue;
 		}
-	});
+	} );
 }
 
 // Support: IE<9
 // Use getAttributeNode to fetch booleans when getAttribute lies
-if ( !assert(function( el ) {
-	return el.getAttribute("disabled") == null;
-}) ) {
+if ( !assert( function( el ) {
+	return el.getAttribute( "disabled" ) == null;
+} ) ) {
 	addHandle( booleans, function( elem, name, isXML ) {
 		var val;
 		if ( !isXML ) {
 			return elem[ name ] === true ? name.toLowerCase() :
-					(val = elem.getAttributeNode( name )) && val.specified ?
+				( val = elem.getAttributeNode( name ) ) && val.specified ?
 					val.value :
-				null;
+					null;
 		}
-	});
+	} );
 }
 
 return Sizzle;
 
-})( window );
+} )( window );
 
 
 
@@ -2791,39 +3024,41 @@ var siblings = function( n, elem ) {
 
 var rneedsContext = jQuery.expr.match.needsContext;
 
+
+
+function nodeName( elem, name ) {
+
+	return elem.nodeName && elem.nodeName.toLowerCase() === name.toLowerCase();
+
+}
 var rsingleTag = ( /^<([a-z][^\/\0>:\x20\t\r\n\f]*)[\x20\t\r\n\f]*\/?>(?:<\/\1>|)$/i );
 
 
 
-var risSimple = /^.[^:#\[\.,]*$/;
-
 // Implement the identical functionality for filter and not
 function winnow( elements, qualifier, not ) {
-	if ( jQuery.isFunction( qualifier ) ) {
+	if ( isFunction( qualifier ) ) {
 		return jQuery.grep( elements, function( elem, i ) {
 			return !!qualifier.call( elem, i, elem ) !== not;
 		} );
-
 	}
 
+	// Single element
 	if ( qualifier.nodeType ) {
 		return jQuery.grep( elements, function( elem ) {
 			return ( elem === qualifier ) !== not;
 		} );
-
 	}
 
-	if ( typeof qualifier === "string" ) {
-		if ( risSimple.test( qualifier ) ) {
-			return jQuery.filter( qualifier, elements, not );
-		}
-
-		qualifier = jQuery.filter( qualifier, elements );
+	// Arraylike of elements (jQuery, arguments, Array)
+	if ( typeof qualifier !== "string" ) {
+		return jQuery.grep( elements, function( elem ) {
+			return ( indexOf.call( qualifier, elem ) > -1 ) !== not;
+		} );
 	}
 
-	return jQuery.grep( elements, function( elem ) {
-		return ( indexOf.call( qualifier, elem ) > -1 ) !== not && elem.nodeType === 1;
-	} );
+	// Filtered directly for both simple and complex selectors
+	return jQuery.filter( qualifier, elements, not );
 }
 
 jQuery.filter = function( expr, elems, not ) {
@@ -2833,11 +3068,13 @@ jQuery.filter = function( expr, elems, not ) {
 		expr = ":not(" + expr + ")";
 	}
 
-	return elems.length === 1 && elem.nodeType === 1 ?
-		jQuery.find.matchesSelector( elem, expr ) ? [ elem ] : [] :
-		jQuery.find.matches( expr, jQuery.grep( elems, function( elem ) {
-			return elem.nodeType === 1;
-		} ) );
+	if ( elems.length === 1 && elem.nodeType === 1 ) {
+		return jQuery.find.matchesSelector( elem, expr ) ? [ elem ] : [];
+	}
+
+	return jQuery.find.matches( expr, jQuery.grep( elems, function( elem ) {
+		return elem.nodeType === 1;
+	} ) );
 };
 
 jQuery.fn.extend( {
@@ -2942,7 +3179,7 @@ var rootjQuery,
 						for ( match in context ) {
 
 							// Properties of context are called as methods if possible
-							if ( jQuery.isFunction( this[ match ] ) ) {
+							if ( isFunction( this[ match ] ) ) {
 								this[ match ]( context[ match ] );
 
 							// ...and otherwise set as attributes
@@ -2985,7 +3222,7 @@ var rootjQuery,
 
 		// HANDLE: $(function)
 		// Shortcut for document ready
-		} else if ( jQuery.isFunction( selector ) ) {
+		} else if ( isFunction( selector ) ) {
 			return root.ready !== undefined ?
 				root.ready( selector ) :
 
@@ -3107,7 +3344,7 @@ jQuery.each( {
 	parents: function( elem ) {
 		return dir( elem, "parentNode" );
 	},
-	parentsUntil: function( elem, i, until ) {
+	parentsUntil: function( elem, _i, until ) {
 		return dir( elem, "parentNode", until );
 	},
 	next: function( elem ) {
@@ -3122,10 +3359,10 @@ jQuery.each( {
 	prevAll: function( elem ) {
 		return dir( elem, "previousSibling" );
 	},
-	nextUntil: function( elem, i, until ) {
+	nextUntil: function( elem, _i, until ) {
 		return dir( elem, "nextSibling", until );
 	},
-	prevUntil: function( elem, i, until ) {
+	prevUntil: function( elem, _i, until ) {
 		return dir( elem, "previousSibling", until );
 	},
 	siblings: function( elem ) {
@@ -3135,7 +3372,24 @@ jQuery.each( {
 		return siblings( elem.firstChild );
 	},
 	contents: function( elem ) {
-		return elem.contentDocument || jQuery.merge( [], elem.childNodes );
+		if ( elem.contentDocument != null &&
+
+			// Support: IE 11+
+			// <object> elements with no `data` attribute has an object
+			// `contentDocument` with a `null` prototype.
+			getProto( elem.contentDocument ) ) {
+
+			return elem.contentDocument;
+		}
+
+		// Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
+		// Treat the template element as a regular one in browsers that
+		// don't support it.
+		if ( nodeName( elem, "template" ) ) {
+			elem = elem.content || elem;
+		}
+
+		return jQuery.merge( [], elem.childNodes );
 	}
 }, function( name, fn ) {
 	jQuery.fn[ name ] = function( until, selector ) {
@@ -3165,14 +3419,14 @@ jQuery.each( {
 		return this.pushStack( matched );
 	};
 } );
-var rnotwhite = ( /\S+/g );
+var rnothtmlwhite = ( /[^\x20\t\r\n\f]+/g );
 
 
 
 // Convert String-formatted options into Object-formatted ones
 function createOptions( options ) {
 	var object = {};
-	jQuery.each( options.match( rnotwhite ) || [], function( _, flag ) {
+	jQuery.each( options.match( rnothtmlwhite ) || [], function( _, flag ) {
 		object[ flag ] = true;
 	} );
 	return object;
@@ -3233,7 +3487,7 @@ jQuery.Callbacks = function( options ) {
 		fire = function() {
 
 			// Enforce single-firing
-			locked = options.once;
+			locked = locked || options.once;
 
 			// Execute callbacks for all pending executions,
 			// respecting firingIndex overrides and runtime changes
@@ -3289,11 +3543,11 @@ jQuery.Callbacks = function( options ) {
 
 					( function add( args ) {
 						jQuery.each( args, function( _, arg ) {
-							if ( jQuery.isFunction( arg ) ) {
+							if ( isFunction( arg ) ) {
 								if ( !options.unique || !self.has( arg ) ) {
 									list.push( arg );
 								}
-							} else if ( arg && arg.length && jQuery.type( arg ) !== "string" ) {
+							} else if ( arg && arg.length && toType( arg ) !== "string" ) {
 
 								// Inspect recursively
 								add( arg );
@@ -3402,25 +3656,26 @@ function Thrower( ex ) {
 	throw ex;
 }
 
-function adoptValue( value, resolve, reject ) {
+function adoptValue( value, resolve, reject, noValue ) {
 	var method;
 
 	try {
 
 		// Check for promise aspect first to privilege synchronous behavior
-		if ( value && jQuery.isFunction( ( method = value.promise ) ) ) {
+		if ( value && isFunction( ( method = value.promise ) ) ) {
 			method.call( value ).done( resolve ).fail( reject );
 
 		// Other thenables
-		} else if ( value && jQuery.isFunction( ( method = value.then ) ) ) {
+		} else if ( value && isFunction( ( method = value.then ) ) ) {
 			method.call( value, resolve, reject );
 
 		// Other non-thenables
 		} else {
 
-			// Support: Android 4.0 only
-			// Strict mode functions invoked without .call/.apply get global-object context
-			resolve.call( undefined, value );
+			// Control `resolve` arguments by letting Array#slice cast boolean `noValue` to integer:
+			// * false: [ value ].slice( 0 ) => resolve( value )
+			// * true: [ value ].slice( 1 ) => resolve()
+			resolve.apply( undefined, [ value ].slice( noValue ) );
 		}
 
 	// For Promises/A+, convert exceptions into rejections
@@ -3430,7 +3685,7 @@ function adoptValue( value, resolve, reject ) {
 
 		// Support: Android 4.0 only
 		// Strict mode functions invoked without .call/.apply get global-object context
-		reject.call( undefined, value );
+		reject.apply( undefined, [ value ] );
 	}
 }
 
@@ -3466,17 +3721,17 @@ jQuery.extend( {
 					var fns = arguments;
 
 					return jQuery.Deferred( function( newDefer ) {
-						jQuery.each( tuples, function( i, tuple ) {
+						jQuery.each( tuples, function( _i, tuple ) {
 
 							// Map tuples (progress, done, fail) to arguments (done, fail, progress)
-							var fn = jQuery.isFunction( fns[ tuple[ 4 ] ] ) && fns[ tuple[ 4 ] ];
+							var fn = isFunction( fns[ tuple[ 4 ] ] ) && fns[ tuple[ 4 ] ];
 
 							// deferred.progress(function() { bind to newDefer or newDefer.notify })
 							// deferred.done(function() { bind to newDefer or newDefer.resolve })
 							// deferred.fail(function() { bind to newDefer or newDefer.reject })
 							deferred[ tuple[ 1 ] ]( function() {
 								var returned = fn && fn.apply( this, arguments );
-								if ( returned && jQuery.isFunction( returned.promise ) ) {
+								if ( returned && isFunction( returned.promise ) ) {
 									returned.promise()
 										.progress( newDefer.notify )
 										.done( newDefer.resolve )
@@ -3530,7 +3785,7 @@ jQuery.extend( {
 										returned.then;
 
 									// Handle a returned thenable
-									if ( jQuery.isFunction( then ) ) {
+									if ( isFunction( then ) ) {
 
 										// Special processors (notify) just wait for resolution
 										if ( special ) {
@@ -3626,7 +3881,7 @@ jQuery.extend( {
 							resolve(
 								0,
 								newDefer,
-								jQuery.isFunction( onProgress ) ?
+								isFunction( onProgress ) ?
 									onProgress :
 									Identity,
 								newDefer.notifyWith
@@ -3638,7 +3893,7 @@ jQuery.extend( {
 							resolve(
 								0,
 								newDefer,
-								jQuery.isFunction( onFulfilled ) ?
+								isFunction( onFulfilled ) ?
 									onFulfilled :
 									Identity
 							)
@@ -3649,7 +3904,7 @@ jQuery.extend( {
 							resolve(
 								0,
 								newDefer,
-								jQuery.isFunction( onRejected ) ?
+								isFunction( onRejected ) ?
 									onRejected :
 									Thrower
 							)
@@ -3689,8 +3944,15 @@ jQuery.extend( {
 					// fulfilled_callbacks.disable
 					tuples[ 3 - i ][ 2 ].disable,
 
+					// rejected_handlers.disable
+					// fulfilled_handlers.disable
+					tuples[ 3 - i ][ 3 ].disable,
+
 					// progress_callbacks.lock
-					tuples[ 0 ][ 2 ].lock
+					tuples[ 0 ][ 2 ].lock,
+
+					// progress_handlers.lock
+					tuples[ 0 ][ 3 ].lock
 				);
 			}
 
@@ -3739,8 +4001,8 @@ jQuery.extend( {
 			resolveContexts = Array( i ),
 			resolveValues = slice.call( arguments ),
 
-			// the master Deferred
-			master = jQuery.Deferred(),
+			// the primary Deferred
+			primary = jQuery.Deferred(),
 
 			// subordinate callback factory
 			updateFunc = function( i ) {
@@ -3748,29 +4010,30 @@ jQuery.extend( {
 					resolveContexts[ i ] = this;
 					resolveValues[ i ] = arguments.length > 1 ? slice.call( arguments ) : value;
 					if ( !( --remaining ) ) {
-						master.resolveWith( resolveContexts, resolveValues );
+						primary.resolveWith( resolveContexts, resolveValues );
 					}
 				};
 			};
 
 		// Single- and empty arguments are adopted like Promise.resolve
 		if ( remaining <= 1 ) {
-			adoptValue( singleValue, master.done( updateFunc( i ) ).resolve, master.reject );
+			adoptValue( singleValue, primary.done( updateFunc( i ) ).resolve, primary.reject,
+				!remaining );
 
 			// Use .then() to unwrap secondary thenables (cf. gh-3000)
-			if ( master.state() === "pending" ||
-				jQuery.isFunction( resolveValues[ i ] && resolveValues[ i ].then ) ) {
+			if ( primary.state() === "pending" ||
+				isFunction( resolveValues[ i ] && resolveValues[ i ].then ) ) {
 
-				return master.then();
+				return primary.then();
 			}
 		}
 
 		// Multiple arguments are aggregated like Promise.all array elements
 		while ( i-- ) {
-			adoptValue( resolveValues[ i ], updateFunc( i ), master.reject );
+			adoptValue( resolveValues[ i ], updateFunc( i ), primary.reject );
 		}
 
-		return master.promise();
+		return primary.promise();
 	}
 } );
 
@@ -3826,15 +4089,6 @@ jQuery.extend( {
 	// A counter to track how many items to wait for before
 	// the ready event fires. See #6781
 	readyWait: 1,
-
-	// Hold (or release) the ready event
-	holdReady: function( hold ) {
-		if ( hold ) {
-			jQuery.readyWait++;
-		} else {
-			jQuery.ready( true );
-		}
-	},
 
 	// Handle when the DOM is ready
 	ready: function( wait ) {
@@ -3896,7 +4150,7 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 		bulk = key == null;
 
 	// Sets many values
-	if ( jQuery.type( key ) === "object" ) {
+	if ( toType( key ) === "object" ) {
 		chainable = true;
 		for ( i in key ) {
 			access( elems, fn, i, key[ i ], true, emptyGet, raw );
@@ -3906,7 +4160,7 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 	} else if ( value !== undefined ) {
 		chainable = true;
 
-		if ( !jQuery.isFunction( value ) ) {
+		if ( !isFunction( value ) ) {
 			raw = true;
 		}
 
@@ -3920,7 +4174,7 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 			// ...except when executing function values
 			} else {
 				bulk = fn;
-				fn = function( elem, key, value ) {
+				fn = function( elem, _key, value ) {
 					return bulk.call( jQuery( elem ), value );
 				};
 			}
@@ -3930,21 +4184,41 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 			for ( ; i < len; i++ ) {
 				fn(
 					elems[ i ], key, raw ?
-					value :
-					value.call( elems[ i ], i, fn( elems[ i ], key ) )
+						value :
+						value.call( elems[ i ], i, fn( elems[ i ], key ) )
 				);
 			}
 		}
 	}
 
-	return chainable ?
-		elems :
+	if ( chainable ) {
+		return elems;
+	}
 
-		// Gets
-		bulk ?
-			fn.call( elems ) :
-			len ? fn( elems[ 0 ], key ) : emptyGet;
+	// Gets
+	if ( bulk ) {
+		return fn.call( elems );
+	}
+
+	return len ? fn( elems[ 0 ], key ) : emptyGet;
 };
+
+
+// Matches dashed string for camelizing
+var rmsPrefix = /^-ms-/,
+	rdashAlpha = /-([a-z])/g;
+
+// Used by camelCase as callback to replace()
+function fcamelCase( _all, letter ) {
+	return letter.toUpperCase();
+}
+
+// Convert dashed to camelCase; used by the css and data modules
+// Support: IE <=9 - 11, Edge 12 - 15
+// Microsoft forgot to hump their vendor prefix (#9572)
+function camelCase( string ) {
+	return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
+}
 var acceptData = function( owner ) {
 
 	// Accepts only:
@@ -4007,14 +4281,14 @@ Data.prototype = {
 		// Handle: [ owner, key, value ] args
 		// Always use camelCase key (gh-2257)
 		if ( typeof data === "string" ) {
-			cache[ jQuery.camelCase( data ) ] = value;
+			cache[ camelCase( data ) ] = value;
 
 		// Handle: [ owner, { properties } ] args
 		} else {
 
 			// Copy the properties one-by-one to the cache object
 			for ( prop in data ) {
-				cache[ jQuery.camelCase( prop ) ] = data[ prop ];
+				cache[ camelCase( prop ) ] = data[ prop ];
 			}
 		}
 		return cache;
@@ -4024,7 +4298,7 @@ Data.prototype = {
 			this.cache( owner ) :
 
 			// Always use camelCase key (gh-2257)
-			owner[ this.expando ] && owner[ this.expando ][ jQuery.camelCase( key ) ];
+			owner[ this.expando ] && owner[ this.expando ][ camelCase( key ) ];
 	},
 	access: function( owner, key, value ) {
 
@@ -4068,19 +4342,19 @@ Data.prototype = {
 		if ( key !== undefined ) {
 
 			// Support array or space separated string of keys
-			if ( jQuery.isArray( key ) ) {
+			if ( Array.isArray( key ) ) {
 
 				// If key is an array of keys...
 				// We always set camelCase keys, so remove that.
-				key = key.map( jQuery.camelCase );
+				key = key.map( camelCase );
 			} else {
-				key = jQuery.camelCase( key );
+				key = camelCase( key );
 
 				// If a key with the spaces exists, use it.
 				// Otherwise, create an array by matching non-whitespace
 				key = key in cache ?
 					[ key ] :
-					( key.match( rnotwhite ) || [] );
+					( key.match( rnothtmlwhite ) || [] );
 			}
 
 			i = key.length;
@@ -4128,6 +4402,31 @@ var dataUser = new Data();
 var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
 	rmultiDash = /[A-Z]/g;
 
+function getData( data ) {
+	if ( data === "true" ) {
+		return true;
+	}
+
+	if ( data === "false" ) {
+		return false;
+	}
+
+	if ( data === "null" ) {
+		return null;
+	}
+
+	// Only convert to a number if it doesn't change the string
+	if ( data === +data + "" ) {
+		return +data;
+	}
+
+	if ( rbrace.test( data ) ) {
+		return JSON.parse( data );
+	}
+
+	return data;
+}
+
 function dataAttr( elem, key, data ) {
 	var name;
 
@@ -4139,14 +4438,7 @@ function dataAttr( elem, key, data ) {
 
 		if ( typeof data === "string" ) {
 			try {
-				data = data === "true" ? true :
-					data === "false" ? false :
-					data === "null" ? null :
-
-					// Only convert to a number if it doesn't change the string
-					+data + "" === data ? +data :
-					rbrace.test( data ) ? JSON.parse( data ) :
-					data;
+				data = getData( data );
 			} catch ( e ) {}
 
 			// Make sure we set the data so it isn't changed later
@@ -4202,7 +4494,7 @@ jQuery.fn.extend( {
 						if ( attrs[ i ] ) {
 							name = attrs[ i ].name;
 							if ( name.indexOf( "data-" ) === 0 ) {
-								name = jQuery.camelCase( name.slice( 5 ) );
+								name = camelCase( name.slice( 5 ) );
 								dataAttr( elem, name, data[ name ] );
 							}
 						}
@@ -4276,7 +4568,7 @@ jQuery.extend( {
 
 			// Speed up dequeue by getting out quickly if this is just a lookup
 			if ( data ) {
-				if ( !queue || jQuery.isArray( data ) ) {
+				if ( !queue || Array.isArray( data ) ) {
 					queue = dataPriv.access( elem, type, jQuery.makeArray( data ) );
 				} else {
 					queue.push( data );
@@ -4406,6 +4698,26 @@ var rcssNum = new RegExp( "^(?:([+-])=|)(" + pnum + ")([a-z%]*)$", "i" );
 
 var cssExpand = [ "Top", "Right", "Bottom", "Left" ];
 
+var documentElement = document.documentElement;
+
+
+
+	var isAttached = function( elem ) {
+			return jQuery.contains( elem.ownerDocument, elem );
+		},
+		composed = { composed: true };
+
+	// Support: IE 9 - 11+, Edge 12 - 18+, iOS 10.0 - 10.2 only
+	// Check attachment across shadow DOM boundaries when possible (gh-3504)
+	// Support: iOS 10.0-10.2 only
+	// Early iOS 10 versions support `attachShadow` but not `getRootNode`,
+	// leading to errors. We need to check for `getRootNode`.
+	if ( documentElement.getRootNode ) {
+		isAttached = function( elem ) {
+			return jQuery.contains( elem.ownerDocument, elem ) ||
+				elem.getRootNode( composed ) === elem.ownerDocument;
+		};
+	}
 var isHiddenWithinTree = function( elem, el ) {
 
 		// isHiddenWithinTree might be called from jQuery#filter function;
@@ -4420,37 +4732,15 @@ var isHiddenWithinTree = function( elem, el ) {
 			// Support: Firefox <=43 - 45
 			// Disconnected elements can have computed display: none, so first confirm that elem is
 			// in the document.
-			jQuery.contains( elem.ownerDocument, elem ) &&
+			isAttached( elem ) &&
 
 			jQuery.css( elem, "display" ) === "none";
 	};
 
-var swap = function( elem, options, callback, args ) {
-	var ret, name,
-		old = {};
-
-	// Remember the old values, and insert the new ones
-	for ( name in options ) {
-		old[ name ] = elem.style[ name ];
-		elem.style[ name ] = options[ name ];
-	}
-
-	ret = callback.apply( elem, args || [] );
-
-	// Revert the old values
-	for ( name in options ) {
-		elem.style[ name ] = old[ name ];
-	}
-
-	return ret;
-};
-
-
 
 
 function adjustCSS( elem, prop, valueParts, tween ) {
-	var adjusted,
-		scale = 1,
+	var adjusted, scale,
 		maxIterations = 20,
 		currentValue = tween ?
 			function() {
@@ -4463,35 +4753,39 @@ function adjustCSS( elem, prop, valueParts, tween ) {
 		unit = valueParts && valueParts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
 
 		// Starting value computation is required for potential unit mismatches
-		initialInUnit = ( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
+		initialInUnit = elem.nodeType &&
+			( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
 			rcssNum.exec( jQuery.css( elem, prop ) );
 
 	if ( initialInUnit && initialInUnit[ 3 ] !== unit ) {
 
+		// Support: Firefox <=54
+		// Halve the iteration target value to prevent interference from CSS upper bounds (gh-2144)
+		initial = initial / 2;
+
 		// Trust units reported by jQuery.css
 		unit = unit || initialInUnit[ 3 ];
-
-		// Make sure we update the tween properties later on
-		valueParts = valueParts || [];
 
 		// Iteratively approximate from a nonzero starting point
 		initialInUnit = +initial || 1;
 
-		do {
+		while ( maxIterations-- ) {
 
-			// If previous iteration zeroed out, double until we get *something*.
-			// Use string for doubling so we don't accidentally see scale as unchanged below
-			scale = scale || ".5";
-
-			// Adjust and apply
-			initialInUnit = initialInUnit / scale;
+			// Evaluate and update our best guess (doubling guesses that zero out).
+			// Finish if the scale equals or crosses 1 (making the old*new product non-positive).
 			jQuery.style( elem, prop, initialInUnit + unit );
+			if ( ( 1 - scale ) * ( 1 - ( scale = currentValue() / initial || 0.5 ) ) <= 0 ) {
+				maxIterations = 0;
+			}
+			initialInUnit = initialInUnit / scale;
 
-		// Update scale, tolerating zero or NaN from tween.cur()
-		// Break the loop if scale is unchanged or perfect, or if we've just had enough.
-		} while (
-			scale !== ( scale = currentValue() / initial ) && scale !== 1 && --maxIterations
-		);
+		}
+
+		initialInUnit = initialInUnit * 2;
+		jQuery.style( elem, prop, initialInUnit + unit );
+
+		// Make sure we update the tween properties later on
+		valueParts = valueParts || [];
 	}
 
 	if ( valueParts ) {
@@ -4523,7 +4817,7 @@ function getDefaultDisplay( elem ) {
 		return display;
 	}
 
-	temp = doc.body.appendChild( doc.createElement( nodeName ) ),
+	temp = doc.body.appendChild( doc.createElement( nodeName ) );
 	display = jQuery.css( temp, "display" );
 
 	temp.parentNode.removeChild( temp );
@@ -4607,17 +4901,46 @@ jQuery.fn.extend( {
 } );
 var rcheckableType = ( /^(?:checkbox|radio)$/i );
 
-var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]+)/i );
+var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]*)/i );
 
-var rscriptType = ( /^$|\/(?:java|ecma)script/i );
+var rscriptType = ( /^$|^module$|\/(?:java|ecma)script/i );
 
+
+
+( function() {
+	var fragment = document.createDocumentFragment(),
+		div = fragment.appendChild( document.createElement( "div" ) ),
+		input = document.createElement( "input" );
+
+	// Support: Android 4.0 - 4.3 only
+	// Check state lost if the name is set (#11217)
+	// Support: Windows Web Apps (WWA)
+	// `name` and `type` must use .setAttribute for WWA (#14901)
+	input.setAttribute( "type", "radio" );
+	input.setAttribute( "checked", "checked" );
+	input.setAttribute( "name", "t" );
+
+	div.appendChild( input );
+
+	// Support: Android <=4.1 only
+	// Older WebKit doesn't clone checked state correctly in fragments
+	support.checkClone = div.cloneNode( true ).cloneNode( true ).lastChild.checked;
+
+	// Support: IE <=11 only
+	// Make sure textarea (and checkbox) defaultValue is properly cloned
+	div.innerHTML = "<textarea>x</textarea>";
+	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
+
+	// Support: IE <=9 only
+	// IE <=9 replaces <option> tags with their contents when inserted outside of
+	// the select element.
+	div.innerHTML = "<option></option>";
+	support.option = !!div.lastChild;
+} )();
 
 
 // We have to close these tags to support XHTML (#13200)
 var wrapMap = {
-
-	// Support: IE <=9 only
-	option: [ 1, "<select multiple='multiple'>", "</select>" ],
 
 	// XHTML parsers do not magically insert elements in the
 	// same way that tag soup parsers do. So we cannot shorten
@@ -4630,26 +4953,36 @@ var wrapMap = {
 	_default: [ 0, "", "" ]
 };
 
-// Support: IE <=9 only
-wrapMap.optgroup = wrapMap.option;
-
 wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
 wrapMap.th = wrapMap.td;
+
+// Support: IE <=9 only
+if ( !support.option ) {
+	wrapMap.optgroup = wrapMap.option = [ 1, "<select multiple='multiple'>", "</select>" ];
+}
 
 
 function getAll( context, tag ) {
 
 	// Support: IE <=9 - 11 only
 	// Use typeof to avoid zero-argument method invocation on host objects (#15151)
-	var ret = typeof context.getElementsByTagName !== "undefined" ?
-			context.getElementsByTagName( tag || "*" ) :
-			typeof context.querySelectorAll !== "undefined" ?
-				context.querySelectorAll( tag || "*" ) :
-			[];
+	var ret;
 
-	return tag === undefined || tag && jQuery.nodeName( context, tag ) ?
-		jQuery.merge( [ context ], ret ) :
-		ret;
+	if ( typeof context.getElementsByTagName !== "undefined" ) {
+		ret = context.getElementsByTagName( tag || "*" );
+
+	} else if ( typeof context.querySelectorAll !== "undefined" ) {
+		ret = context.querySelectorAll( tag || "*" );
+
+	} else {
+		ret = [];
+	}
+
+	if ( tag === undefined || tag && nodeName( context, tag ) ) {
+		return jQuery.merge( [ context ], ret );
+	}
+
+	return ret;
 }
 
 
@@ -4671,7 +5004,7 @@ function setGlobalEval( elems, refElements ) {
 var rhtml = /<|&#?\w+;/;
 
 function buildFragment( elems, context, scripts, selection, ignored ) {
-	var elem, tmp, tag, wrap, contains, j,
+	var elem, tmp, tag, wrap, attached, j,
 		fragment = context.createDocumentFragment(),
 		nodes = [],
 		i = 0,
@@ -4683,7 +5016,7 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 		if ( elem || elem === 0 ) {
 
 			// Add nodes directly
-			if ( jQuery.type( elem ) === "object" ) {
+			if ( toType( elem ) === "object" ) {
 
 				// Support: Android <=4.0 only, PhantomJS 1 only
 				// push.apply(_, arraylike) throws on ancient WebKit
@@ -4735,13 +5068,13 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 			continue;
 		}
 
-		contains = jQuery.contains( elem.ownerDocument, elem );
+		attached = isAttached( elem );
 
 		// Append to fragment
 		tmp = getAll( fragment.appendChild( elem ), "script" );
 
 		// Preserve script evaluation history
-		if ( contains ) {
+		if ( attached ) {
 			setGlobalEval( tmp );
 		}
 
@@ -4760,38 +5093,7 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 }
 
 
-( function() {
-	var fragment = document.createDocumentFragment(),
-		div = fragment.appendChild( document.createElement( "div" ) ),
-		input = document.createElement( "input" );
-
-	// Support: Android 4.0 - 4.3 only
-	// Check state lost if the name is set (#11217)
-	// Support: Windows Web Apps (WWA)
-	// `name` and `type` must use .setAttribute for WWA (#14901)
-	input.setAttribute( "type", "radio" );
-	input.setAttribute( "checked", "checked" );
-	input.setAttribute( "name", "t" );
-
-	div.appendChild( input );
-
-	// Support: Android <=4.1 only
-	// Older WebKit doesn't clone checked state correctly in fragments
-	support.checkClone = div.cloneNode( true ).cloneNode( true ).lastChild.checked;
-
-	// Support: IE <=11 only
-	// Make sure textarea (and checkbox) defaultValue is properly cloned
-	div.innerHTML = "<textarea>x</textarea>";
-	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
-} )();
-var documentElement = document.documentElement;
-
-
-
-var
-	rkeyEvent = /^key/,
-	rmouseEvent = /^(?:mouse|pointer|contextmenu|drag|drop)|click/,
-	rtypenamespace = /^([^.]*)(?:\.(.+)|)/;
+var rtypenamespace = /^([^.]*)(?:\.(.+)|)/;
 
 function returnTrue() {
 	return true;
@@ -4801,8 +5103,19 @@ function returnFalse() {
 	return false;
 }
 
+// Support: IE <=9 - 11+
+// focus() and blur() are asynchronous, except when they are no-op.
+// So expect focus to be synchronous when the element is already active,
+// and blur to be synchronous when the element is not already active.
+// (focus and blur are always synchronous in other supported browsers,
+// this just defines when we can count on it).
+function expectSync( elem, type ) {
+	return ( elem === safeActiveElement() ) === ( type === "focus" );
+}
+
 // Support: IE <=9 only
-// See #13393 for more info
+// Accessing document.activeElement can throw unexpectedly
+// https://bugs.jquery.com/ticket/13393
 function safeActiveElement() {
 	try {
 		return document.activeElement;
@@ -4885,8 +5198,8 @@ jQuery.event = {
 			special, handlers, type, namespaces, origType,
 			elemData = dataPriv.get( elem );
 
-		// Don't attach events to noData or text/comment nodes (but allow plain objects)
-		if ( !elemData ) {
+		// Only attach events to objects that accept data
+		if ( !acceptData( elem ) ) {
 			return;
 		}
 
@@ -4910,7 +5223,7 @@ jQuery.event = {
 
 		// Init the element's event structure and main handler, if this is the first
 		if ( !( events = elemData.events ) ) {
-			events = elemData.events = {};
+			events = elemData.events = Object.create( null );
 		}
 		if ( !( eventHandle = elemData.handle ) ) {
 			eventHandle = elemData.handle = function( e ) {
@@ -4923,7 +5236,7 @@ jQuery.event = {
 		}
 
 		// Handle multiple events separated by a space
-		types = ( types || "" ).match( rnotwhite ) || [ "" ];
+		types = ( types || "" ).match( rnothtmlwhite ) || [ "" ];
 		t = types.length;
 		while ( t-- ) {
 			tmp = rtypenamespace.exec( types[ t ] ) || [];
@@ -5005,7 +5318,7 @@ jQuery.event = {
 		}
 
 		// Once for each type.namespace in types; type may be omitted
-		types = ( types || "" ).match( rnotwhite ) || [ "" ];
+		types = ( types || "" ).match( rnothtmlwhite ) || [ "" ];
 		t = types.length;
 		while ( t-- ) {
 			tmp = rtypenamespace.exec( types[ t ] ) || [];
@@ -5068,12 +5381,15 @@ jQuery.event = {
 
 	dispatch: function( nativeEvent ) {
 
-		// Make a writable jQuery.Event from the native event object
-		var event = jQuery.event.fix( nativeEvent );
-
 		var i, j, ret, matched, handleObj, handlerQueue,
 			args = new Array( arguments.length ),
-			handlers = ( dataPriv.get( this, "events" ) || {} )[ event.type ] || [],
+
+			// Make a writable jQuery.Event from the native event object
+			event = jQuery.event.fix( nativeEvent ),
+
+			handlers = (
+				dataPriv.get( this, "events" ) || Object.create( null )
+			)[ event.type ] || [],
 			special = jQuery.event.special[ event.type ] || {};
 
 		// Use the fix-ed jQuery.Event rather than the (read-only) native event
@@ -5102,9 +5418,10 @@ jQuery.event = {
 			while ( ( handleObj = matched.handlers[ j++ ] ) &&
 				!event.isImmediatePropagationStopped() ) {
 
-				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
-				// a subset or equal to those in the bound event (both can have no namespace).
-				if ( !event.rnamespace || event.rnamespace.test( handleObj.namespace ) ) {
+				// If the event is namespaced, then each handler is only invoked if it is
+				// specially universal or its namespaces are a superset of the event's.
+				if ( !event.rnamespace || handleObj.namespace === false ||
+					event.rnamespace.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
 					event.data = handleObj.data;
@@ -5131,51 +5448,58 @@ jQuery.event = {
 	},
 
 	handlers: function( event, handlers ) {
-		var i, matches, sel, handleObj,
+		var i, handleObj, sel, matchedHandlers, matchedSelectors,
 			handlerQueue = [],
 			delegateCount = handlers.delegateCount,
 			cur = event.target;
 
-		// Support: IE <=9
 		// Find delegate handlers
-		// Black-hole SVG <use> instance trees (#13180)
-		//
-		// Support: Firefox <=42
-		// Avoid non-left-click in FF but don't block IE radio events (#3861, gh-2343)
-		if ( delegateCount && cur.nodeType &&
-			( event.type !== "click" || isNaN( event.button ) || event.button < 1 ) ) {
+		if ( delegateCount &&
+
+			// Support: IE <=9
+			// Black-hole SVG <use> instance trees (trac-13180)
+			cur.nodeType &&
+
+			// Support: Firefox <=42
+			// Suppress spec-violating clicks indicating a non-primary pointer button (trac-3861)
+			// https://www.w3.org/TR/DOM-Level-3-Events/#event-type-click
+			// Support: IE 11 only
+			// ...but not arrow key "clicks" of radio inputs, which can have `button` -1 (gh-2343)
+			!( event.type === "click" && event.button >= 1 ) ) {
 
 			for ( ; cur !== this; cur = cur.parentNode || this ) {
 
 				// Don't check non-elements (#13208)
 				// Don't process clicks on disabled elements (#6911, #8165, #11382, #11764)
-				if ( cur.nodeType === 1 && ( cur.disabled !== true || event.type !== "click" ) ) {
-					matches = [];
+				if ( cur.nodeType === 1 && !( event.type === "click" && cur.disabled === true ) ) {
+					matchedHandlers = [];
+					matchedSelectors = {};
 					for ( i = 0; i < delegateCount; i++ ) {
 						handleObj = handlers[ i ];
 
 						// Don't conflict with Object.prototype properties (#13203)
 						sel = handleObj.selector + " ";
 
-						if ( matches[ sel ] === undefined ) {
-							matches[ sel ] = handleObj.needsContext ?
+						if ( matchedSelectors[ sel ] === undefined ) {
+							matchedSelectors[ sel ] = handleObj.needsContext ?
 								jQuery( sel, this ).index( cur ) > -1 :
 								jQuery.find( sel, this, null, [ cur ] ).length;
 						}
-						if ( matches[ sel ] ) {
-							matches.push( handleObj );
+						if ( matchedSelectors[ sel ] ) {
+							matchedHandlers.push( handleObj );
 						}
 					}
-					if ( matches.length ) {
-						handlerQueue.push( { elem: cur, handlers: matches } );
+					if ( matchedHandlers.length ) {
+						handlerQueue.push( { elem: cur, handlers: matchedHandlers } );
 					}
 				}
 			}
 		}
 
 		// Add the remaining (directly-bound) handlers
+		cur = this;
 		if ( delegateCount < handlers.length ) {
-			handlerQueue.push( { elem: this, handlers: handlers.slice( delegateCount ) } );
+			handlerQueue.push( { elem: cur, handlers: handlers.slice( delegateCount ) } );
 		}
 
 		return handlerQueue;
@@ -5186,15 +5510,15 @@ jQuery.event = {
 			enumerable: true,
 			configurable: true,
 
-			get: jQuery.isFunction( hook ) ?
+			get: isFunction( hook ) ?
 				function() {
 					if ( this.originalEvent ) {
-							return hook( this.originalEvent );
+						return hook( this.originalEvent );
 					}
 				} :
 				function() {
 					if ( this.originalEvent ) {
-							return this.originalEvent[ name ];
+						return this.originalEvent[ name ];
 					}
 				},
 
@@ -5221,39 +5545,51 @@ jQuery.event = {
 			// Prevent triggered image.load events from bubbling to window.load
 			noBubble: true
 		},
-		focus: {
-
-			// Fire native event if possible so blur/focus sequence is correct
-			trigger: function() {
-				if ( this !== safeActiveElement() && this.focus ) {
-					this.focus();
-					return false;
-				}
-			},
-			delegateType: "focusin"
-		},
-		blur: {
-			trigger: function() {
-				if ( this === safeActiveElement() && this.blur ) {
-					this.blur();
-					return false;
-				}
-			},
-			delegateType: "focusout"
-		},
 		click: {
 
-			// For checkbox, fire native event so checked state will be right
-			trigger: function() {
-				if ( this.type === "checkbox" && this.click && jQuery.nodeName( this, "input" ) ) {
-					this.click();
-					return false;
+			// Utilize native event to ensure correct state for checkable inputs
+			setup: function( data ) {
+
+				// For mutual compressibility with _default, replace `this` access with a local var.
+				// `|| data` is dead code meant only to preserve the variable through minification.
+				var el = this || data;
+
+				// Claim the first handler
+				if ( rcheckableType.test( el.type ) &&
+					el.click && nodeName( el, "input" ) ) {
+
+					// dataPriv.set( el, "click", ... )
+					leverageNative( el, "click", returnTrue );
 				}
+
+				// Return false to allow normal processing in the caller
+				return false;
+			},
+			trigger: function( data ) {
+
+				// For mutual compressibility with _default, replace `this` access with a local var.
+				// `|| data` is dead code meant only to preserve the variable through minification.
+				var el = this || data;
+
+				// Force setup before triggering a click
+				if ( rcheckableType.test( el.type ) &&
+					el.click && nodeName( el, "input" ) ) {
+
+					leverageNative( el, "click" );
+				}
+
+				// Return non-false to allow normal event-path propagation
+				return true;
 			},
 
-			// For cross-browser consistency, don't fire native .click() on links
+			// For cross-browser consistency, suppress native .click() on links
+			// Also prevent it if we're currently inside a leveraged native-event stack
 			_default: function( event ) {
-				return jQuery.nodeName( event.target, "a" );
+				var target = event.target;
+				return rcheckableType.test( target.type ) &&
+					target.click && nodeName( target, "input" ) &&
+					dataPriv.get( target, "click" ) ||
+					nodeName( target, "a" );
 			}
 		},
 
@@ -5269,6 +5605,99 @@ jQuery.event = {
 		}
 	}
 };
+
+// Ensure the presence of an event listener that handles manually-triggered
+// synthetic events by interrupting progress until reinvoked in response to
+// *native* events that it fires directly, ensuring that state changes have
+// already occurred before other listeners are invoked.
+function leverageNative( el, type, expectSync ) {
+
+	// Missing expectSync indicates a trigger call, which must force setup through jQuery.event.add
+	if ( !expectSync ) {
+		if ( dataPriv.get( el, type ) === undefined ) {
+			jQuery.event.add( el, type, returnTrue );
+		}
+		return;
+	}
+
+	// Register the controller as a special universal handler for all event namespaces
+	dataPriv.set( el, type, false );
+	jQuery.event.add( el, type, {
+		namespace: false,
+		handler: function( event ) {
+			var notAsync, result,
+				saved = dataPriv.get( this, type );
+
+			if ( ( event.isTrigger & 1 ) && this[ type ] ) {
+
+				// Interrupt processing of the outer synthetic .trigger()ed event
+				// Saved data should be false in such cases, but might be a leftover capture object
+				// from an async native handler (gh-4350)
+				if ( !saved.length ) {
+
+					// Store arguments for use when handling the inner native event
+					// There will always be at least one argument (an event object), so this array
+					// will not be confused with a leftover capture object.
+					saved = slice.call( arguments );
+					dataPriv.set( this, type, saved );
+
+					// Trigger the native event and capture its result
+					// Support: IE <=9 - 11+
+					// focus() and blur() are asynchronous
+					notAsync = expectSync( this, type );
+					this[ type ]();
+					result = dataPriv.get( this, type );
+					if ( saved !== result || notAsync ) {
+						dataPriv.set( this, type, false );
+					} else {
+						result = {};
+					}
+					if ( saved !== result ) {
+
+						// Cancel the outer synthetic event
+						event.stopImmediatePropagation();
+						event.preventDefault();
+
+						// Support: Chrome 86+
+						// In Chrome, if an element having a focusout handler is blurred by
+						// clicking outside of it, it invokes the handler synchronously. If
+						// that handler calls `.remove()` on the element, the data is cleared,
+						// leaving `result` undefined. We need to guard against this.
+						return result && result.value;
+					}
+
+				// If this is an inner synthetic event for an event with a bubbling surrogate
+				// (focus or blur), assume that the surrogate already propagated from triggering the
+				// native event and prevent that from happening again here.
+				// This technically gets the ordering wrong w.r.t. to `.trigger()` (in which the
+				// bubbling surrogate propagates *after* the non-bubbling base), but that seems
+				// less bad than duplication.
+				} else if ( ( jQuery.event.special[ type ] || {} ).delegateType ) {
+					event.stopPropagation();
+				}
+
+			// If this is a native event triggered above, everything is now in order
+			// Fire an inner synthetic event with the original arguments
+			} else if ( saved.length ) {
+
+				// ...and capture the result
+				dataPriv.set( this, type, {
+					value: jQuery.event.trigger(
+
+						// Support: IE <=9 - 11+
+						// Extend with the prototype to reset the above stopImmediatePropagation()
+						jQuery.extend( saved[ 0 ], jQuery.Event.prototype ),
+						saved.slice( 1 ),
+						this
+					)
+				} );
+
+				// Abort handling of the native event
+				event.stopImmediatePropagation();
+			}
+		}
+	} );
+}
 
 jQuery.removeEvent = function( elem, type, handle ) {
 
@@ -5321,7 +5750,7 @@ jQuery.Event = function( src, props ) {
 	}
 
 	// Create a timestamp if incoming event doesn't have one
-	this.timeStamp = src && src.timeStamp || jQuery.now();
+	this.timeStamp = src && src.timeStamp || Date.now();
 
 	// Mark it as fixed
 	this[ jQuery.expando ] = true;
@@ -5382,6 +5811,7 @@ jQuery.each( {
 	shiftKey: true,
 	view: true,
 	"char": true,
+	code: true,
 	charCode: true,
 	key: true,
 	keyCode: true,
@@ -5398,23 +5828,41 @@ jQuery.each( {
 	targetTouches: true,
 	toElement: true,
 	touches: true,
-
-	which: function( event ) {
-		var button = event.button;
-
-		// Add which for key events
-		if ( event.which == null && rkeyEvent.test( event.type ) ) {
-			return event.charCode != null ? event.charCode : event.keyCode;
-		}
-
-		// Add which for click: 1 === left; 2 === middle; 3 === right
-		if ( !event.which && button !== undefined && rmouseEvent.test( event.type ) ) {
-			return ( button & 1 ? 1 : ( button & 2 ? 3 : ( button & 4 ? 2 : 0 ) ) );
-		}
-
-		return event.which;
-	}
+	which: true
 }, jQuery.event.addProp );
+
+jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateType ) {
+	jQuery.event.special[ type ] = {
+
+		// Utilize native event if possible so blur/focus sequence is correct
+		setup: function() {
+
+			// Claim the first handler
+			// dataPriv.set( this, "focus", ... )
+			// dataPriv.set( this, "blur", ... )
+			leverageNative( this, type, expectSync );
+
+			// Return false to allow normal processing in the caller
+			return false;
+		},
+		trigger: function() {
+
+			// Force setup before trigger
+			leverageNative( this, type );
+
+			// Return non-false to allow normal event-path propagation
+			return true;
+		},
+
+		// Suppress native focus or blur as it's already being fired
+		// in leverageNative.
+		_default: function() {
+			return true;
+		},
+
+		delegateType: delegateType
+	};
+} );
 
 // Create mouseenter/leave events using mouseover/out and event-time checks
 // so that event delegation works in jQuery.
@@ -5501,28 +5949,21 @@ jQuery.fn.extend( {
 
 var
 
-	/* eslint-disable max-len */
-
-	// See https://github.com/eslint/eslint/issues/3229
-	rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([a-z][^\/\0>\x20\t\r\n\f]*)[^>]*)\/>/gi,
-
-	/* eslint-enable */
-
-	// Support: IE <=10 - 11, Edge 12 - 13
+	// Support: IE <=10 - 11, Edge 12 - 13 only
 	// In IE/Edge using regex groups here causes severe slowdowns.
 	// See https://connect.microsoft.com/IE/feedback/details/1736512/
 	rnoInnerhtml = /<script|<style|<link/i,
 
 	// checked="checked" or checked
 	rchecked = /checked\s*(?:[^=]|=\s*.checked.)/i,
-	rscriptTypeMasked = /^true\/(.*)/,
 	rcleanScript = /^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g;
 
+// Prefer a tbody over its parent table for containing new rows
 function manipulationTarget( elem, content ) {
-	if ( jQuery.nodeName( elem, "table" ) &&
-		jQuery.nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
+	if ( nodeName( elem, "table" ) &&
+		nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
 
-		return elem.getElementsByTagName( "tbody" )[ 0 ] || elem;
+		return jQuery( elem ).children( "tbody" )[ 0 ] || elem;
 	}
 
 	return elem;
@@ -5534,10 +5975,8 @@ function disableScript( elem ) {
 	return elem;
 }
 function restoreScript( elem ) {
-	var match = rscriptTypeMasked.exec( elem.type );
-
-	if ( match ) {
-		elem.type = match[ 1 ];
+	if ( ( elem.type || "" ).slice( 0, 5 ) === "true/" ) {
+		elem.type = elem.type.slice( 5 );
 	} else {
 		elem.removeAttribute( "type" );
 	}
@@ -5546,7 +5985,7 @@ function restoreScript( elem ) {
 }
 
 function cloneCopyEvent( src, dest ) {
-	var i, l, type, pdataOld, pdataCur, udataOld, udataCur, events;
+	var i, l, type, pdataOld, udataOld, udataCur, events;
 
 	if ( dest.nodeType !== 1 ) {
 		return;
@@ -5554,13 +5993,11 @@ function cloneCopyEvent( src, dest ) {
 
 	// 1. Copy private data: events, handlers, etc.
 	if ( dataPriv.hasData( src ) ) {
-		pdataOld = dataPriv.access( src );
-		pdataCur = dataPriv.set( dest, pdataOld );
+		pdataOld = dataPriv.get( src );
 		events = pdataOld.events;
 
 		if ( events ) {
-			delete pdataCur.handle;
-			pdataCur.events = {};
+			dataPriv.remove( dest, "handle events" );
 
 			for ( type in events ) {
 				for ( i = 0, l = events[ type ].length; i < l; i++ ) {
@@ -5596,22 +6033,22 @@ function fixInput( src, dest ) {
 function domManip( collection, args, callback, ignored ) {
 
 	// Flatten any nested arrays
-	args = concat.apply( [], args );
+	args = flat( args );
 
 	var fragment, first, scripts, hasScripts, node, doc,
 		i = 0,
 		l = collection.length,
 		iNoClone = l - 1,
 		value = args[ 0 ],
-		isFunction = jQuery.isFunction( value );
+		valueIsFunction = isFunction( value );
 
 	// We can't cloneNode fragments that contain checked, in WebKit
-	if ( isFunction ||
+	if ( valueIsFunction ||
 			( l > 1 && typeof value === "string" &&
 				!support.checkClone && rchecked.test( value ) ) ) {
 		return collection.each( function( index ) {
 			var self = collection.eq( index );
-			if ( isFunction ) {
+			if ( valueIsFunction ) {
 				args[ 0 ] = value.call( this, index, self.html() );
 			}
 			domManip( self, args, callback, ignored );
@@ -5665,14 +6102,16 @@ function domManip( collection, args, callback, ignored ) {
 						!dataPriv.access( node, "globalEval" ) &&
 						jQuery.contains( doc, node ) ) {
 
-						if ( node.src ) {
+						if ( node.src && ( node.type || "" ).toLowerCase()  !== "module" ) {
 
 							// Optional AJAX dependency, but won't run scripts if not present
-							if ( jQuery._evalUrl ) {
-								jQuery._evalUrl( node.src );
+							if ( jQuery._evalUrl && !node.noModule ) {
+								jQuery._evalUrl( node.src, {
+									nonce: node.nonce || node.getAttribute( "nonce" )
+								}, doc );
 							}
 						} else {
-							DOMEval( node.textContent.replace( rcleanScript, "" ), doc );
+							DOMEval( node.textContent.replace( rcleanScript, "" ), node, doc );
 						}
 					}
 				}
@@ -5694,7 +6133,7 @@ function remove( elem, selector, keepData ) {
 		}
 
 		if ( node.parentNode ) {
-			if ( keepData && jQuery.contains( node.ownerDocument, node ) ) {
+			if ( keepData && isAttached( node ) ) {
 				setGlobalEval( getAll( node, "script" ) );
 			}
 			node.parentNode.removeChild( node );
@@ -5706,13 +6145,13 @@ function remove( elem, selector, keepData ) {
 
 jQuery.extend( {
 	htmlPrefilter: function( html ) {
-		return html.replace( rxhtmlTag, "<$1></$2>" );
+		return html;
 	},
 
 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
 		var i, l, srcElements, destElements,
 			clone = elem.cloneNode( true ),
-			inPage = jQuery.contains( elem.ownerDocument, elem );
+			inPage = isAttached( elem );
 
 		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
@@ -5952,8 +6391,6 @@ jQuery.each( {
 		return this.pushStack( ret );
 	};
 } );
-var rmargin = ( /^margin/ );
-
 var rnumnonpx = new RegExp( "^(" + pnum + ")(?!px)[a-z%]+$", "i" );
 
 var getStyles = function( elem ) {
@@ -5970,6 +6407,29 @@ var getStyles = function( elem ) {
 		return view.getComputedStyle( elem );
 	};
 
+var swap = function( elem, options, callback ) {
+	var ret, name,
+		old = {};
+
+	// Remember the old values, and insert the new ones
+	for ( name in options ) {
+		old[ name ] = elem.style[ name ];
+		elem.style[ name ] = options[ name ];
+	}
+
+	ret = callback.call( elem );
+
+	// Revert the old values
+	for ( name in options ) {
+		elem.style[ name ] = old[ name ];
+	}
+
+	return ret;
+};
+
+
+var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
+
 
 
 ( function() {
@@ -5983,25 +6443,35 @@ var getStyles = function( elem ) {
 			return;
 		}
 
+		container.style.cssText = "position:absolute;left:-11111px;width:60px;" +
+			"margin-top:1px;padding:0;border:0";
 		div.style.cssText =
-			"box-sizing:border-box;" +
-			"position:relative;display:block;" +
+			"position:relative;display:block;box-sizing:border-box;overflow:scroll;" +
 			"margin:auto;border:1px;padding:1px;" +
-			"top:1%;width:50%";
-		div.innerHTML = "";
-		documentElement.appendChild( container );
+			"width:60%;top:1%";
+		documentElement.appendChild( container ).appendChild( div );
 
 		var divStyle = window.getComputedStyle( div );
 		pixelPositionVal = divStyle.top !== "1%";
 
 		// Support: Android 4.0 - 4.3 only, Firefox <=3 - 44
-		reliableMarginLeftVal = divStyle.marginLeft === "2px";
-		boxSizingReliableVal = divStyle.width === "4px";
+		reliableMarginLeftVal = roundPixelMeasures( divStyle.marginLeft ) === 12;
 
-		// Support: Android 4.0 - 4.3 only
+		// Support: Android 4.0 - 4.3 only, Safari <=9.1 - 10.1, iOS <=7.0 - 9.3
 		// Some styles come back with percentage values, even though they shouldn't
-		div.style.marginRight = "50%";
-		pixelMarginRightVal = divStyle.marginRight === "4px";
+		div.style.right = "60%";
+		pixelBoxStylesVal = roundPixelMeasures( divStyle.right ) === 36;
+
+		// Support: IE 9 - 11 only
+		// Detect misreporting of content dimensions for box-sizing:border-box elements
+		boxSizingReliableVal = roundPixelMeasures( divStyle.width ) === 36;
+
+		// Support: IE 9 only
+		// Detect overflow:scroll screwiness (gh-3699)
+		// Support: Chrome <=64
+		// Don't get tricked when zoom affects offsetWidth (gh-4029)
+		div.style.position = "absolute";
+		scrollboxSizeVal = roundPixelMeasures( div.offsetWidth / 3 ) === 12;
 
 		documentElement.removeChild( container );
 
@@ -6010,7 +6480,12 @@ var getStyles = function( elem ) {
 		div = null;
 	}
 
-	var pixelPositionVal, boxSizingReliableVal, pixelMarginRightVal, reliableMarginLeftVal,
+	function roundPixelMeasures( measure ) {
+		return Math.round( parseFloat( measure ) );
+	}
+
+	var pixelPositionVal, boxSizingReliableVal, scrollboxSizeVal, pixelBoxStylesVal,
+		reliableTrDimensionsVal, reliableMarginLeftVal,
 		container = document.createElement( "div" ),
 		div = document.createElement( "div" );
 
@@ -6025,26 +6500,74 @@ var getStyles = function( elem ) {
 	div.cloneNode( true ).style.backgroundClip = "";
 	support.clearCloneStyle = div.style.backgroundClip === "content-box";
 
-	container.style.cssText = "border:0;width:8px;height:0;top:0;left:-9999px;" +
-		"padding:0;margin-top:1px;position:absolute";
-	container.appendChild( div );
-
 	jQuery.extend( support, {
-		pixelPosition: function() {
-			computeStyleTests();
-			return pixelPositionVal;
-		},
 		boxSizingReliable: function() {
 			computeStyleTests();
 			return boxSizingReliableVal;
 		},
-		pixelMarginRight: function() {
+		pixelBoxStyles: function() {
 			computeStyleTests();
-			return pixelMarginRightVal;
+			return pixelBoxStylesVal;
+		},
+		pixelPosition: function() {
+			computeStyleTests();
+			return pixelPositionVal;
 		},
 		reliableMarginLeft: function() {
 			computeStyleTests();
 			return reliableMarginLeftVal;
+		},
+		scrollboxSize: function() {
+			computeStyleTests();
+			return scrollboxSizeVal;
+		},
+
+		// Support: IE 9 - 11+, Edge 15 - 18+
+		// IE/Edge misreport `getComputedStyle` of table rows with width/height
+		// set in CSS while `offset*` properties report correct values.
+		// Behavior in IE 9 is more subtle than in newer versions & it passes
+		// some versions of this test; make sure not to make it pass there!
+		//
+		// Support: Firefox 70+
+		// Only Firefox includes border widths
+		// in computed dimensions. (gh-4529)
+		reliableTrDimensions: function() {
+			var table, tr, trChild, trStyle;
+			if ( reliableTrDimensionsVal == null ) {
+				table = document.createElement( "table" );
+				tr = document.createElement( "tr" );
+				trChild = document.createElement( "div" );
+
+				table.style.cssText = "position:absolute;left:-11111px;border-collapse:separate";
+				tr.style.cssText = "border:1px solid";
+
+				// Support: Chrome 86+
+				// Height set through cssText does not get applied.
+				// Computed height then comes back as 0.
+				tr.style.height = "1px";
+				trChild.style.height = "9px";
+
+				// Support: Android 8 Chrome 86+
+				// In our bodyBackground.html iframe,
+				// display for all div elements is set to "inline",
+				// which causes a problem only in Android 8 Chrome 86.
+				// Ensuring the div is display: block
+				// gets around this issue.
+				trChild.style.display = "block";
+
+				documentElement
+					.appendChild( table )
+					.appendChild( tr )
+					.appendChild( trChild );
+
+				trStyle = window.getComputedStyle( tr );
+				reliableTrDimensionsVal = ( parseInt( trStyle.height, 10 ) +
+					parseInt( trStyle.borderTopWidth, 10 ) +
+					parseInt( trStyle.borderBottomWidth, 10 ) ) === tr.offsetHeight;
+
+				documentElement.removeChild( table );
+			}
+			return reliableTrDimensionsVal;
 		}
 	} );
 } )();
@@ -6052,16 +6575,22 @@ var getStyles = function( elem ) {
 
 function curCSS( elem, name, computed ) {
 	var width, minWidth, maxWidth, ret,
+
+		// Support: Firefox 51+
+		// Retrieving style before computed somehow
+		// fixes an issue with getting wrong values
+		// on detached elements
 		style = elem.style;
 
 	computed = computed || getStyles( elem );
 
-	// Support: IE <=9 only
-	// getPropertyValue is only needed for .css('filter') (#12537)
+	// getPropertyValue is needed for:
+	//   .css('filter') (IE 9 only, #12537)
+	//   .css('--customProperty) (#3144)
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 
-		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
+		if ( ret === "" && !isAttached( elem ) ) {
 			ret = jQuery.style( elem, name );
 		}
 
@@ -6070,7 +6599,7 @@ function curCSS( elem, name, computed ) {
 		// but width seems to be reliably pixels.
 		// This is against the CSSOM draft spec:
 		// https://drafts.csswg.org/cssom/#resolved-values
-		if ( !support.pixelMarginRight() && rnumnonpx.test( ret ) && rmargin.test( name ) ) {
+		if ( !support.pixelBoxStyles() && rnumnonpx.test( ret ) && rboxStyle.test( name ) ) {
 
 			// Remember the original values
 			width = style.width;
@@ -6117,28 +6646,12 @@ function addGetHookIf( conditionFn, hookFn ) {
 }
 
 
-var
+var cssPrefixes = [ "Webkit", "Moz", "ms" ],
+	emptyStyle = document.createElement( "div" ).style,
+	vendorProps = {};
 
-	// Swappable if display is none or starts with table
-	// except "table", "table-cell", or "table-caption"
-	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
-	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
-	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
-	cssNormalTransform = {
-		letterSpacing: "0",
-		fontWeight: "400"
-	},
-
-	cssPrefixes = [ "Webkit", "Moz", "ms" ],
-	emptyStyle = document.createElement( "div" ).style;
-
-// Return a css property mapped to a potentially vendor prefixed property
+// Return a vendor-prefixed property or undefined
 function vendorPropName( name ) {
-
-	// Shortcut for names that are not vendor prefixed
-	if ( name in emptyStyle ) {
-		return name;
-	}
 
 	// Check for vendor prefixed names
 	var capName = name[ 0 ].toUpperCase() + name.slice( 1 ),
@@ -6152,7 +6665,34 @@ function vendorPropName( name ) {
 	}
 }
 
-function setPositiveNumber( elem, value, subtract ) {
+// Return a potentially-mapped jQuery.cssProps or vendor prefixed property
+function finalPropName( name ) {
+	var final = jQuery.cssProps[ name ] || vendorProps[ name ];
+
+	if ( final ) {
+		return final;
+	}
+	if ( name in emptyStyle ) {
+		return name;
+	}
+	return vendorProps[ name ] = vendorPropName( name ) || name;
+}
+
+
+var
+
+	// Swappable if display is none or starts with table
+	// except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
+	rcustomProp = /^--/,
+	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
+	cssNormalTransform = {
+		letterSpacing: "0",
+		fontWeight: "400"
+	};
+
+function setPositiveNumber( _elem, value, subtract ) {
 
 	// Any relative (+/-) values have already been
 	// normalized at this point
@@ -6164,98 +6704,146 @@ function setPositiveNumber( elem, value, subtract ) {
 		value;
 }
 
-function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
-	var i = extra === ( isBorderBox ? "border" : "content" ) ?
+function boxModelAdjustment( elem, dimension, box, isBorderBox, styles, computedVal ) {
+	var i = dimension === "width" ? 1 : 0,
+		extra = 0,
+		delta = 0;
 
-		// If we already have the right measurement, avoid augmentation
-		4 :
-
-		// Otherwise initialize for horizontal or vertical properties
-		name === "width" ? 1 : 0,
-
-		val = 0;
+	// Adjustment may not be necessary
+	if ( box === ( isBorderBox ? "border" : "content" ) ) {
+		return 0;
+	}
 
 	for ( ; i < 4; i += 2 ) {
 
-		// Both box models exclude margin, so add it if we want it
-		if ( extra === "margin" ) {
-			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
+		// Both box models exclude margin
+		if ( box === "margin" ) {
+			delta += jQuery.css( elem, box + cssExpand[ i ], true, styles );
 		}
 
-		if ( isBorderBox ) {
+		// If we get here with a content-box, we're seeking "padding" or "border" or "margin"
+		if ( !isBorderBox ) {
 
-			// border-box includes padding, so remove it if we want content
-			if ( extra === "content" ) {
-				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			// Add padding
+			delta += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+
+			// For "border" or "margin", add border
+			if ( box !== "padding" ) {
+				delta += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
+
+			// But still keep track of it otherwise
+			} else {
+				extra += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 
-			// At this point, extra isn't border nor margin, so remove border
-			if ( extra !== "margin" ) {
-				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
-			}
+		// If we get here with a border-box (content + padding + border), we're seeking "content" or
+		// "padding" or "margin"
 		} else {
 
-			// At this point, extra isn't content, so add padding
-			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			// For "content", subtract padding
+			if ( box === "content" ) {
+				delta -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			}
 
-			// At this point, extra isn't content nor padding, so add border
-			if ( extra !== "padding" ) {
-				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
+			// For "content" or "padding", subtract border
+			if ( box !== "margin" ) {
+				delta -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 		}
 	}
 
-	return val;
+	// Account for positive content-box scroll gutter when requested by providing computedVal
+	if ( !isBorderBox && computedVal >= 0 ) {
+
+		// offsetWidth/offsetHeight is a rounded sum of content, padding, scroll gutter, and border
+		// Assuming integer scroll gutter, subtract the rest and round down
+		delta += Math.max( 0, Math.ceil(
+			elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ] -
+			computedVal -
+			delta -
+			extra -
+			0.5
+
+		// If offsetWidth/offsetHeight is unknown, then we can't determine content-box scroll gutter
+		// Use an explicit zero to avoid NaN (gh-3964)
+		) ) || 0;
+	}
+
+	return delta;
 }
 
-function getWidthOrHeight( elem, name, extra ) {
+function getWidthOrHeight( elem, dimension, extra ) {
 
-	// Start with offset property, which is equivalent to the border-box value
-	var val,
-		valueIsBorderBox = true,
-		styles = getStyles( elem ),
-		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
+	// Start with computed style
+	var styles = getStyles( elem ),
 
-	// Support: IE <=11 only
-	// Running getBoundingClientRect on a disconnected node
-	// in IE throws an error.
-	if ( elem.getClientRects().length ) {
-		val = elem.getBoundingClientRect()[ name ];
-	}
+		// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-4322).
+		// Fake content-box until we know it's needed to know the true value.
+		boxSizingNeeded = !support.boxSizingReliable() || extra,
+		isBorderBox = boxSizingNeeded &&
+			jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+		valueIsBorderBox = isBorderBox,
 
-	// Some non-html elements return undefined for offsetWidth, so check for null/undefined
-	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
-	// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
-	if ( val <= 0 || val == null ) {
+		val = curCSS( elem, dimension, styles ),
+		offsetProp = "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 );
 
-		// Fall back to computed then uncomputed css if necessary
-		val = curCSS( elem, name, styles );
-		if ( val < 0 || val == null ) {
-			val = elem.style[ name ];
-		}
-
-		// Computed unit is not pixels. Stop here and return.
-		if ( rnumnonpx.test( val ) ) {
+	// Support: Firefox <=54
+	// Return a confounding non-pixel value or feign ignorance, as appropriate.
+	if ( rnumnonpx.test( val ) ) {
+		if ( !extra ) {
 			return val;
 		}
-
-		// Check for style in case a browser which returns unreliable values
-		// for getComputedStyle silently falls back to the reliable elem.style
-		valueIsBorderBox = isBorderBox &&
-			( support.boxSizingReliable() || val === elem.style[ name ] );
-
-		// Normalize "", auto, and prepare for extra
-		val = parseFloat( val ) || 0;
+		val = "auto";
 	}
 
-	// Use the active box-sizing model to add/subtract irrelevant styles
+
+	// Support: IE 9 - 11 only
+	// Use offsetWidth/offsetHeight for when box sizing is unreliable.
+	// In those cases, the computed value can be trusted to be border-box.
+	if ( ( !support.boxSizingReliable() && isBorderBox ||
+
+		// Support: IE 10 - 11+, Edge 15 - 18+
+		// IE/Edge misreport `getComputedStyle` of table rows with width/height
+		// set in CSS while `offset*` properties report correct values.
+		// Interestingly, in some cases IE 9 doesn't suffer from this issue.
+		!support.reliableTrDimensions() && nodeName( elem, "tr" ) ||
+
+		// Fall back to offsetWidth/offsetHeight when value is "auto"
+		// This happens for inline elements with no explicit setting (gh-3571)
+		val === "auto" ||
+
+		// Support: Android <=4.1 - 4.3 only
+		// Also use offsetWidth/offsetHeight for misreported inline dimensions (gh-3602)
+		!parseFloat( val ) && jQuery.css( elem, "display", false, styles ) === "inline" ) &&
+
+		// Make sure the element is visible & connected
+		elem.getClientRects().length ) {
+
+		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
+
+		// Where available, offsetWidth/offsetHeight approximate border box dimensions.
+		// Where not available (e.g., SVG), assume unreliable box-sizing and interpret the
+		// retrieved value as a content box dimension.
+		valueIsBorderBox = offsetProp in elem;
+		if ( valueIsBorderBox ) {
+			val = elem[ offsetProp ];
+		}
+	}
+
+	// Normalize "" and auto
+	val = parseFloat( val ) || 0;
+
+	// Adjust for the element's box model
 	return ( val +
-		augmentWidthOrHeight(
+		boxModelAdjustment(
 			elem,
-			name,
+			dimension,
 			extra || ( isBorderBox ? "border" : "content" ),
 			valueIsBorderBox,
-			styles
+			styles,
+
+			// Provide the current computed size to request scroll gutter calculation (gh-3589)
+			val
 		)
 	) + "px";
 }
@@ -6285,6 +6873,13 @@ jQuery.extend( {
 		"flexGrow": true,
 		"flexShrink": true,
 		"fontWeight": true,
+		"gridArea": true,
+		"gridColumn": true,
+		"gridColumnEnd": true,
+		"gridColumnStart": true,
+		"gridRow": true,
+		"gridRowEnd": true,
+		"gridRowStart": true,
 		"lineHeight": true,
 		"opacity": true,
 		"order": true,
@@ -6296,9 +6891,7 @@ jQuery.extend( {
 
 	// Add in properties whose names you wish to fix before
 	// setting or getting the value
-	cssProps: {
-		"float": "cssFloat"
-	},
+	cssProps: {},
 
 	// Get and set the style property on a DOM Node
 	style: function( elem, name, value, extra ) {
@@ -6310,11 +6903,16 @@ jQuery.extend( {
 
 		// Make sure that we're working with the right name
 		var ret, type, hooks,
-			origName = jQuery.camelCase( name ),
+			origName = camelCase( name ),
+			isCustomProp = rcustomProp.test( name ),
 			style = elem.style;
 
-		name = jQuery.cssProps[ origName ] ||
-			( jQuery.cssProps[ origName ] = vendorPropName( origName ) || origName );
+		// Make sure that we're working with the right name. We don't
+		// want to query the value if it is a CSS custom property
+		// since they are user-defined.
+		if ( !isCustomProp ) {
+			name = finalPropName( origName );
+		}
 
 		// Gets hook for the prefixed version, then unprefixed version
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
@@ -6337,7 +6935,9 @@ jQuery.extend( {
 			}
 
 			// If a number was passed in, add the unit (except for certain CSS properties)
-			if ( type === "number" ) {
+			// The isCustomProp check can be removed in jQuery 4.0 when we only auto-append
+			// "px" to a few hardcoded values.
+			if ( type === "number" && !isCustomProp ) {
 				value += ret && ret[ 3 ] || ( jQuery.cssNumber[ origName ] ? "" : "px" );
 			}
 
@@ -6350,7 +6950,11 @@ jQuery.extend( {
 			if ( !hooks || !( "set" in hooks ) ||
 				( value = hooks.set( elem, value, extra ) ) !== undefined ) {
 
-				style[ name ] = value;
+				if ( isCustomProp ) {
+					style.setProperty( name, value );
+				} else {
+					style[ name ] = value;
+				}
 			}
 
 		} else {
@@ -6369,11 +6973,15 @@ jQuery.extend( {
 
 	css: function( elem, name, extra, styles ) {
 		var val, num, hooks,
-			origName = jQuery.camelCase( name );
+			origName = camelCase( name ),
+			isCustomProp = rcustomProp.test( name );
 
-		// Make sure that we're working with the right name
-		name = jQuery.cssProps[ origName ] ||
-			( jQuery.cssProps[ origName ] = vendorPropName( origName ) || origName );
+		// Make sure that we're working with the right name. We don't
+		// want to modify the value if it is a CSS custom property
+		// since they are user-defined.
+		if ( !isCustomProp ) {
+			name = finalPropName( origName );
+		}
 
 		// Try prefixed name followed by the unprefixed name
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
@@ -6398,12 +7006,13 @@ jQuery.extend( {
 			num = parseFloat( val );
 			return extra === true || isFinite( num ) ? num || 0 : val;
 		}
+
 		return val;
 	}
 } );
 
-jQuery.each( [ "height", "width" ], function( i, name ) {
-	jQuery.cssHooks[ name ] = {
+jQuery.each( [ "height", "width" ], function( _i, dimension ) {
+	jQuery.cssHooks[ dimension ] = {
 		get: function( elem, computed, extra ) {
 			if ( computed ) {
 
@@ -6418,30 +7027,53 @@ jQuery.each( [ "height", "width" ], function( i, name ) {
 					// Running getBoundingClientRect on a disconnected node
 					// in IE throws an error.
 					( !elem.getClientRects().length || !elem.getBoundingClientRect().width ) ?
-						swap( elem, cssShow, function() {
-							return getWidthOrHeight( elem, name, extra );
-						} ) :
-						getWidthOrHeight( elem, name, extra );
+					swap( elem, cssShow, function() {
+						return getWidthOrHeight( elem, dimension, extra );
+					} ) :
+					getWidthOrHeight( elem, dimension, extra );
 			}
 		},
 
 		set: function( elem, value, extra ) {
 			var matches,
-				styles = extra && getStyles( elem ),
-				subtract = extra && augmentWidthOrHeight(
-					elem,
-					name,
-					extra,
+				styles = getStyles( elem ),
+
+				// Only read styles.position if the test has a chance to fail
+				// to avoid forcing a reflow.
+				scrollboxSizeBuggy = !support.scrollboxSize() &&
+					styles.position === "absolute",
+
+				// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-3991)
+				boxSizingNeeded = scrollboxSizeBuggy || extra,
+				isBorderBox = boxSizingNeeded &&
 					jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-					styles
+				subtract = extra ?
+					boxModelAdjustment(
+						elem,
+						dimension,
+						extra,
+						isBorderBox,
+						styles
+					) :
+					0;
+
+			// Account for unreliable border-box dimensions by comparing offset* to computed and
+			// faking a content-box to get border and padding (gh-3699)
+			if ( isBorderBox && scrollboxSizeBuggy ) {
+				subtract -= Math.ceil(
+					elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ] -
+					parseFloat( styles[ dimension ] ) -
+					boxModelAdjustment( elem, dimension, "border", false, styles ) -
+					0.5
 				);
+			}
 
 			// Convert to pixels if value adjustment is needed
 			if ( subtract && ( matches = rcssNum.exec( value ) ) &&
 				( matches[ 3 ] || "px" ) !== "px" ) {
 
-				elem.style[ name ] = value;
-				value = jQuery.css( elem, name );
+				elem.style[ dimension ] = value;
+				value = jQuery.css( elem, dimension );
 			}
 
 			return setPositiveNumber( elem, value, subtract );
@@ -6457,7 +7089,7 @@ jQuery.cssHooks.marginLeft = addGetHookIf( support.reliableMarginLeft,
 					swap( elem, { marginLeft: 0 }, function() {
 						return elem.getBoundingClientRect().left;
 					} )
-				) + "px";
+			) + "px";
 		}
 	}
 );
@@ -6485,7 +7117,7 @@ jQuery.each( {
 		}
 	};
 
-	if ( !rmargin.test( prefix ) ) {
+	if ( prefix !== "margin" ) {
 		jQuery.cssHooks[ prefix + suffix ].set = setPositiveNumber;
 	}
 } );
@@ -6497,7 +7129,7 @@ jQuery.fn.extend( {
 				map = {},
 				i = 0;
 
-			if ( jQuery.isArray( name ) ) {
+			if ( Array.isArray( name ) ) {
 				styles = getStyles( elem );
 				len = name.length;
 
@@ -6595,9 +7227,9 @@ Tween.propHooks = {
 			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.nodeType === 1 &&
-				( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null ||
-					jQuery.cssHooks[ tween.prop ] ) ) {
+			} else if ( tween.elem.nodeType === 1 && (
+				jQuery.cssHooks[ tween.prop ] ||
+					tween.elem.style[ finalPropName( tween.prop ) ] != null ) ) {
 				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
 			} else {
 				tween.elem[ tween.prop ] = tween.now;
@@ -6635,13 +7267,18 @@ jQuery.fx.step = {};
 
 
 var
-	fxNow, timerId,
+	fxNow, inProgress,
 	rfxtypes = /^(?:toggle|show|hide)$/,
 	rrun = /queueHooks$/;
 
-function raf() {
-	if ( timerId ) {
-		window.requestAnimationFrame( raf );
+function schedule() {
+	if ( inProgress ) {
+		if ( document.hidden === false && window.requestAnimationFrame ) {
+			window.requestAnimationFrame( schedule );
+		} else {
+			window.setTimeout( schedule, jQuery.fx.interval );
+		}
+
 		jQuery.fx.tick();
 	}
 }
@@ -6651,7 +7288,7 @@ function createFxNow() {
 	window.setTimeout( function() {
 		fxNow = undefined;
 	} );
-	return ( fxNow = jQuery.now() );
+	return ( fxNow = Date.now() );
 }
 
 // Generate parameters to create a standard animation
@@ -6755,9 +7392,10 @@ function defaultPrefilter( elem, props, opts ) {
 	// Restrict "overflow" and "display" styles during box animations
 	if ( isBox && elem.nodeType === 1 ) {
 
-		// Support: IE <=9 - 11, Edge 12 - 13
+		// Support: IE <=9 - 11, Edge 12 - 15
 		// Record all 3 overflow attributes because IE does not infer the shorthand
-		// from identically-valued overflowX and overflowY
+		// from identically-valued overflowX and overflowY and Edge just mirrors
+		// the overflowX value there.
 		opts.overflow = [ style.overflow, style.overflowX, style.overflowY ];
 
 		// Identify a display type, preferring old show/hide data over the CSS cascade
@@ -6835,7 +7473,7 @@ function defaultPrefilter( elem, props, opts ) {
 
 			anim.done( function() {
 
-			/* eslint-enable no-loop-func */
+				/* eslint-enable no-loop-func */
 
 				// The final step of a "hide" animation is actually hiding the element
 				if ( !hidden ) {
@@ -6865,10 +7503,10 @@ function propFilter( props, specialEasing ) {
 
 	// camelCase, specialEasing and expand cssHook pass
 	for ( index in props ) {
-		name = jQuery.camelCase( index );
+		name = camelCase( index );
 		easing = specialEasing[ name ];
 		value = props[ index ];
-		if ( jQuery.isArray( value ) ) {
+		if ( Array.isArray( value ) ) {
 			easing = value[ 1 ];
 			value = props[ index ] = value[ 0 ];
 		}
@@ -6927,12 +7565,19 @@ function Animation( elem, properties, options ) {
 
 			deferred.notifyWith( elem, [ animation, percent, remaining ] );
 
+			// If there's more to do, yield
 			if ( percent < 1 && length ) {
 				return remaining;
-			} else {
-				deferred.resolveWith( elem, [ animation ] );
-				return false;
 			}
+
+			// If this was an empty animation, synthesize a final progress notification
+			if ( !length ) {
+				deferred.notifyWith( elem, [ animation, 1, 0 ] );
+			}
+
+			// Resolve the animation and report its conclusion
+			deferred.resolveWith( elem, [ animation ] );
+			return false;
 		},
 		animation = deferred.promise( {
 			elem: elem,
@@ -6948,7 +7593,7 @@ function Animation( elem, properties, options ) {
 			tweens: [],
 			createTween: function( prop, end ) {
 				var tween = jQuery.Tween( elem, animation.opts, prop, end,
-						animation.opts.specialEasing[ prop ] || animation.opts.easing );
+					animation.opts.specialEasing[ prop ] || animation.opts.easing );
 				animation.tweens.push( tween );
 				return tween;
 			},
@@ -6983,9 +7628,9 @@ function Animation( elem, properties, options ) {
 	for ( ; index < length; index++ ) {
 		result = Animation.prefilters[ index ].call( animation, elem, props, animation.opts );
 		if ( result ) {
-			if ( jQuery.isFunction( result.stop ) ) {
+			if ( isFunction( result.stop ) ) {
 				jQuery._queueHooks( animation.elem, animation.opts.queue ).stop =
-					jQuery.proxy( result.stop, result );
+					result.stop.bind( result );
 			}
 			return result;
 		}
@@ -6993,9 +7638,16 @@ function Animation( elem, properties, options ) {
 
 	jQuery.map( props, createTween, animation );
 
-	if ( jQuery.isFunction( animation.opts.start ) ) {
+	if ( isFunction( animation.opts.start ) ) {
 		animation.opts.start.call( elem, animation );
 	}
+
+	// Attach callbacks from options
+	animation
+		.progress( animation.opts.progress )
+		.done( animation.opts.done, animation.opts.complete )
+		.fail( animation.opts.fail )
+		.always( animation.opts.always );
 
 	jQuery.fx.timer(
 		jQuery.extend( tick, {
@@ -7005,11 +7657,7 @@ function Animation( elem, properties, options ) {
 		} )
 	);
 
-	// attach callbacks from options
-	return animation.progress( animation.opts.progress )
-		.done( animation.opts.done, animation.opts.complete )
-		.fail( animation.opts.fail )
-		.always( animation.opts.always );
+	return animation;
 }
 
 jQuery.Animation = jQuery.extend( Animation, {
@@ -7023,11 +7671,11 @@ jQuery.Animation = jQuery.extend( Animation, {
 	},
 
 	tweener: function( props, callback ) {
-		if ( jQuery.isFunction( props ) ) {
+		if ( isFunction( props ) ) {
 			callback = props;
 			props = [ "*" ];
 		} else {
-			props = props.match( rnotwhite );
+			props = props.match( rnothtmlwhite );
 		}
 
 		var prop,
@@ -7055,19 +7703,24 @@ jQuery.Animation = jQuery.extend( Animation, {
 jQuery.speed = function( speed, easing, fn ) {
 	var opt = speed && typeof speed === "object" ? jQuery.extend( {}, speed ) : {
 		complete: fn || !fn && easing ||
-			jQuery.isFunction( speed ) && speed,
+			isFunction( speed ) && speed,
 		duration: speed,
-		easing: fn && easing || easing && !jQuery.isFunction( easing ) && easing
+		easing: fn && easing || easing && !isFunction( easing ) && easing
 	};
 
-	// Go to the end state if fx are off or if document is hidden
-	if ( jQuery.fx.off || document.hidden ) {
+	// Go to the end state if fx are off
+	if ( jQuery.fx.off ) {
 		opt.duration = 0;
 
 	} else {
-		opt.duration = typeof opt.duration === "number" ?
-			opt.duration : opt.duration in jQuery.fx.speeds ?
-				jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
+		if ( typeof opt.duration !== "number" ) {
+			if ( opt.duration in jQuery.fx.speeds ) {
+				opt.duration = jQuery.fx.speeds[ opt.duration ];
+
+			} else {
+				opt.duration = jQuery.fx.speeds._default;
+			}
+		}
 	}
 
 	// Normalize opt.queue - true/undefined/null -> "fx"
@@ -7079,7 +7732,7 @@ jQuery.speed = function( speed, easing, fn ) {
 	opt.old = opt.complete;
 
 	opt.complete = function() {
-		if ( jQuery.isFunction( opt.old ) ) {
+		if ( isFunction( opt.old ) ) {
 			opt.old.call( this );
 		}
 
@@ -7113,7 +7766,8 @@ jQuery.fn.extend( {
 					anim.stop( true );
 				}
 			};
-			doAnimation.finish = doAnimation;
+
+		doAnimation.finish = doAnimation;
 
 		return empty || optall.queue === false ?
 			this.each( doAnimation ) :
@@ -7131,7 +7785,7 @@ jQuery.fn.extend( {
 			clearQueue = type;
 			type = undefined;
 		}
-		if ( clearQueue && type !== false ) {
+		if ( clearQueue ) {
 			this.queue( type || "fx", [] );
 		}
 
@@ -7214,7 +7868,7 @@ jQuery.fn.extend( {
 	}
 } );
 
-jQuery.each( [ "toggle", "show", "hide" ], function( i, name ) {
+jQuery.each( [ "toggle", "show", "hide" ], function( _i, name ) {
 	var cssFn = jQuery.fn[ name ];
 	jQuery.fn[ name ] = function( speed, easing, callback ) {
 		return speed == null || typeof speed === "boolean" ?
@@ -7243,12 +7897,12 @@ jQuery.fx.tick = function() {
 		i = 0,
 		timers = jQuery.timers;
 
-	fxNow = jQuery.now();
+	fxNow = Date.now();
 
 	for ( ; i < timers.length; i++ ) {
 		timer = timers[ i ];
 
-		// Checks the timer has not already been removed
+		// Run the timer and safely remove it when done (allowing for external removal)
 		if ( !timer() && timers[ i ] === timer ) {
 			timers.splice( i--, 1 );
 		}
@@ -7262,30 +7916,21 @@ jQuery.fx.tick = function() {
 
 jQuery.fx.timer = function( timer ) {
 	jQuery.timers.push( timer );
-	if ( timer() ) {
-		jQuery.fx.start();
-	} else {
-		jQuery.timers.pop();
-	}
+	jQuery.fx.start();
 };
 
 jQuery.fx.interval = 13;
 jQuery.fx.start = function() {
-	if ( !timerId ) {
-		timerId = window.requestAnimationFrame ?
-			window.requestAnimationFrame( raf ) :
-			window.setInterval( jQuery.fx.tick, jQuery.fx.interval );
+	if ( inProgress ) {
+		return;
 	}
+
+	inProgress = true;
+	schedule();
 };
 
 jQuery.fx.stop = function() {
-	if ( window.cancelAnimationFrame ) {
-		window.cancelAnimationFrame( timerId );
-	} else {
-		window.clearInterval( timerId );
-	}
-
-	timerId = null;
+	inProgress = null;
 };
 
 jQuery.fx.speeds = {
@@ -7402,7 +8047,7 @@ jQuery.extend( {
 		type: {
 			set: function( elem, value ) {
 				if ( !support.radioValue && value === "radio" &&
-					jQuery.nodeName( elem, "input" ) ) {
+					nodeName( elem, "input" ) ) {
 					var val = elem.value;
 					elem.setAttribute( "type", value );
 					if ( val ) {
@@ -7417,7 +8062,10 @@ jQuery.extend( {
 	removeAttr: function( elem, value ) {
 		var name,
 			i = 0,
-			attrNames = value && value.match( rnotwhite );
+
+			// Attribute names can contain non-HTML whitespace characters
+			// https://html.spec.whatwg.org/multipage/syntax.html#attributes-2
+			attrNames = value && value.match( rnothtmlwhite );
 
 		if ( attrNames && elem.nodeType === 1 ) {
 			while ( ( name = attrNames[ i++ ] ) ) {
@@ -7441,7 +8089,7 @@ boolHook = {
 	}
 };
 
-jQuery.each( jQuery.expr.match.bool.source.match( /\w+/g ), function( i, name ) {
+jQuery.each( jQuery.expr.match.bool.source.match( /\w+/g ), function( _i, name ) {
 	var getter = attrHandle[ name ] || jQuery.find.attr;
 
 	attrHandle[ name ] = function( elem, name, isXML ) {
@@ -7524,12 +8172,19 @@ jQuery.extend( {
 				// Use proper attribute retrieval(#12072)
 				var tabindex = jQuery.find.attr( elem, "tabindex" );
 
-				return tabindex ?
-					parseInt( tabindex, 10 ) :
+				if ( tabindex ) {
+					return parseInt( tabindex, 10 );
+				}
+
+				if (
 					rfocusable.test( elem.nodeName ) ||
-						rclickable.test( elem.nodeName ) && elem.href ?
-							0 :
-							-1;
+					rclickable.test( elem.nodeName ) &&
+					elem.href
+				) {
+					return 0;
+				}
+
+				return -1;
 			}
 		}
 	},
@@ -7546,9 +8201,14 @@ jQuery.extend( {
 // on the option
 // The getter ensures a default option is selected
 // when in an optgroup
+// eslint rule "no-unused-expressions" is disabled for this code
+// since it considers such accessions noop
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
+
+			/* eslint no-unused-expressions: "off" */
+
 			var parent = elem.parentNode;
 			if ( parent && parent.parentNode ) {
 				parent.parentNode.selectedIndex;
@@ -7556,6 +8216,9 @@ if ( !support.optSelected ) {
 			return null;
 		},
 		set: function( elem ) {
+
+			/* eslint no-unused-expressions: "off" */
+
 			var parent = elem.parentNode;
 			if ( parent ) {
 				parent.selectedIndex;
@@ -7586,10 +8249,26 @@ jQuery.each( [
 
 
 
-var rclass = /[\t\r\n\f]/g;
+	// Strip and collapse whitespace according to HTML spec
+	// https://infra.spec.whatwg.org/#strip-and-collapse-ascii-whitespace
+	function stripAndCollapse( value ) {
+		var tokens = value.match( rnothtmlwhite ) || [];
+		return tokens.join( " " );
+	}
+
 
 function getClass( elem ) {
 	return elem.getAttribute && elem.getAttribute( "class" ) || "";
+}
+
+function classesToArray( value ) {
+	if ( Array.isArray( value ) ) {
+		return value;
+	}
+	if ( typeof value === "string" ) {
+		return value.match( rnothtmlwhite ) || [];
+	}
+	return [];
 }
 
 jQuery.fn.extend( {
@@ -7597,19 +8276,18 @@ jQuery.fn.extend( {
 		var classes, elem, cur, curValue, clazz, j, finalValue,
 			i = 0;
 
-		if ( jQuery.isFunction( value ) ) {
+		if ( isFunction( value ) ) {
 			return this.each( function( j ) {
 				jQuery( this ).addClass( value.call( this, j, getClass( this ) ) );
 			} );
 		}
 
-		if ( typeof value === "string" && value ) {
-			classes = value.match( rnotwhite ) || [];
+		classes = classesToArray( value );
 
+		if ( classes.length ) {
 			while ( ( elem = this[ i++ ] ) ) {
 				curValue = getClass( elem );
-				cur = elem.nodeType === 1 &&
-					( " " + curValue + " " ).replace( rclass, " " );
+				cur = elem.nodeType === 1 && ( " " + stripAndCollapse( curValue ) + " " );
 
 				if ( cur ) {
 					j = 0;
@@ -7620,7 +8298,7 @@ jQuery.fn.extend( {
 					}
 
 					// Only assign if different to avoid unneeded rendering.
-					finalValue = jQuery.trim( cur );
+					finalValue = stripAndCollapse( cur );
 					if ( curValue !== finalValue ) {
 						elem.setAttribute( "class", finalValue );
 					}
@@ -7635,7 +8313,7 @@ jQuery.fn.extend( {
 		var classes, elem, cur, curValue, clazz, j, finalValue,
 			i = 0;
 
-		if ( jQuery.isFunction( value ) ) {
+		if ( isFunction( value ) ) {
 			return this.each( function( j ) {
 				jQuery( this ).removeClass( value.call( this, j, getClass( this ) ) );
 			} );
@@ -7645,15 +8323,14 @@ jQuery.fn.extend( {
 			return this.attr( "class", "" );
 		}
 
-		if ( typeof value === "string" && value ) {
-			classes = value.match( rnotwhite ) || [];
+		classes = classesToArray( value );
 
+		if ( classes.length ) {
 			while ( ( elem = this[ i++ ] ) ) {
 				curValue = getClass( elem );
 
 				// This expression is here for better compressibility (see addClass)
-				cur = elem.nodeType === 1 &&
-					( " " + curValue + " " ).replace( rclass, " " );
+				cur = elem.nodeType === 1 && ( " " + stripAndCollapse( curValue ) + " " );
 
 				if ( cur ) {
 					j = 0;
@@ -7666,7 +8343,7 @@ jQuery.fn.extend( {
 					}
 
 					// Only assign if different to avoid unneeded rendering.
-					finalValue = jQuery.trim( cur );
+					finalValue = stripAndCollapse( cur );
 					if ( curValue !== finalValue ) {
 						elem.setAttribute( "class", finalValue );
 					}
@@ -7678,13 +8355,14 @@ jQuery.fn.extend( {
 	},
 
 	toggleClass: function( value, stateVal ) {
-		var type = typeof value;
+		var type = typeof value,
+			isValidValue = type === "string" || Array.isArray( value );
 
-		if ( typeof stateVal === "boolean" && type === "string" ) {
+		if ( typeof stateVal === "boolean" && isValidValue ) {
 			return stateVal ? this.addClass( value ) : this.removeClass( value );
 		}
 
-		if ( jQuery.isFunction( value ) ) {
+		if ( isFunction( value ) ) {
 			return this.each( function( i ) {
 				jQuery( this ).toggleClass(
 					value.call( this, i, getClass( this ), stateVal ),
@@ -7696,12 +8374,12 @@ jQuery.fn.extend( {
 		return this.each( function() {
 			var className, i, self, classNames;
 
-			if ( type === "string" ) {
+			if ( isValidValue ) {
 
 				// Toggle individual class names
 				i = 0;
 				self = jQuery( this );
-				classNames = value.match( rnotwhite ) || [];
+				classNames = classesToArray( value );
 
 				while ( ( className = classNames[ i++ ] ) ) {
 
@@ -7729,8 +8407,8 @@ jQuery.fn.extend( {
 				if ( this.setAttribute ) {
 					this.setAttribute( "class",
 						className || value === false ?
-						"" :
-						dataPriv.get( this, "__className__" ) || ""
+							"" :
+							dataPriv.get( this, "__className__" ) || ""
 					);
 				}
 			}
@@ -7744,9 +8422,7 @@ jQuery.fn.extend( {
 		className = " " + selector + " ";
 		while ( ( elem = this[ i++ ] ) ) {
 			if ( elem.nodeType === 1 &&
-				( " " + getClass( elem ) + " " ).replace( rclass, " " )
-					.indexOf( className ) > -1
-			) {
+				( " " + stripAndCollapse( getClass( elem ) ) + " " ).indexOf( className ) > -1 ) {
 				return true;
 			}
 		}
@@ -7758,12 +8434,11 @@ jQuery.fn.extend( {
 
 
 
-var rreturn = /\r/g,
-	rspaces = /[\x20\t\r\n\f]+/g;
+var rreturn = /\r/g;
 
 jQuery.fn.extend( {
 	val: function( value ) {
-		var hooks, ret, isFunction,
+		var hooks, ret, valueIsFunction,
 			elem = this[ 0 ];
 
 		if ( !arguments.length ) {
@@ -7780,19 +8455,19 @@ jQuery.fn.extend( {
 
 				ret = elem.value;
 
-				return typeof ret === "string" ?
+				// Handle most common string cases
+				if ( typeof ret === "string" ) {
+					return ret.replace( rreturn, "" );
+				}
 
-					// Handle most common string cases
-					ret.replace( rreturn, "" ) :
-
-					// Handle cases where value is null/undef or number
-					ret == null ? "" : ret;
+				// Handle cases where value is null/undef or number
+				return ret == null ? "" : ret;
 			}
 
 			return;
 		}
 
-		isFunction = jQuery.isFunction( value );
+		valueIsFunction = isFunction( value );
 
 		return this.each( function( i ) {
 			var val;
@@ -7801,7 +8476,7 @@ jQuery.fn.extend( {
 				return;
 			}
 
-			if ( isFunction ) {
+			if ( valueIsFunction ) {
 				val = value.call( this, i, jQuery( this ).val() );
 			} else {
 				val = value;
@@ -7814,7 +8489,7 @@ jQuery.fn.extend( {
 			} else if ( typeof val === "number" ) {
 				val += "";
 
-			} else if ( jQuery.isArray( val ) ) {
+			} else if ( Array.isArray( val ) ) {
 				val = jQuery.map( val, function( value ) {
 					return value == null ? "" : value + "";
 				} );
@@ -7843,20 +8518,24 @@ jQuery.extend( {
 					// option.text throws exceptions (#14686, #14858)
 					// Strip and collapse whitespace
 					// https://html.spec.whatwg.org/#strip-and-collapse-whitespace
-					jQuery.trim( jQuery.text( elem ) ).replace( rspaces, " " );
+					stripAndCollapse( jQuery.text( elem ) );
 			}
 		},
 		select: {
 			get: function( elem ) {
-				var value, option,
+				var value, option, i,
 					options = elem.options,
 					index = elem.selectedIndex,
 					one = elem.type === "select-one",
 					values = one ? null : [],
-					max = one ? index + 1 : options.length,
-					i = index < 0 ?
-						max :
-						one ? index : 0;
+					max = one ? index + 1 : options.length;
+
+				if ( index < 0 ) {
+					i = max;
+
+				} else {
+					i = one ? index : 0;
+				}
 
 				// Loop through all the selected options
 				for ( ; i < max; i++ ) {
@@ -7869,7 +8548,7 @@ jQuery.extend( {
 							// Don't return options that are disabled or in a disabled optgroup
 							!option.disabled &&
 							( !option.parentNode.disabled ||
-								!jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
+								!nodeName( option.parentNode, "optgroup" ) ) ) {
 
 						// Get the specific value for the option
 						value = jQuery( option ).val();
@@ -7921,7 +8600,7 @@ jQuery.extend( {
 jQuery.each( [ "radio", "checkbox" ], function() {
 	jQuery.valHooks[ this ] = {
 		set: function( elem, value ) {
-			if ( jQuery.isArray( value ) ) {
+			if ( Array.isArray( value ) ) {
 				return ( elem.checked = jQuery.inArray( jQuery( elem ).val(), value ) > -1 );
 			}
 		}
@@ -7939,18 +8618,24 @@ jQuery.each( [ "radio", "checkbox" ], function() {
 // Return jQuery for attributes-only inclusion
 
 
-var rfocusMorph = /^(?:focusinfocus|focusoutblur)$/;
+support.focusin = "onfocusin" in window;
+
+
+var rfocusMorph = /^(?:focusinfocus|focusoutblur)$/,
+	stopPropagationCallback = function( e ) {
+		e.stopPropagation();
+	};
 
 jQuery.extend( jQuery.event, {
 
 	trigger: function( event, data, elem, onlyHandlers ) {
 
-		var i, cur, tmp, bubbleType, ontype, handle, special,
+		var i, cur, tmp, bubbleType, ontype, handle, special, lastElement,
 			eventPath = [ elem || document ],
 			type = hasOwn.call( event, "type" ) ? event.type : event,
 			namespaces = hasOwn.call( event, "namespace" ) ? event.namespace.split( "." ) : [];
 
-		cur = tmp = elem = elem || document;
+		cur = lastElement = tmp = elem = elem || document;
 
 		// Don't do events on text and comment nodes
 		if ( elem.nodeType === 3 || elem.nodeType === 8 ) {
@@ -8002,7 +8687,7 @@ jQuery.extend( jQuery.event, {
 
 		// Determine event propagation path in advance, per W3C events spec (#9951)
 		// Bubble up to document, then to window; watch for a global ownerDocument var (#9724)
-		if ( !onlyHandlers && !special.noBubble && !jQuery.isWindow( elem ) ) {
+		if ( !onlyHandlers && !special.noBubble && !isWindow( elem ) ) {
 
 			bubbleType = special.delegateType || type;
 			if ( !rfocusMorph.test( bubbleType + type ) ) {
@@ -8022,13 +8707,13 @@ jQuery.extend( jQuery.event, {
 		// Fire handlers on the event path
 		i = 0;
 		while ( ( cur = eventPath[ i++ ] ) && !event.isPropagationStopped() ) {
-
+			lastElement = cur;
 			event.type = i > 1 ?
 				bubbleType :
 				special.bindType || type;
 
 			// jQuery handler
-			handle = ( dataPriv.get( cur, "events" ) || {} )[ event.type ] &&
+			handle = ( dataPriv.get( cur, "events" ) || Object.create( null ) )[ event.type ] &&
 				dataPriv.get( cur, "handle" );
 			if ( handle ) {
 				handle.apply( cur, data );
@@ -8054,7 +8739,7 @@ jQuery.extend( jQuery.event, {
 
 				// Call a native DOM method on the target with the same name as the event.
 				// Don't do default actions on window, that's where global variables be (#6170)
-				if ( ontype && jQuery.isFunction( elem[ type ] ) && !jQuery.isWindow( elem ) ) {
+				if ( ontype && isFunction( elem[ type ] ) && !isWindow( elem ) ) {
 
 					// Don't re-trigger an onFOO event when we call its FOO() method
 					tmp = elem[ ontype ];
@@ -8065,7 +8750,17 @@ jQuery.extend( jQuery.event, {
 
 					// Prevent re-triggering of the same event, since we already bubbled it above
 					jQuery.event.triggered = type;
+
+					if ( event.isPropagationStopped() ) {
+						lastElement.addEventListener( type, stopPropagationCallback );
+					}
+
 					elem[ type ]();
+
+					if ( event.isPropagationStopped() ) {
+						lastElement.removeEventListener( type, stopPropagationCallback );
+					}
+
 					jQuery.event.triggered = undefined;
 
 					if ( tmp ) {
@@ -8111,31 +8806,6 @@ jQuery.fn.extend( {
 } );
 
 
-jQuery.each( ( "blur focus focusin focusout resize scroll click dblclick " +
-	"mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
-	"change select submit keydown keypress keyup contextmenu" ).split( " " ),
-	function( i, name ) {
-
-	// Handle event binding
-	jQuery.fn[ name ] = function( data, fn ) {
-		return arguments.length > 0 ?
-			this.on( name, null, data, fn ) :
-			this.trigger( name );
-	};
-} );
-
-jQuery.fn.extend( {
-	hover: function( fnOver, fnOut ) {
-		return this.mouseenter( fnOver ).mouseleave( fnOut || fnOver );
-	}
-} );
-
-
-
-
-support.focusin = "onfocusin" in window;
-
-
 // Support: Firefox <=44
 // Firefox doesn't have focus(in | out) events
 // Related ticket - https://bugzilla.mozilla.org/show_bug.cgi?id=687787
@@ -8154,7 +8824,10 @@ if ( !support.focusin ) {
 
 		jQuery.event.special[ fix ] = {
 			setup: function() {
-				var doc = this.ownerDocument || this,
+
+				// Handle: regular nodes (via `this.ownerDocument`), window
+				// (via `this.document`) & document (via `this`).
+				var doc = this.ownerDocument || this.document || this,
 					attaches = dataPriv.access( doc, fix );
 
 				if ( !attaches ) {
@@ -8163,7 +8836,7 @@ if ( !support.focusin ) {
 				dataPriv.access( doc, fix, ( attaches || 0 ) + 1 );
 			},
 			teardown: function() {
-				var doc = this.ownerDocument || this,
+				var doc = this.ownerDocument || this.document || this,
 					attaches = dataPriv.access( doc, fix ) - 1;
 
 				if ( !attaches ) {
@@ -8179,7 +8852,7 @@ if ( !support.focusin ) {
 }
 var location = window.location;
 
-var nonce = jQuery.now();
+var nonce = { guid: Date.now() };
 
 var rquery = ( /\?/ );
 
@@ -8187,7 +8860,7 @@ var rquery = ( /\?/ );
 
 // Cross-browser xml parsing
 jQuery.parseXML = function( data ) {
-	var xml;
+	var xml, parserErrorElem;
 	if ( !data || typeof data !== "string" ) {
 		return null;
 	}
@@ -8196,12 +8869,17 @@ jQuery.parseXML = function( data ) {
 	// IE throws on parseFromString with invalid input.
 	try {
 		xml = ( new window.DOMParser() ).parseFromString( data, "text/xml" );
-	} catch ( e ) {
-		xml = undefined;
-	}
+	} catch ( e ) {}
 
-	if ( !xml || xml.getElementsByTagName( "parsererror" ).length ) {
-		jQuery.error( "Invalid XML: " + data );
+	parserErrorElem = xml && xml.getElementsByTagName( "parsererror" )[ 0 ];
+	if ( !xml || parserErrorElem ) {
+		jQuery.error( "Invalid XML: " + (
+			parserErrorElem ?
+				jQuery.map( parserErrorElem.childNodes, function( el ) {
+					return el.textContent;
+				} ).join( "\n" ) :
+				data
+		) );
 	}
 	return xml;
 };
@@ -8216,7 +8894,7 @@ var
 function buildParams( prefix, obj, traditional, add ) {
 	var name;
 
-	if ( jQuery.isArray( obj ) ) {
+	if ( Array.isArray( obj ) ) {
 
 		// Serialize array item.
 		jQuery.each( obj, function( i, v ) {
@@ -8237,7 +8915,7 @@ function buildParams( prefix, obj, traditional, add ) {
 			}
 		} );
 
-	} else if ( !traditional && jQuery.type( obj ) === "object" ) {
+	} else if ( !traditional && toType( obj ) === "object" ) {
 
 		// Serialize object item.
 		for ( name in obj ) {
@@ -8259,7 +8937,7 @@ jQuery.param = function( a, traditional ) {
 		add = function( key, valueOrFunction ) {
 
 			// If value is a function, invoke it and use its return value
-			var value = jQuery.isFunction( valueOrFunction ) ?
+			var value = isFunction( valueOrFunction ) ?
 				valueOrFunction() :
 				valueOrFunction;
 
@@ -8267,8 +8945,12 @@ jQuery.param = function( a, traditional ) {
 				encodeURIComponent( value == null ? "" : value );
 		};
 
+	if ( a == null ) {
+		return "";
+	}
+
 	// If an array was passed in, assume that it is an array of form elements.
-	if ( jQuery.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
+	if ( Array.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
 
 		// Serialize the form elements
 		jQuery.each( a, function() {
@@ -8298,25 +8980,27 @@ jQuery.fn.extend( {
 			// Can add propHook for "elements" to filter or add form elements
 			var elements = jQuery.prop( this, "elements" );
 			return elements ? jQuery.makeArray( elements ) : this;
-		} )
-		.filter( function() {
+		} ).filter( function() {
 			var type = this.type;
 
 			// Use .is( ":disabled" ) so that fieldset[disabled] works
 			return this.name && !jQuery( this ).is( ":disabled" ) &&
 				rsubmittable.test( this.nodeName ) && !rsubmitterTypes.test( type ) &&
 				( this.checked || !rcheckableType.test( type ) );
-		} )
-		.map( function( i, elem ) {
+		} ).map( function( _i, elem ) {
 			var val = jQuery( this ).val();
 
-			return val == null ?
-				null :
-				jQuery.isArray( val ) ?
-					jQuery.map( val, function( val ) {
-						return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
-					} ) :
-					{ name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
+			if ( val == null ) {
+				return null;
+			}
+
+			if ( Array.isArray( val ) ) {
+				return jQuery.map( val, function( val ) {
+					return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
+				} );
+			}
+
+			return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
 		} ).get();
 	}
 } );
@@ -8325,7 +9009,7 @@ jQuery.fn.extend( {
 var
 	r20 = /%20/g,
 	rhash = /#.*$/,
-	rts = /([?&])_=[^&]*/,
+	rantiCache = /([?&])_=[^&]*/,
 	rheaders = /^(.*?):[ \t]*([^\r\n]*)$/mg,
 
 	// #7653, #8125, #8152: local protocol detection
@@ -8356,7 +9040,8 @@ var
 
 	// Anchor tag for parsing the document origin
 	originAnchor = document.createElement( "a" );
-	originAnchor.href = location.href;
+
+originAnchor.href = location.href;
 
 // Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
 function addToPrefiltersOrTransports( structure ) {
@@ -8371,9 +9056,9 @@ function addToPrefiltersOrTransports( structure ) {
 
 		var dataType,
 			i = 0,
-			dataTypes = dataTypeExpression.toLowerCase().match( rnotwhite ) || [];
+			dataTypes = dataTypeExpression.toLowerCase().match( rnothtmlwhite ) || [];
 
-		if ( jQuery.isFunction( func ) ) {
+		if ( isFunction( func ) ) {
 
 			// For each dataType in the dataTypeExpression
 			while ( ( dataType = dataTypes[ i++ ] ) ) {
@@ -8737,8 +9422,8 @@ jQuery.extend( {
 			// Context for global events is callbackContext if it is a DOM node or jQuery collection
 			globalEventContext = s.context &&
 				( callbackContext.nodeType || callbackContext.jquery ) ?
-					jQuery( callbackContext ) :
-					jQuery.event,
+				jQuery( callbackContext ) :
+				jQuery.event,
 
 			// Deferreds
 			deferred = jQuery.Deferred(),
@@ -8765,12 +9450,14 @@ jQuery.extend( {
 						if ( !responseHeaders ) {
 							responseHeaders = {};
 							while ( ( match = rheaders.exec( responseHeadersString ) ) ) {
-								responseHeaders[ match[ 1 ].toLowerCase() ] = match[ 2 ];
+								responseHeaders[ match[ 1 ].toLowerCase() + " " ] =
+									( responseHeaders[ match[ 1 ].toLowerCase() + " " ] || [] )
+										.concat( match[ 2 ] );
 							}
 						}
-						match = responseHeaders[ key.toLowerCase() ];
+						match = responseHeaders[ key.toLowerCase() + " " ];
 					}
-					return match == null ? null : match;
+					return match == null ? null : match.join( ", " );
 				},
 
 				// Raw string
@@ -8839,13 +9526,13 @@ jQuery.extend( {
 		s.type = options.method || options.type || s.method || s.type;
 
 		// Extract dataTypes list
-		s.dataTypes = ( s.dataType || "*" ).toLowerCase().match( rnotwhite ) || [ "" ];
+		s.dataTypes = ( s.dataType || "*" ).toLowerCase().match( rnothtmlwhite ) || [ "" ];
 
 		// A cross-domain request is in order when the origin doesn't match the current origin.
 		if ( s.crossDomain == null ) {
 			urlAnchor = document.createElement( "a" );
 
-			// Support: IE <=8 - 11, Edge 12 - 13
+			// Support: IE <=8 - 11, Edge 12 - 15
 			// IE throws exception on accessing the href property if url is malformed,
 			// e.g. http://example.com:80x/
 			try {
@@ -8903,18 +9590,19 @@ jQuery.extend( {
 			// Remember the hash so we can put it back
 			uncached = s.url.slice( cacheURL.length );
 
-			// If data is available, append data to url
-			if ( s.data ) {
+			// If data is available and should be processed, append data to url
+			if ( s.data && ( s.processData || typeof s.data === "string" ) ) {
 				cacheURL += ( rquery.test( cacheURL ) ? "&" : "?" ) + s.data;
 
 				// #9682: remove data so that it's not used in an eventual retry
 				delete s.data;
 			}
 
-			// Add anti-cache in uncached url if needed
+			// Add or update anti-cache param if needed
 			if ( s.cache === false ) {
-				cacheURL = cacheURL.replace( rts, "" );
-				uncached = ( rquery.test( cacheURL ) ? "&" : "?" ) + "_=" + ( nonce++ ) + uncached;
+				cacheURL = cacheURL.replace( rantiCache, "$1" );
+				uncached = ( rquery.test( cacheURL ) ? "&" : "?" ) + "_=" + ( nonce.guid++ ) +
+					uncached;
 			}
 
 			// Put hash and anti-cache on the URL that will be requested (gh-1732)
@@ -9047,6 +9735,13 @@ jQuery.extend( {
 				response = ajaxHandleResponses( s, jqXHR, responses );
 			}
 
+			// Use a noop converter for missing script but not if jsonp
+			if ( !isSuccess &&
+				jQuery.inArray( "script", s.dataTypes ) > -1 &&
+				jQuery.inArray( "json", s.dataTypes ) < 0 ) {
+				s.converters[ "text script" ] = function() {};
+			}
+
 			// Convert no matter what (that way responseXXX fields are always set)
 			response = ajaxConvert( s, response, jqXHR, isSuccess );
 
@@ -9137,11 +9832,11 @@ jQuery.extend( {
 	}
 } );
 
-jQuery.each( [ "get", "post" ], function( i, method ) {
+jQuery.each( [ "get", "post" ], function( _i, method ) {
 	jQuery[ method ] = function( url, data, callback, type ) {
 
 		// Shift arguments if data argument was omitted
-		if ( jQuery.isFunction( data ) ) {
+		if ( isFunction( data ) ) {
 			type = type || callback;
 			callback = data;
 			data = undefined;
@@ -9158,8 +9853,17 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 	};
 } );
 
+jQuery.ajaxPrefilter( function( s ) {
+	var i;
+	for ( i in s.headers ) {
+		if ( i.toLowerCase() === "content-type" ) {
+			s.contentType = s.headers[ i ] || "";
+		}
+	}
+} );
 
-jQuery._evalUrl = function( url ) {
+
+jQuery._evalUrl = function( url, options, doc ) {
 	return jQuery.ajax( {
 		url: url,
 
@@ -9169,7 +9873,16 @@ jQuery._evalUrl = function( url ) {
 		cache: true,
 		async: false,
 		global: false,
-		"throws": true
+
+		// Only evaluate the response if it is successful (gh-4126)
+		// dataFilter is not invoked for failure responses, so using it instead
+		// of the default converter is kludgy but it works.
+		converters: {
+			"text script": function() {}
+		},
+		dataFilter: function( response ) {
+			jQuery.globalEval( response, options, doc );
+		}
 	} );
 };
 
@@ -9179,7 +9892,7 @@ jQuery.fn.extend( {
 		var wrap;
 
 		if ( this[ 0 ] ) {
-			if ( jQuery.isFunction( html ) ) {
+			if ( isFunction( html ) ) {
 				html = html.call( this[ 0 ] );
 			}
 
@@ -9205,7 +9918,7 @@ jQuery.fn.extend( {
 	},
 
 	wrapInner: function( html ) {
-		if ( jQuery.isFunction( html ) ) {
+		if ( isFunction( html ) ) {
 			return this.each( function( i ) {
 				jQuery( this ).wrapInner( html.call( this, i ) );
 			} );
@@ -9225,10 +9938,10 @@ jQuery.fn.extend( {
 	},
 
 	wrap: function( html ) {
-		var isFunction = jQuery.isFunction( html );
+		var htmlIsFunction = isFunction( html );
 
 		return this.each( function( i ) {
-			jQuery( this ).wrapAll( isFunction ? html.call( this, i ) : html );
+			jQuery( this ).wrapAll( htmlIsFunction ? html.call( this, i ) : html );
 		} );
 	},
 
@@ -9320,7 +10033,8 @@ jQuery.ajaxTransport( function( options ) {
 					return function() {
 						if ( callback ) {
 							callback = errorCallback = xhr.onload =
-								xhr.onerror = xhr.onabort = xhr.onreadystatechange = null;
+								xhr.onerror = xhr.onabort = xhr.ontimeout =
+									xhr.onreadystatechange = null;
 
 							if ( type === "abort" ) {
 								xhr.abort();
@@ -9360,7 +10074,7 @@ jQuery.ajaxTransport( function( options ) {
 
 				// Listen to events
 				xhr.onload = callback();
-				errorCallback = xhr.onerror = callback( "error" );
+				errorCallback = xhr.onerror = xhr.ontimeout = callback( "error" );
 
 				// Support: IE 9 only
 				// Use onreadystatechange to replace onabort
@@ -9451,24 +10165,21 @@ jQuery.ajaxPrefilter( "script", function( s ) {
 // Bind script tag hack transport
 jQuery.ajaxTransport( "script", function( s ) {
 
-	// This transport only deals with cross domain requests
-	if ( s.crossDomain ) {
+	// This transport only deals with cross domain or forced-by-attrs requests
+	if ( s.crossDomain || s.scriptAttrs ) {
 		var script, callback;
 		return {
 			send: function( _, complete ) {
-				script = jQuery( "<script>" ).prop( {
-					charset: s.scriptCharset,
-					src: s.url
-				} ).on(
-					"load error",
-					callback = function( evt ) {
+				script = jQuery( "<script>" )
+					.attr( s.scriptAttrs || {} )
+					.prop( { charset: s.scriptCharset, src: s.url } )
+					.on( "load error", callback = function( evt ) {
 						script.remove();
 						callback = null;
 						if ( evt ) {
 							complete( evt.type === "error" ? 404 : 200, evt.type );
 						}
-					}
-				);
+					} );
 
 				// Use native DOM manipulation to avoid our domManip AJAX trickery
 				document.head.appendChild( script[ 0 ] );
@@ -9492,7 +10203,7 @@ var oldCallbacks = [],
 jQuery.ajaxSetup( {
 	jsonp: "callback",
 	jsonpCallback: function() {
-		var callback = oldCallbacks.pop() || ( jQuery.expando + "_" + ( nonce++ ) );
+		var callback = oldCallbacks.pop() || ( jQuery.expando + "_" + ( nonce.guid++ ) );
 		this[ callback ] = true;
 		return callback;
 	}
@@ -9514,7 +10225,7 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 	if ( jsonProp || s.dataTypes[ 0 ] === "jsonp" ) {
 
 		// Get callback name, remembering preexisting value associated with it
-		callbackName = s.jsonpCallback = jQuery.isFunction( s.jsonpCallback ) ?
+		callbackName = s.jsonpCallback = isFunction( s.jsonpCallback ) ?
 			s.jsonpCallback() :
 			s.jsonpCallback;
 
@@ -9565,7 +10276,7 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 			}
 
 			// Call if it was a function and we have a response
-			if ( responseContainer && jQuery.isFunction( overwritten ) ) {
+			if ( responseContainer && isFunction( overwritten ) ) {
 				overwritten( responseContainer[ 0 ] );
 			}
 
@@ -9652,12 +10363,12 @@ jQuery.fn.load = function( url, params, callback ) {
 		off = url.indexOf( " " );
 
 	if ( off > -1 ) {
-		selector = jQuery.trim( url.slice( off ) );
+		selector = stripAndCollapse( url.slice( off ) );
 		url = url.slice( 0, off );
 	}
 
 	// If it's a function
-	if ( jQuery.isFunction( params ) ) {
+	if ( isFunction( params ) ) {
 
 		// We assume that it's the callback
 		callback = params;
@@ -9709,23 +10420,6 @@ jQuery.fn.load = function( url, params, callback ) {
 
 
 
-// Attach a bunch of functions for handling common AJAX events
-jQuery.each( [
-	"ajaxStart",
-	"ajaxStop",
-	"ajaxComplete",
-	"ajaxError",
-	"ajaxSuccess",
-	"ajaxSend"
-], function( i, type ) {
-	jQuery.fn[ type ] = function( fn ) {
-		return this.on( type, fn );
-	};
-} );
-
-
-
-
 jQuery.expr.pseudos.animated = function( elem ) {
 	return jQuery.grep( jQuery.timers, function( fn ) {
 		return elem === fn.elem;
@@ -9734,13 +10428,6 @@ jQuery.expr.pseudos.animated = function( elem ) {
 
 
 
-
-/**
- * Gets a window from an element
- */
-function getWindow( elem ) {
-	return jQuery.isWindow( elem ) ? elem : elem.nodeType === 9 && elem.defaultView;
-}
 
 jQuery.offset = {
 	setOffset: function( elem, options, i ) {
@@ -9772,7 +10459,7 @@ jQuery.offset = {
 			curLeft = parseFloat( curCSSLeft ) || 0;
 		}
 
-		if ( jQuery.isFunction( options ) ) {
+		if ( isFunction( options ) ) {
 
 			// Use jQuery.extend here to allow modification of coordinates argument (gh-1848)
 			options = options.call( elem, i, jQuery.extend( {}, curOffset ) );
@@ -9795,6 +10482,8 @@ jQuery.offset = {
 };
 
 jQuery.fn.extend( {
+
+	// offset() relates an element's border box to the document origin
 	offset: function( options ) {
 
 		// Preserve chaining for setter
@@ -9806,13 +10495,14 @@ jQuery.fn.extend( {
 				} );
 		}
 
-		var docElem, win, rect, doc,
+		var rect, win,
 			elem = this[ 0 ];
 
 		if ( !elem ) {
 			return;
 		}
 
+		// Return zeros for disconnected and hidden (display: none) elements (gh-2310)
 		// Support: IE <=11 only
 		// Running getBoundingClientRect on a
 		// disconnected node in IE throws an error
@@ -9820,56 +10510,52 @@ jQuery.fn.extend( {
 			return { top: 0, left: 0 };
 		}
 
+		// Get document-relative position by adding viewport scroll to viewport-relative gBCR
 		rect = elem.getBoundingClientRect();
-
-		// Make sure element is not hidden (display: none)
-		if ( rect.width || rect.height ) {
-			doc = elem.ownerDocument;
-			win = getWindow( doc );
-			docElem = doc.documentElement;
-
-			return {
-				top: rect.top + win.pageYOffset - docElem.clientTop,
-				left: rect.left + win.pageXOffset - docElem.clientLeft
-			};
-		}
-
-		// Return zeros for disconnected and hidden elements (gh-2310)
-		return rect;
+		win = elem.ownerDocument.defaultView;
+		return {
+			top: rect.top + win.pageYOffset,
+			left: rect.left + win.pageXOffset
+		};
 	},
 
+	// position() relates an element's margin box to its offset parent's padding box
+	// This corresponds to the behavior of CSS absolute positioning
 	position: function() {
 		if ( !this[ 0 ] ) {
 			return;
 		}
 
-		var offsetParent, offset,
+		var offsetParent, offset, doc,
 			elem = this[ 0 ],
 			parentOffset = { top: 0, left: 0 };
 
-		// Fixed elements are offset from window (parentOffset = {top:0, left: 0},
-		// because it is its only offset parent
+		// position:fixed elements are offset from the viewport, which itself always has zero offset
 		if ( jQuery.css( elem, "position" ) === "fixed" ) {
 
-			// Assume getBoundingClientRect is there when computed position is fixed
+			// Assume position:fixed implies availability of getBoundingClientRect
 			offset = elem.getBoundingClientRect();
 
 		} else {
-
-			// Get *real* offsetParent
-			offsetParent = this.offsetParent();
-
-			// Get correct offsets
 			offset = this.offset();
-			if ( !jQuery.nodeName( offsetParent[ 0 ], "html" ) ) {
-				parentOffset = offsetParent.offset();
-			}
 
-			// Add offsetParent borders
-			parentOffset = {
-				top: parentOffset.top + jQuery.css( offsetParent[ 0 ], "borderTopWidth", true ),
-				left: parentOffset.left + jQuery.css( offsetParent[ 0 ], "borderLeftWidth", true )
-			};
+			// Account for the *real* offset parent, which can be the document or its root element
+			// when a statically positioned element is identified
+			doc = elem.ownerDocument;
+			offsetParent = elem.offsetParent || doc.documentElement;
+			while ( offsetParent &&
+				( offsetParent === doc.body || offsetParent === doc.documentElement ) &&
+				jQuery.css( offsetParent, "position" ) === "static" ) {
+
+				offsetParent = offsetParent.parentNode;
+			}
+			if ( offsetParent && offsetParent !== elem && offsetParent.nodeType === 1 ) {
+
+				// Incorporate borders into its offset, since they are outside its content origin
+				parentOffset = jQuery( offsetParent ).offset();
+				parentOffset.top += jQuery.css( offsetParent, "borderTopWidth", true );
+				parentOffset.left += jQuery.css( offsetParent, "borderLeftWidth", true );
+			}
 		}
 
 		// Subtract parent offsets and element margins
@@ -9908,7 +10594,14 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 
 	jQuery.fn[ method ] = function( val ) {
 		return access( this, function( elem, method, val ) {
-			var win = getWindow( elem );
+
+			// Coalesce documents and windows
+			var win;
+			if ( isWindow( elem ) ) {
+				win = elem;
+			} else if ( elem.nodeType === 9 ) {
+				win = elem.defaultView;
+			}
 
 			if ( val === undefined ) {
 				return win ? win[ prop ] : elem[ method ];
@@ -9933,7 +10626,7 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 // Blink bug: https://bugs.chromium.org/p/chromium/issues/detail?id=589347
 // getComputedStyle returns percent when specified for top/left/bottom/right;
 // rather than make the css module depend on the offset module, just check for it here
-jQuery.each( [ "top", "left" ], function( i, prop ) {
+jQuery.each( [ "top", "left" ], function( _i, prop ) {
 	jQuery.cssHooks[ prop ] = addGetHookIf( support.pixelPosition,
 		function( elem, computed ) {
 			if ( computed ) {
@@ -9951,8 +10644,11 @@ jQuery.each( [ "top", "left" ], function( i, prop ) {
 
 // Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
 jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
-	jQuery.each( { padding: "inner" + name, content: type, "": "outer" + name },
-		function( defaultExtra, funcName ) {
+	jQuery.each( {
+		padding: "inner" + name,
+		content: type,
+		"": "outer" + name
+	}, function( defaultExtra, funcName ) {
 
 		// Margin is only for outerHeight, outerWidth
 		jQuery.fn[ funcName ] = function( margin, value ) {
@@ -9962,7 +10658,7 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 			return access( this, function( elem, type, value ) {
 				var doc;
 
-				if ( jQuery.isWindow( elem ) ) {
+				if ( isWindow( elem ) ) {
 
 					// $( window ).outerWidth/Height return w/h including scrollbars (gh-1729)
 					return funcName.indexOf( "outer" ) === 0 ?
@@ -9996,6 +10692,22 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 } );
 
 
+jQuery.each( [
+	"ajaxStart",
+	"ajaxStop",
+	"ajaxComplete",
+	"ajaxError",
+	"ajaxSuccess",
+	"ajaxSend"
+], function( _i, type ) {
+	jQuery.fn[ type ] = function( fn ) {
+		return this.on( type, fn );
+	};
+} );
+
+
+
+
 jQuery.fn.extend( {
 
 	bind: function( types, data, fn ) {
@@ -10014,11 +10726,102 @@ jQuery.fn.extend( {
 		return arguments.length === 1 ?
 			this.off( selector, "**" ) :
 			this.off( types, selector || "**", fn );
+	},
+
+	hover: function( fnOver, fnOut ) {
+		return this.mouseenter( fnOver ).mouseleave( fnOut || fnOver );
 	}
 } );
 
-jQuery.parseJSON = JSON.parse;
+jQuery.each(
+	( "blur focus focusin focusout resize scroll click dblclick " +
+	"mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
+	"change select submit keydown keypress keyup contextmenu" ).split( " " ),
+	function( _i, name ) {
 
+		// Handle event binding
+		jQuery.fn[ name ] = function( data, fn ) {
+			return arguments.length > 0 ?
+				this.on( name, null, data, fn ) :
+				this.trigger( name );
+		};
+	}
+);
+
+
+
+
+// Support: Android <=4.0 only
+// Make sure we trim BOM and NBSP
+var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
+
+// Bind a function to a context, optionally partially applying any
+// arguments.
+// jQuery.proxy is deprecated to promote standards (specifically Function#bind)
+// However, it is not slated for removal any time soon
+jQuery.proxy = function( fn, context ) {
+	var tmp, args, proxy;
+
+	if ( typeof context === "string" ) {
+		tmp = fn[ context ];
+		context = fn;
+		fn = tmp;
+	}
+
+	// Quick check to determine if target is callable, in the spec
+	// this throws a TypeError, but we will just return undefined.
+	if ( !isFunction( fn ) ) {
+		return undefined;
+	}
+
+	// Simulated bind
+	args = slice.call( arguments, 2 );
+	proxy = function() {
+		return fn.apply( context || this, args.concat( slice.call( arguments ) ) );
+	};
+
+	// Set the guid of unique handler to the same of original handler, so it can be removed
+	proxy.guid = fn.guid = fn.guid || jQuery.guid++;
+
+	return proxy;
+};
+
+jQuery.holdReady = function( hold ) {
+	if ( hold ) {
+		jQuery.readyWait++;
+	} else {
+		jQuery.ready( true );
+	}
+};
+jQuery.isArray = Array.isArray;
+jQuery.parseJSON = JSON.parse;
+jQuery.nodeName = nodeName;
+jQuery.isFunction = isFunction;
+jQuery.isWindow = isWindow;
+jQuery.camelCase = camelCase;
+jQuery.type = toType;
+
+jQuery.now = Date.now;
+
+jQuery.isNumeric = function( obj ) {
+
+	// As of jQuery 3.0, isNumeric is limited to
+	// strings and numbers (primitives or objects)
+	// that can be coerced to finite numbers (gh-2662)
+	var type = jQuery.type( obj );
+	return ( type === "number" || type === "string" ) &&
+
+		// parseFloat NaNs numeric-cast false positives ("")
+		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
+		// subtraction forces infinities to NaN
+		!isNaN( obj - parseFloat( obj ) );
+};
+
+jQuery.trim = function( text ) {
+	return text == null ?
+		"" :
+		( text + "" ).replace( rtrim, "" );
+};
 
 
 
@@ -10040,7 +10843,6 @@ if ( typeof define === "function" && define.amd ) {
 		return jQuery;
 	} );
 }
-
 
 
 
@@ -10068,9 +10870,11 @@ jQuery.noConflict = function( deep ) {
 // Expose jQuery and $ identifiers, even in AMD
 // (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
 // and CommonJS for browser emulators (#13566)
-if ( !noGlobal ) {
+if ( typeof noGlobal === "undefined" ) {
 	window.jQuery = window.$ = jQuery;
 }
+
+
 
 
 return jQuery;
@@ -28760,1518 +29564,3455 @@ var widgetsTooltip = $.ui.tooltip;
 
 
 
-}));/*
- *  jQuery OwlCarousel v1.3.2
- *
- *  Copyright (c) 2013 Bartosz Wojciechowski
- *  http://www.owlgraphic.com/owlcarousel/
- *
- *  Licensed under MIT
- *
+}));/**
+ * Owl Carousel v2.3.4
+ * Copyright 2013-2018 David Deutsch
+ * Licensed under: SEE LICENSE IN https://github.com/OwlCarousel2/OwlCarousel2/blob/master/LICENSE
  */
-
-/*JS Lint helpers: */
-/*global dragMove: false, dragEnd: false, $, jQuery, alert, window, document */
-/*jslint nomen: true, continue:true */
-
-if (typeof Object.create !== "function") {
-    Object.create = function (obj) {
-        function F() {}
-        F.prototype = obj;
-        return new F();
-    };
-}
-(function ($, window, document) {
-
-    var Carousel = {
-        init : function (options, el) {
-            var base = this;
-
-            base.$elem = $(el);
-            base.options = $.extend({}, $.fn.owlCarousel.options, base.$elem.data(), options);
-
-            base.userOptions = options;
-            base.loadContent();
-        },
-
-        loadContent : function () {
-            var base = this, url;
-
-            function getData(data) {
-                var i, content = "";
-                if (typeof base.options.jsonSuccess === "function") {
-                    base.options.jsonSuccess.apply(this, [data]);
-                } else {
-                    for (i in data.owl) {
-                        if (data.owl.hasOwnProperty(i)) {
-                            content += data.owl[i].item;
-                        }
-                    }
-                    base.$elem.html(content);
-                }
-                base.logIn();
-            }
-
-            if (typeof base.options.beforeInit === "function") {
-                base.options.beforeInit.apply(this, [base.$elem]);
-            }
-
-            if (typeof base.options.jsonPath === "string") {
-                url = base.options.jsonPath;
-                $.getJSON(url, getData);
-            } else {
-                base.logIn();
-            }
-        },
-
-        logIn : function () {
-            var base = this;
-
-            base.$elem.data("owl-originalStyles", base.$elem.attr("style"))
-                      .data("owl-originalClasses", base.$elem.attr("class"));
-
-            base.$elem.css({opacity: 0});
-            base.orignalItems = base.options.items;
-            base.checkBrowser();
-            base.wrapperWidth = 0;
-            base.checkVisible = null;
-            base.setVars();
-        },
-
-        setVars : function () {
-            var base = this;
-            if (base.$elem.children().length === 0) {return false; }
-            base.baseClass();
-            base.eventTypes();
-            base.$userItems = base.$elem.children();
-            base.itemsAmount = base.$userItems.length;
-            base.wrapItems();
-            base.$owlItems = base.$elem.find(".owl-item");
-            base.$owlWrapper = base.$elem.find(".owl-wrapper");
-            base.playDirection = "next";
-            base.prevItem = 0;
-            base.prevArr = [0];
-            base.currentItem = 0;
-            base.customEvents();
-            base.onStartup();
-        },
-
-        onStartup : function () {
-            var base = this;
-            base.updateItems();
-            base.calculateAll();
-            base.buildControls();
-            base.updateControls();
-            base.response();
-            base.moveEvents();
-            base.stopOnHover();
-            base.owlStatus();
-
-            if (base.options.transitionStyle !== false) {
-                base.transitionTypes(base.options.transitionStyle);
-            }
-            if (base.options.autoPlay === true) {
-                base.options.autoPlay = 5000;
-            }
-            base.play();
-
-            base.$elem.find(".owl-wrapper").css("display", "block");
-
-            if (!base.$elem.is(":visible")) {
-                base.watchVisibility();
-            } else {
-                base.$elem.css("opacity", 1);
-            }
-            base.onstartup = false;
-            base.eachMoveUpdate();
-            if (typeof base.options.afterInit === "function") {
-                base.options.afterInit.apply(this, [base.$elem]);
-            }
-        },
-
-        eachMoveUpdate : function () {
-            var base = this;
-
-            if (base.options.lazyLoad === true) {
-                base.lazyLoad();
-            }
-            if (base.options.autoHeight === true) {
-                base.autoHeight();
-            }
-            base.onVisibleItems();
-
-            if (typeof base.options.afterAction === "function") {
-                base.options.afterAction.apply(this, [base.$elem]);
-            }
-        },
-
-        updateVars : function () {
-            var base = this;
-            if (typeof base.options.beforeUpdate === "function") {
-                base.options.beforeUpdate.apply(this, [base.$elem]);
-            }
-            base.watchVisibility();
-            base.updateItems();
-            base.calculateAll();
-            base.updatePosition();
-            base.updateControls();
-            base.eachMoveUpdate();
-            if (typeof base.options.afterUpdate === "function") {
-                base.options.afterUpdate.apply(this, [base.$elem]);
-            }
-        },
-
-        reload : function () {
-            var base = this;
-            window.setTimeout(function () {
-                base.updateVars();
-            }, 0);
-        },
-
-        watchVisibility : function () {
-            var base = this;
-
-            if (base.$elem.is(":visible") === false) {
-                base.$elem.css({opacity: 0});
-                window.clearInterval(base.autoPlayInterval);
-                window.clearInterval(base.checkVisible);
-            } else {
-                return false;
-            }
-            base.checkVisible = window.setInterval(function () {
-                if (base.$elem.is(":visible")) {
-                    base.reload();
-                    base.$elem.animate({opacity: 1}, 200);
-                    window.clearInterval(base.checkVisible);
-                }
-            }, 500);
-        },
-
-        wrapItems : function () {
-            var base = this;
-            base.$userItems.wrapAll("<div class=\"owl-wrapper\">").wrap("<div class=\"owl-item\"></div>");
-            base.$elem.find(".owl-wrapper").wrap("<div class=\"owl-wrapper-outer\">");
-            base.wrapperOuter = base.$elem.find(".owl-wrapper-outer");
-            base.$elem.css("display", "block");
-        },
-
-        baseClass : function () {
-            var base = this,
-                hasBaseClass = base.$elem.hasClass(base.options.baseClass),
-                hasThemeClass = base.$elem.hasClass(base.options.theme);
-
-            if (!hasBaseClass) {
-                base.$elem.addClass(base.options.baseClass);
-            }
-
-            if (!hasThemeClass) {
-                base.$elem.addClass(base.options.theme);
-            }
-        },
-
-        updateItems : function () {
-            var base = this, width, i;
-
-            if (base.options.responsive === false) {
-                return false;
-            }
-            if (base.options.singleItem === true) {
-                base.options.items = base.orignalItems = 1;
-                base.options.itemsCustom = false;
-                base.options.itemsDesktop = false;
-                base.options.itemsDesktopSmall = false;
-                base.options.itemsTablet = false;
-                base.options.itemsTabletSmall = false;
-                base.options.itemsMobile = false;
-                return false;
-            }
-
-            width = $(base.options.responsiveBaseWidth).width();
-
-            if (width > (base.options.itemsDesktop[0] || base.orignalItems)) {
-                base.options.items = base.orignalItems;
-            }
-            if (base.options.itemsCustom !== false) {
-                //Reorder array by screen size
-                base.options.itemsCustom.sort(function (a, b) {return a[0] - b[0]; });
-
-                for (i = 0; i < base.options.itemsCustom.length; i += 1) {
-                    if (base.options.itemsCustom[i][0] <= width) {
-                        base.options.items = base.options.itemsCustom[i][1];
-                    }
-                }
-
-            } else {
-
-                if (width <= base.options.itemsDesktop[0] && base.options.itemsDesktop !== false) {
-                    base.options.items = base.options.itemsDesktop[1];
-                }
-
-                if (width <= base.options.itemsDesktopSmall[0] && base.options.itemsDesktopSmall !== false) {
-                    base.options.items = base.options.itemsDesktopSmall[1];
-                }
-
-                if (width <= base.options.itemsTablet[0] && base.options.itemsTablet !== false) {
-                    base.options.items = base.options.itemsTablet[1];
-                }
-
-                if (width <= base.options.itemsTabletSmall[0] && base.options.itemsTabletSmall !== false) {
-                    base.options.items = base.options.itemsTabletSmall[1];
-                }
-
-                if (width <= base.options.itemsMobile[0] && base.options.itemsMobile !== false) {
-                    base.options.items = base.options.itemsMobile[1];
-                }
-            }
-
-            //if number of items is less than declared
-            if (base.options.items > base.itemsAmount && base.options.itemsScaleUp === true) {
-                base.options.items = base.itemsAmount;
-            }
-        },
-
-        response : function () {
-            var base = this,
-                smallDelay,
-                lastWindowWidth;
-
-            if (base.options.responsive !== true) {
-                return false;
-            }
-            lastWindowWidth = $(window).width();
-
-            base.resizer = function () {
-                if ($(window).width() !== lastWindowWidth) {
-                    if (base.options.autoPlay !== false) {
-                        window.clearInterval(base.autoPlayInterval);
-                    }
-                    window.clearTimeout(smallDelay);
-                    smallDelay = window.setTimeout(function () {
-                        lastWindowWidth = $(window).width();
-                        base.updateVars();
-                    }, base.options.responsiveRefreshRate);
-                }
-            };
-            $(window).resize(base.resizer);
-        },
-
-        updatePosition : function () {
-            var base = this;
-            base.jumpTo(base.currentItem);
-            if (base.options.autoPlay !== false) {
-                base.checkAp();
-            }
-        },
-
-        appendItemsSizes : function () {
-            var base = this,
-                roundPages = 0,
-                lastItem = base.itemsAmount - base.options.items;
-
-            base.$owlItems.each(function (index) {
-                var $this = $(this);
-                $this
-                    .css({"width": base.itemWidth})
-                    .data("owl-item", Number(index));
-
-                if (index % base.options.items === 0 || index === lastItem) {
-                    if (!(index > lastItem)) {
-                        roundPages += 1;
-                    }
-                }
-                $this.data("owl-roundPages", roundPages);
-            });
-        },
-
-        appendWrapperSizes : function () {
-            var base = this,
-                width = base.$owlItems.length * base.itemWidth;
-
-            base.$owlWrapper.css({
-                "width": width * 2,
-                "left": 0
-            });
-            base.appendItemsSizes();
-        },
-
-        calculateAll : function () {
-            var base = this;
-            base.calculateWidth();
-            base.appendWrapperSizes();
-            base.loops();
-            base.max();
-        },
-
-        calculateWidth : function () {
-            var base = this;
-            base.itemWidth = Math.round(base.$elem.width() / base.options.items);
-        },
-
-        max : function () {
-            var base = this,
-                maximum = ((base.itemsAmount * base.itemWidth) - base.options.items * base.itemWidth) * -1;
-            if (base.options.items > base.itemsAmount) {
-                base.maximumItem = 0;
-                maximum = 0;
-                base.maximumPixels = 0;
-            } else {
-                base.maximumItem = base.itemsAmount - base.options.items;
-                base.maximumPixels = maximum;
-            }
-            return maximum;
-        },
-
-        min : function () {
-            return 0;
-        },
-
-        loops : function () {
-            var base = this,
-                prev = 0,
-                elWidth = 0,
-                i,
-                item,
-                roundPageNum;
-
-            base.positionsInArray = [0];
-            base.pagesInArray = [];
-
-            for (i = 0; i < base.itemsAmount; i += 1) {
-                elWidth += base.itemWidth;
-                base.positionsInArray.push(-elWidth);
-
-                if (base.options.scrollPerPage === true) {
-                    item = $(base.$owlItems[i]);
-                    roundPageNum = item.data("owl-roundPages");
-                    if (roundPageNum !== prev) {
-                        base.pagesInArray[prev] = base.positionsInArray[i];
-                        prev = roundPageNum;
-                    }
-                }
-            }
-        },
-
-        buildControls : function () {
-            var base = this;
-            if (base.options.navigation === true || base.options.pagination === true) {
-                base.owlControls = $("<div class=\"owl-controls\"/>").toggleClass("clickable", !base.browser.isTouch).appendTo(base.$elem);
-            }
-            if (base.options.pagination === true) {
-                base.buildPagination();
-            }
-            if (base.options.navigation === true) {
-                base.buildButtons();
-            }
-        },
-
-        buildButtons : function () {
-            var base = this,
-                buttonsWrapper = $("<div class=\"owl-buttons\"/>");
-            base.owlControls.append(buttonsWrapper);
-
-            base.buttonPrev = $("<div/>", {
-                "class" : "owl-prev",
-                "html" : base.options.navigationText[0] || ""
-            });
-
-            base.buttonNext = $("<div/>", {
-                "class" : "owl-next",
-                "html" : base.options.navigationText[1] || ""
-            });
-
-            buttonsWrapper
-                .append(base.buttonPrev)
-                .append(base.buttonNext);
-
-            buttonsWrapper.on("touchstart.owlControls mousedown.owlControls", "div[class^=\"owl\"]", function (event) {
-                event.preventDefault();
-            });
-
-            buttonsWrapper.on("touchend.owlControls mouseup.owlControls", "div[class^=\"owl\"]", function (event) {
-                event.preventDefault();
-                if ($(this).hasClass("owl-next")) {
-                    base.next();
-                } else {
-                    base.prev();
-                }
-            });
-        },
-
-        buildPagination : function () {
-            var base = this;
-
-            base.paginationWrapper = $("<div class=\"owl-pagination\"/>");
-            base.owlControls.append(base.paginationWrapper);
-
-            base.paginationWrapper.on("touchend.owlControls mouseup.owlControls", ".owl-page", function (event) {
-                event.preventDefault();
-                if (Number($(this).data("owl-page")) !== base.currentItem) {
-                    base.goTo(Number($(this).data("owl-page")), true);
-                }
-            });
-        },
-
-        updatePagination : function () {
-            var base = this,
-                counter,
-                lastPage,
-                lastItem,
-                i,
-                paginationButton,
-                paginationButtonInner;
-
-            if (base.options.pagination === false) {
-                return false;
-            }
-
-            base.paginationWrapper.html("");
-
-            counter = 0;
-            lastPage = base.itemsAmount - base.itemsAmount % base.options.items;
-
-            for (i = 0; i < base.itemsAmount; i += 1) {
-                if (i % base.options.items === 0) {
-                    counter += 1;
-                    if (lastPage === i) {
-                        lastItem = base.itemsAmount - base.options.items;
-                    }
-                    paginationButton = $("<div/>", {
-                        "class" : "owl-page"
-                    });
-                    paginationButtonInner = $("<span></span>", {
-                        "text": base.options.paginationNumbers === true ? counter : "",
-                        "class": base.options.paginationNumbers === true ? "owl-numbers" : ""
-                    });
-                    paginationButton.append(paginationButtonInner);
-
-                    paginationButton.data("owl-page", lastPage === i ? lastItem : i);
-                    paginationButton.data("owl-roundPages", counter);
-
-                    base.paginationWrapper.append(paginationButton);
-                }
-            }
-            base.checkPagination();
-        },
-        checkPagination : function () {
-            var base = this;
-            if (base.options.pagination === false) {
-                return false;
-            }
-            base.paginationWrapper.find(".owl-page").each(function () {
-                if ($(this).data("owl-roundPages") === $(base.$owlItems[base.currentItem]).data("owl-roundPages")) {
-                    base.paginationWrapper
-                        .find(".owl-page")
-                        .removeClass("active");
-                    $(this).addClass("active");
-                }
-            });
-        },
-
-        checkNavigation : function () {
-            var base = this;
-
-            if (base.options.navigation === false) {
-                return false;
-            }
-            if (base.options.rewindNav === false) {
-                if (base.currentItem === 0 && base.maximumItem === 0) {
-                    base.buttonPrev.addClass("disabled");
-                    base.buttonNext.addClass("disabled");
-                } else if (base.currentItem === 0 && base.maximumItem !== 0) {
-                    base.buttonPrev.addClass("disabled");
-                    base.buttonNext.removeClass("disabled");
-                } else if (base.currentItem === base.maximumItem) {
-                    base.buttonPrev.removeClass("disabled");
-                    base.buttonNext.addClass("disabled");
-                } else if (base.currentItem !== 0 && base.currentItem !== base.maximumItem) {
-                    base.buttonPrev.removeClass("disabled");
-                    base.buttonNext.removeClass("disabled");
-                }
-            }
-        },
-
-        updateControls : function () {
-            var base = this;
-            base.updatePagination();
-            base.checkNavigation();
-            if (base.owlControls) {
-                if (base.options.items >= base.itemsAmount) {
-                    base.owlControls.hide();
-                } else {
-                    base.owlControls.show();
-                }
-            }
-        },
-
-        destroyControls : function () {
-            var base = this;
-            if (base.owlControls) {
-                base.owlControls.remove();
-            }
-        },
-
-        next : function (speed) {
-            var base = this;
-
-            if (base.isTransition) {
-                return false;
-            }
-
-            base.currentItem += base.options.scrollPerPage === true ? base.options.items : 1;
-            if (base.currentItem > base.maximumItem + (base.options.scrollPerPage === true ? (base.options.items - 1) : 0)) {
-                if (base.options.rewindNav === true) {
-                    base.currentItem = 0;
-                    speed = "rewind";
-                } else {
-                    base.currentItem = base.maximumItem;
-                    return false;
-                }
-            }
-            base.goTo(base.currentItem, speed);
-        },
-
-        prev : function (speed) {
-            var base = this;
-
-            if (base.isTransition) {
-                return false;
-            }
-
-            if (base.options.scrollPerPage === true && base.currentItem > 0 && base.currentItem < base.options.items) {
-                base.currentItem = 0;
-            } else {
-                base.currentItem -= base.options.scrollPerPage === true ? base.options.items : 1;
-            }
-            if (base.currentItem < 0) {
-                if (base.options.rewindNav === true) {
-                    base.currentItem = base.maximumItem;
-                    speed = "rewind";
-                } else {
-                    base.currentItem = 0;
-                    return false;
-                }
-            }
-            base.goTo(base.currentItem, speed);
-        },
-
-        goTo : function (position, speed, drag) {
-            var base = this,
-                goToPixel;
-
-            if (base.isTransition) {
-                return false;
-            }
-            if (typeof base.options.beforeMove === "function") {
-                base.options.beforeMove.apply(this, [base.$elem]);
-            }
-            if (position >= base.maximumItem) {
-                position = base.maximumItem;
-            } else if (position <= 0) {
-                position = 0;
-            }
-
-            base.currentItem = base.owl.currentItem = position;
-            if (base.options.transitionStyle !== false && drag !== "drag" && base.options.items === 1 && base.browser.support3d === true) {
-                base.swapSpeed(0);
-                if (base.browser.support3d === true) {
-                    base.transition3d(base.positionsInArray[position]);
-                } else {
-                    base.css2slide(base.positionsInArray[position], 1);
-                }
-                base.afterGo();
-                base.singleItemTransition();
-                return false;
-            }
-            goToPixel = base.positionsInArray[position];
-
-            if (base.browser.support3d === true) {
-                base.isCss3Finish = false;
-
-                if (speed === true) {
-                    base.swapSpeed("paginationSpeed");
-                    window.setTimeout(function () {
-                        base.isCss3Finish = true;
-                    }, base.options.paginationSpeed);
-
-                } else if (speed === "rewind") {
-                    base.swapSpeed(base.options.rewindSpeed);
-                    window.setTimeout(function () {
-                        base.isCss3Finish = true;
-                    }, base.options.rewindSpeed);
-
-                } else {
-                    base.swapSpeed("slideSpeed");
-                    window.setTimeout(function () {
-                        base.isCss3Finish = true;
-                    }, base.options.slideSpeed);
-                }
-                base.transition3d(goToPixel);
-            } else {
-                if (speed === true) {
-                    base.css2slide(goToPixel, base.options.paginationSpeed);
-                } else if (speed === "rewind") {
-                    base.css2slide(goToPixel, base.options.rewindSpeed);
-                } else {
-                    base.css2slide(goToPixel, base.options.slideSpeed);
-                }
-            }
-            base.afterGo();
-        },
-
-        jumpTo : function (position) {
-            var base = this;
-            if (typeof base.options.beforeMove === "function") {
-                base.options.beforeMove.apply(this, [base.$elem]);
-            }
-            if (position >= base.maximumItem || position === -1) {
-                position = base.maximumItem;
-            } else if (position <= 0) {
-                position = 0;
-            }
-            base.swapSpeed(0);
-            if (base.browser.support3d === true) {
-                base.transition3d(base.positionsInArray[position]);
-            } else {
-                base.css2slide(base.positionsInArray[position], 1);
-            }
-            base.currentItem = base.owl.currentItem = position;
-            base.afterGo();
-        },
-
-        afterGo : function () {
-            var base = this;
-
-            base.prevArr.push(base.currentItem);
-            base.prevItem = base.owl.prevItem = base.prevArr[base.prevArr.length - 2];
-            base.prevArr.shift(0);
-
-            if (base.prevItem !== base.currentItem) {
-                base.checkPagination();
-                base.checkNavigation();
-                base.eachMoveUpdate();
-
-                if (base.options.autoPlay !== false) {
-                    base.checkAp();
-                }
-            }
-            if (typeof base.options.afterMove === "function" && base.prevItem !== base.currentItem) {
-                base.options.afterMove.apply(this, [base.$elem]);
-            }
-        },
-
-        stop : function () {
-            var base = this;
-            base.apStatus = "stop";
-            window.clearInterval(base.autoPlayInterval);
-        },
-
-        checkAp : function () {
-            var base = this;
-            if (base.apStatus !== "stop") {
-                base.play();
-            }
-        },
-
-        play : function () {
-            var base = this;
-            base.apStatus = "play";
-            if (base.options.autoPlay === false) {
-                return false;
-            }
-            window.clearInterval(base.autoPlayInterval);
-            base.autoPlayInterval = window.setInterval(function () {
-                base.next(true);
-            }, base.options.autoPlay);
-        },
-
-        swapSpeed : function (action) {
-            var base = this;
-            if (action === "slideSpeed") {
-                base.$owlWrapper.css(base.addCssSpeed(base.options.slideSpeed));
-            } else if (action === "paginationSpeed") {
-                base.$owlWrapper.css(base.addCssSpeed(base.options.paginationSpeed));
-            } else if (typeof action !== "string") {
-                base.$owlWrapper.css(base.addCssSpeed(action));
-            }
-        },
-
-        addCssSpeed : function (speed) {
-            return {
-                "-webkit-transition": "all " + speed + "ms ease",
-                "-moz-transition": "all " + speed + "ms ease",
-                "-o-transition": "all " + speed + "ms ease",
-                "transition": "all " + speed + "ms ease"
-            };
-        },
-
-        removeTransition : function () {
-            return {
-                "-webkit-transition": "",
-                "-moz-transition": "",
-                "-o-transition": "",
-                "transition": ""
-            };
-        },
-
-        doTranslate : function (pixels) {
-            return {
-                "-webkit-transform": "translate3d(" + pixels + "px, 0px, 0px)",
-                "-moz-transform": "translate3d(" + pixels + "px, 0px, 0px)",
-                "-o-transform": "translate3d(" + pixels + "px, 0px, 0px)",
-                "-ms-transform": "translate3d(" + pixels + "px, 0px, 0px)",
-                "transform": "translate3d(" + pixels + "px, 0px,0px)"
-            };
-        },
-
-        transition3d : function (value) {
-            var base = this;
-            base.$owlWrapper.css(base.doTranslate(value));
-        },
-
-        css2move : function (value) {
-            var base = this;
-            base.$owlWrapper.css({"left" : value});
-        },
-
-        css2slide : function (value, speed) {
-            var base = this;
-
-            base.isCssFinish = false;
-            base.$owlWrapper.stop(true, true).animate({
-                "left" : value
-            }, {
-                duration : speed || base.options.slideSpeed,
-                complete : function () {
-                    base.isCssFinish = true;
-                }
-            });
-        },
-
-        checkBrowser : function () {
-            var base = this,
-                translate3D = "translate3d(0px, 0px, 0px)",
-                tempElem = document.createElement("div"),
-                regex,
-                asSupport,
-                support3d,
-                isTouch;
-
-            tempElem.style.cssText = "  -moz-transform:" + translate3D +
-                                  "; -ms-transform:"     + translate3D +
-                                  "; -o-transform:"      + translate3D +
-                                  "; -webkit-transform:" + translate3D +
-                                  "; transform:"         + translate3D;
-            regex = /translate3d\(0px, 0px, 0px\)/g;
-            asSupport = tempElem.style.cssText.match(regex);
-            support3d = (asSupport !== null && asSupport.length === 1);
-
-            isTouch = "ontouchstart" in window || window.navigator.msMaxTouchPoints;
-
-            base.browser = {
-                "support3d" : support3d,
-                "isTouch" : isTouch
-            };
-        },
-
-        moveEvents : function () {
-            var base = this;
-            if (base.options.mouseDrag !== false || base.options.touchDrag !== false) {
-                base.gestures();
-                base.disabledEvents();
-            }
-        },
-
-        eventTypes : function () {
-            var base = this,
-                types = ["s", "e", "x"];
-
-            base.ev_types = {};
-
-            if (base.options.mouseDrag === true && base.options.touchDrag === true) {
-                types = [
-                    "touchstart.owl mousedown.owl",
-                    "touchmove.owl mousemove.owl",
-                    "touchend.owl touchcancel.owl mouseup.owl"
-                ];
-            } else if (base.options.mouseDrag === false && base.options.touchDrag === true) {
-                types = [
-                    "touchstart.owl",
-                    "touchmove.owl",
-                    "touchend.owl touchcancel.owl"
-                ];
-            } else if (base.options.mouseDrag === true && base.options.touchDrag === false) {
-                types = [
-                    "mousedown.owl",
-                    "mousemove.owl",
-                    "mouseup.owl"
-                ];
-            }
-
-            base.ev_types.start = types[0];
-            base.ev_types.move = types[1];
-            base.ev_types.end = types[2];
-        },
-
-        disabledEvents :  function () {
-            var base = this;
-            base.$elem.on("dragstart.owl", function (event) { event.preventDefault(); });
-            base.$elem.on("mousedown.disableTextSelect", function (e) {
-                return $(e.target).is('input, textarea, select, option');
-            });
-        },
-
-        gestures : function () {
-            /*jslint unparam: true*/
-            var base = this,
-                locals = {
-                    offsetX : 0,
-                    offsetY : 0,
-                    baseElWidth : 0,
-                    relativePos : 0,
-                    position: null,
-                    minSwipe : null,
-                    maxSwipe: null,
-                    sliding : null,
-                    dargging: null,
-                    targetElement : null
-                };
-
-            base.isCssFinish = true;
-
-            function getTouches(event) {
-                if (event.touches !== undefined) {
-                    return {
-                        x : event.touches[0].pageX,
-                        y : event.touches[0].pageY
-                    };
-                }
-
-                if (event.touches === undefined) {
-                    if (event.pageX !== undefined) {
-                        return {
-                            x : event.pageX,
-                            y : event.pageY
-                        };
-                    }
-                    if (event.pageX === undefined) {
-                        return {
-                            x : event.clientX,
-                            y : event.clientY
-                        };
-                    }
-                }
-            }
-
-            function swapEvents(type) {
-                if (type === "on") {
-                    $(document).on(base.ev_types.move, dragMove);
-                    $(document).on(base.ev_types.end, dragEnd);
-                } else if (type === "off") {
-                    $(document).off(base.ev_types.move);
-                    $(document).off(base.ev_types.end);
-                }
-            }
-
-            function dragStart(event) {
-                var ev = event.originalEvent || event || window.event,
-                    position;
-
-                if (ev.which === 3) {
-                    return false;
-                }
-                if (base.itemsAmount <= base.options.items) {
-                    return;
-                }
-                if (base.isCssFinish === false && !base.options.dragBeforeAnimFinish) {
-                    return false;
-                }
-                if (base.isCss3Finish === false && !base.options.dragBeforeAnimFinish) {
-                    return false;
-                }
-
-                if (base.options.autoPlay !== false) {
-                    window.clearInterval(base.autoPlayInterval);
-                }
-
-                if (base.browser.isTouch !== true && !base.$owlWrapper.hasClass("grabbing")) {
-                    base.$owlWrapper.addClass("grabbing");
-                }
-
-                base.newPosX = 0;
-                base.newRelativeX = 0;
-
-                $(this).css(base.removeTransition());
-
-                position = $(this).position();
-                locals.relativePos = position.left;
-
-                locals.offsetX = getTouches(ev).x - position.left;
-                locals.offsetY = getTouches(ev).y - position.top;
-
-                swapEvents("on");
-
-                locals.sliding = false;
-                locals.targetElement = ev.target || ev.srcElement;
-            }
-
-            function dragMove(event) {
-                var ev = event.originalEvent || event || window.event,
-                    minSwipe,
-                    maxSwipe;
-
-                base.newPosX = getTouches(ev).x - locals.offsetX;
-                base.newPosY = getTouches(ev).y - locals.offsetY;
-                base.newRelativeX = base.newPosX - locals.relativePos;
-
-                if (typeof base.options.startDragging === "function" && locals.dragging !== true && base.newRelativeX !== 0) {
-                    locals.dragging = true;
-                    base.options.startDragging.apply(base, [base.$elem]);
-                }
-
-                if ((base.newRelativeX > 8 || base.newRelativeX < -8) && (base.browser.isTouch === true)) {
-                    if (ev.preventDefault !== undefined) {
-                        ev.preventDefault();
-                    } else {
-                        ev.returnValue = false;
-                    }
-                    locals.sliding = true;
-                }
-
-                if ((base.newPosY > 10 || base.newPosY < -10) && locals.sliding === false) {
-                    $(document).off("touchmove.owl");
-                }
-
-                minSwipe = function () {
-                    return base.newRelativeX / 5;
-                };
-
-                maxSwipe = function () {
-                    return base.maximumPixels + base.newRelativeX / 5;
-                };
-
-                base.newPosX = Math.max(Math.min(base.newPosX, minSwipe()), maxSwipe());
-                if (base.browser.support3d === true) {
-                    base.transition3d(base.newPosX);
-                } else {
-                    base.css2move(base.newPosX);
-                }
-            }
-
-            function dragEnd(event) {
-                var ev = event.originalEvent || event || window.event,
-                    newPosition,
-                    handlers,
-                    owlStopEvent;
-
-                ev.target = ev.target || ev.srcElement;
-
-                locals.dragging = false;
-
-                if (base.browser.isTouch !== true) {
-                    base.$owlWrapper.removeClass("grabbing");
-                }
-
-                if (base.newRelativeX < 0) {
-                    base.dragDirection = base.owl.dragDirection = "left";
-                } else {
-                    base.dragDirection = base.owl.dragDirection = "right";
-                }
-
-                if (base.newRelativeX !== 0) {
-                    newPosition = base.getNewPosition();
-                    base.goTo(newPosition, false, "drag");
-                    if (locals.targetElement === ev.target && base.browser.isTouch !== true) {
-                        $(ev.target).on("click.disable", function (ev) {
-                            ev.stopImmediatePropagation();
-                            ev.stopPropagation();
-                            ev.preventDefault();
-                            $(ev.target).off("click.disable");
-                        });
-                        handlers = $._data(ev.target, "events").click;
-                        owlStopEvent = handlers.pop();
-                        handlers.splice(0, 0, owlStopEvent);
-                    }
-                }
-                swapEvents("off");
-            }
-            base.$elem.on(base.ev_types.start, ".owl-wrapper", dragStart);
-        },
-
-        getNewPosition : function () {
-            var base = this,
-                newPosition = base.closestItem();
-
-            if (newPosition > base.maximumItem) {
-                base.currentItem = base.maximumItem;
-                newPosition  = base.maximumItem;
-            } else if (base.newPosX >= 0) {
-                newPosition = 0;
-                base.currentItem = 0;
-            }
-            return newPosition;
-        },
-        closestItem : function () {
-            var base = this,
-                array = base.options.scrollPerPage === true ? base.pagesInArray : base.positionsInArray,
-                goal = base.newPosX,
-                closest = null;
-
-            $.each(array, function (i, v) {
-                if (goal - (base.itemWidth / 20) > array[i + 1] && goal - (base.itemWidth / 20) < v && base.moveDirection() === "left") {
-                    closest = v;
-                    if (base.options.scrollPerPage === true) {
-                        base.currentItem = $.inArray(closest, base.positionsInArray);
-                    } else {
-                        base.currentItem = i;
-                    }
-                } else if (goal + (base.itemWidth / 20) < v && goal + (base.itemWidth / 20) > (array[i + 1] || array[i] - base.itemWidth) && base.moveDirection() === "right") {
-                    if (base.options.scrollPerPage === true) {
-                        closest = array[i + 1] || array[array.length - 1];
-                        base.currentItem = $.inArray(closest, base.positionsInArray);
-                    } else {
-                        closest = array[i + 1];
-                        base.currentItem = i + 1;
-                    }
-                }
-            });
-            return base.currentItem;
-        },
-
-        moveDirection : function () {
-            var base = this,
-                direction;
-            if (base.newRelativeX < 0) {
-                direction = "right";
-                base.playDirection = "next";
-            } else {
-                direction = "left";
-                base.playDirection = "prev";
-            }
-            return direction;
-        },
-
-        customEvents : function () {
-            /*jslint unparam: true*/
-            var base = this;
-            base.$elem.on("owl.next", function () {
-                base.next();
-            });
-            base.$elem.on("owl.prev", function () {
-                base.prev();
-            });
-            base.$elem.on("owl.play", function (event, speed) {
-                base.options.autoPlay = speed;
-                base.play();
-                base.hoverStatus = "play";
-            });
-            base.$elem.on("owl.stop", function () {
-                base.stop();
-                base.hoverStatus = "stop";
-            });
-            base.$elem.on("owl.goTo", function (event, item) {
-                base.goTo(item);
-            });
-            base.$elem.on("owl.jumpTo", function (event, item) {
-                base.jumpTo(item);
-            });
-        },
-
-        stopOnHover : function () {
-            var base = this;
-            if (base.options.stopOnHover === true && base.browser.isTouch !== true && base.options.autoPlay !== false) {
-                base.$elem.on("mouseover", function () {
-                    base.stop();
-                });
-                base.$elem.on("mouseout", function () {
-                    if (base.hoverStatus !== "stop") {
-                        base.play();
-                    }
-                });
-            }
-        },
-
-        lazyLoad : function () {
-            var base = this,
-                i,
-                $item,
-                itemNumber,
-                $lazyImg,
-                follow;
-
-            if (base.options.lazyLoad === false) {
-                return false;
-            }
-            for (i = 0; i < base.itemsAmount; i += 1) {
-                $item = $(base.$owlItems[i]);
-
-                if ($item.data("owl-loaded") === "loaded") {
-                    continue;
-                }
-
-                itemNumber = $item.data("owl-item");
-                $lazyImg = $item.find(".lazyOwl");
-
-                if (typeof $lazyImg.data("src") !== "string") {
-                    $item.data("owl-loaded", "loaded");
-                    continue;
-                }
-                if ($item.data("owl-loaded") === undefined) {
-                    $lazyImg.hide();
-                    $item.addClass("loading").data("owl-loaded", "checked");
-                }
-                if (base.options.lazyFollow === true) {
-                    follow = itemNumber >= base.currentItem;
-                } else {
-                    follow = true;
-                }
-                if (follow && itemNumber < base.currentItem + base.options.items && $lazyImg.length) {
-                    base.lazyPreload($item, $lazyImg);
-                }
-            }
-        },
-
-        lazyPreload : function ($item, $lazyImg) {
-            var base = this,
-                iterations = 0,
-                isBackgroundImg;
-
-            if ($lazyImg.prop("tagName") === "DIV") {
-                $lazyImg.css("background-image", "url(" + $lazyImg.data("src") + ")");
-                isBackgroundImg = true;
-            } else {
-                $lazyImg[0].src = $lazyImg.data("src");
-            }
-
-            function showImage() {
-                $item.data("owl-loaded", "loaded").removeClass("loading");
-                $lazyImg.removeAttr("data-src");
-                if (base.options.lazyEffect === "fade") {
-                    $lazyImg.fadeIn(400);
-                } else {
-                    $lazyImg.show();
-                }
-                if (typeof base.options.afterLazyLoad === "function") {
-                    base.options.afterLazyLoad.apply(this, [base.$elem]);
-                }
-            }
-
-            function checkLazyImage() {
-                iterations += 1;
-                if (base.completeImg($lazyImg.get(0)) || isBackgroundImg === true) {
-                    showImage();
-                } else if (iterations <= 100) {//if image loads in less than 10 seconds 
-                    window.setTimeout(checkLazyImage, 100);
-                } else {
-                    showImage();
-                }
-            }
-
-            checkLazyImage();
-        },
-
-        autoHeight : function () {
-            var base = this,
-                $currentimg = $(base.$owlItems[base.currentItem]).find("img"),
-                iterations;
-
-            function addHeight() {
-                var $currentItem = $(base.$owlItems[base.currentItem]).height();
-                base.wrapperOuter.css("height", $currentItem + "px");
-                if (!base.wrapperOuter.hasClass("autoHeight")) {
-                    window.setTimeout(function () {
-                        base.wrapperOuter.addClass("autoHeight");
-                    }, 0);
-                }
-            }
-
-            function checkImage() {
-                iterations += 1;
-                if (base.completeImg($currentimg.get(0))) {
-                    addHeight();
-                } else if (iterations <= 100) { //if image loads in less than 10 seconds 
-                    window.setTimeout(checkImage, 100);
-                } else {
-                    base.wrapperOuter.css("height", ""); //Else remove height attribute
-                }
-            }
-
-            if ($currentimg.get(0) !== undefined) {
-                iterations = 0;
-                checkImage();
-            } else {
-                addHeight();
-            }
-        },
-
-        completeImg : function (img) {
-            var naturalWidthType;
-
-            if (!img.complete) {
-                return false;
-            }
-            naturalWidthType = typeof img.naturalWidth;
-            if (naturalWidthType !== "undefined" && img.naturalWidth === 0) {
-                return false;
-            }
-            return true;
-        },
-
-        onVisibleItems : function () {
-            var base = this,
-                i;
-
-            if (base.options.addClassActive === true) {
-                base.$owlItems.removeClass("active");
-            }
-            base.visibleItems = [];
-            for (i = base.currentItem; i < base.currentItem + base.options.items; i += 1) {
-                base.visibleItems.push(i);
-
-                if (base.options.addClassActive === true) {
-                    $(base.$owlItems[i]).addClass("active");
-                }
-            }
-            base.owl.visibleItems = base.visibleItems;
-        },
-
-        transitionTypes : function (className) {
-            var base = this;
-            //Currently available: "fade", "backSlide", "goDown", "fadeUp"
-            base.outClass = "owl-" + className + "-out";
-            base.inClass = "owl-" + className + "-in";
-        },
-
-        singleItemTransition : function () {
-            var base = this,
-                outClass = base.outClass,
-                inClass = base.inClass,
-                $currentItem = base.$owlItems.eq(base.currentItem),
-                $prevItem = base.$owlItems.eq(base.prevItem),
-                prevPos = Math.abs(base.positionsInArray[base.currentItem]) + base.positionsInArray[base.prevItem],
-                origin = Math.abs(base.positionsInArray[base.currentItem]) + base.itemWidth / 2,
-                animEnd = 'webkitAnimationEnd oAnimationEnd MSAnimationEnd animationend';
-
-            base.isTransition = true;
-
-            base.$owlWrapper
-                .addClass('owl-origin')
-                .css({
-                    "-webkit-transform-origin" : origin + "px",
-                    "-moz-perspective-origin" : origin + "px",
-                    "perspective-origin" : origin + "px"
-                });
-            function transStyles(prevPos) {
-                return {
-                    "position" : "relative",
-                    "left" : prevPos + "px"
-                };
-            }
-
-            $prevItem
-                .css(transStyles(prevPos, 10))
-                .addClass(outClass)
-                .on(animEnd, function () {
-                    base.endPrev = true;
-                    $prevItem.off(animEnd);
-                    base.clearTransStyle($prevItem, outClass);
-                });
-
-            $currentItem
-                .addClass(inClass)
-                .on(animEnd, function () {
-                    base.endCurrent = true;
-                    $currentItem.off(animEnd);
-                    base.clearTransStyle($currentItem, inClass);
-                });
-        },
-
-        clearTransStyle : function (item, classToRemove) {
-            var base = this;
-            item.css({
-                "position" : "",
-                "left" : ""
-            }).removeClass(classToRemove);
-
-            if (base.endPrev && base.endCurrent) {
-                base.$owlWrapper.removeClass('owl-origin');
-                base.endPrev = false;
-                base.endCurrent = false;
-                base.isTransition = false;
-            }
-        },
-
-        owlStatus : function () {
-            var base = this;
-            base.owl = {
-                "userOptions"   : base.userOptions,
-                "baseElement"   : base.$elem,
-                "userItems"     : base.$userItems,
-                "owlItems"      : base.$owlItems,
-                "currentItem"   : base.currentItem,
-                "prevItem"      : base.prevItem,
-                "visibleItems"  : base.visibleItems,
-                "isTouch"       : base.browser.isTouch,
-                "browser"       : base.browser,
-                "dragDirection" : base.dragDirection
-            };
-        },
-
-        clearEvents : function () {
-            var base = this;
-            base.$elem.off(".owl owl mousedown.disableTextSelect");
-            $(document).off(".owl owl");
-            $(window).off("resize", base.resizer);
-        },
-
-        unWrap : function () {
-            var base = this;
-            if (base.$elem.children().length !== 0) {
-                base.$owlWrapper.unwrap();
-                base.$userItems.unwrap().unwrap();
-                if (base.owlControls) {
-                    base.owlControls.remove();
-                }
-            }
-            base.clearEvents();
-            base.$elem
-                .attr("style", base.$elem.data("owl-originalStyles") || "")
-                .attr("class", base.$elem.data("owl-originalClasses"));
-        },
-
-        destroy : function () {
-            var base = this;
-            base.stop();
-            window.clearInterval(base.checkVisible);
-            base.unWrap();
-            base.$elem.removeData();
-        },
-
-        reinit : function (newOptions) {
-            var base = this,
-                options = $.extend({}, base.userOptions, newOptions);
-            base.unWrap();
-            base.init(options, base.$elem);
-        },
-
-        addItem : function (htmlString, targetPosition) {
-            var base = this,
-                position;
-
-            if (!htmlString) {return false; }
-
-            if (base.$elem.children().length === 0) {
-                base.$elem.append(htmlString);
-                base.setVars();
-                return false;
-            }
-            base.unWrap();
-            if (targetPosition === undefined || targetPosition === -1) {
-                position = -1;
-            } else {
-                position = targetPosition;
-            }
-            if (position >= base.$userItems.length || position === -1) {
-                base.$userItems.eq(-1).after(htmlString);
-            } else {
-                base.$userItems.eq(position).before(htmlString);
-            }
-
-            base.setVars();
-        },
-
-        removeItem : function (targetPosition) {
-            var base = this,
-                position;
-
-            if (base.$elem.children().length === 0) {
-                return false;
-            }
-            if (targetPosition === undefined || targetPosition === -1) {
-                position = -1;
-            } else {
-                position = targetPosition;
-            }
-
-            base.unWrap();
-            base.$userItems.eq(position).remove();
-            base.setVars();
-        }
-
-    };
-
-    $.fn.owlCarousel = function (options) {
-        return this.each(function () {
-            if ($(this).data("owl-init") === true) {
-                return false;
-            }
-            $(this).data("owl-init", true);
-            var carousel = Object.create(Carousel);
-            carousel.init(options, this);
-            $.data(this, "owlCarousel", carousel);
-        });
-    };
-
-    $.fn.owlCarousel.options = {
-
-        items : 5,
-        itemsCustom : false,
-        itemsDesktop : [1199, 4],
-        itemsDesktopSmall : [979, 3],
-        itemsTablet : [768, 2],
-        itemsTabletSmall : false,
-        itemsMobile : [479, 1],
-        singleItem : false,
-        itemsScaleUp : false,
-
-        slideSpeed : 200,
-        paginationSpeed : 800,
-        rewindSpeed : 1000,
-
-        autoPlay : false,
-        stopOnHover : false,
-
-        navigation : false,
-        navigationText : ["prev", "next"],
-        rewindNav : true,
-        scrollPerPage : false,
-
-        pagination : true,
-        paginationNumbers : false,
-
-        responsive : true,
-        responsiveRefreshRate : 200,
-        responsiveBaseWidth : window,
-
-        baseClass : "owl-carousel",
-        theme : "owl-theme",
-
-        lazyLoad : false,
-        lazyFollow : true,
-        lazyEffect : "fade",
-
-        autoHeight : false,
-
-        jsonPath : false,
-        jsonSuccess : false,
-
-        dragBeforeAnimFinish : true,
-        mouseDrag : true,
-        touchDrag : true,
-
-        addClassActive : false,
-        transitionStyle : false,
-
-        beforeUpdate : false,
-        afterUpdate : false,
-        beforeInit : false,
-        afterInit : false,
-        beforeMove : false,
-        afterMove : false,
-        afterAction : false,
-        startDragging : false,
-        afterLazyLoad: false
-    };
-}(jQuery, window, document));/**
+/**
+ * Owl carousel
+ * @version 2.3.4
+ * @author Bartosz Wojciechowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ * @todo Lazy Load Icon
+ * @todo prevent animationend bubling
+ * @todo itemsScaleUp
+ * @todo Test Zepto
+ * @todo stagePadding calculate wrong active classes
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates a carousel.
+	 * @class The Owl Carousel.
+	 * @public
+	 * @param {HTMLElement|jQuery} element - The element to create the carousel for.
+	 * @param {Object} [options] - The options
+	 */
+	function Owl(element, options) {
+
+		/**
+		 * Current settings for the carousel.
+		 * @public
+		 */
+		this.settings = null;
+
+		/**
+		 * Current options set by the caller including defaults.
+		 * @public
+		 */
+		this.options = $.extend({}, Owl.Defaults, options);
+
+		/**
+		 * Plugin element.
+		 * @public
+		 */
+		this.$element = $(element);
+
+		/**
+		 * Proxied event handlers.
+		 * @protected
+		 */
+		this._handlers = {};
+
+		/**
+		 * References to the running plugins of this carousel.
+		 * @protected
+		 */
+		this._plugins = {};
+
+		/**
+		 * Currently suppressed events to prevent them from being retriggered.
+		 * @protected
+		 */
+		this._supress = {};
+
+		/**
+		 * Absolute current position.
+		 * @protected
+		 */
+		this._current = null;
+
+		/**
+		 * Animation speed in milliseconds.
+		 * @protected
+		 */
+		this._speed = null;
+
+		/**
+		 * Coordinates of all items in pixel.
+		 * @todo The name of this member is missleading.
+		 * @protected
+		 */
+		this._coordinates = [];
+
+		/**
+		 * Current breakpoint.
+		 * @todo Real media queries would be nice.
+		 * @protected
+		 */
+		this._breakpoint = null;
+
+		/**
+		 * Current width of the plugin element.
+		 */
+		this._width = null;
+
+		/**
+		 * All real items.
+		 * @protected
+		 */
+		this._items = [];
+
+		/**
+		 * All cloned items.
+		 * @protected
+		 */
+		this._clones = [];
+
+		/**
+		 * Merge values of all items.
+		 * @todo Maybe this could be part of a plugin.
+		 * @protected
+		 */
+		this._mergers = [];
+
+		/**
+		 * Widths of all items.
+		 */
+		this._widths = [];
+
+		/**
+		 * Invalidated parts within the update process.
+		 * @protected
+		 */
+		this._invalidated = {};
+
+		/**
+		 * Ordered list of workers for the update process.
+		 * @protected
+		 */
+		this._pipe = [];
+
+		/**
+		 * Current state information for the drag operation.
+		 * @todo #261
+		 * @protected
+		 */
+		this._drag = {
+			time: null,
+			target: null,
+			pointer: null,
+			stage: {
+				start: null,
+				current: null
+			},
+			direction: null
+		};
+
+		/**
+		 * Current state information and their tags.
+		 * @type {Object}
+		 * @protected
+		 */
+		this._states = {
+			current: {},
+			tags: {
+				'initializing': [ 'busy' ],
+				'animating': [ 'busy' ],
+				'dragging': [ 'interacting' ]
+			}
+		};
+
+		$.each([ 'onResize', 'onThrottledResize' ], $.proxy(function(i, handler) {
+			this._handlers[handler] = $.proxy(this[handler], this);
+		}, this));
+
+		$.each(Owl.Plugins, $.proxy(function(key, plugin) {
+			this._plugins[key.charAt(0).toLowerCase() + key.slice(1)]
+				= new plugin(this);
+		}, this));
+
+		$.each(Owl.Workers, $.proxy(function(priority, worker) {
+			this._pipe.push({
+				'filter': worker.filter,
+				'run': $.proxy(worker.run, this)
+			});
+		}, this));
+
+		this.setup();
+		this.initialize();
+	}
+
+	/**
+	 * Default options for the carousel.
+	 * @public
+	 */
+	Owl.Defaults = {
+		items: 3,
+		loop: false,
+		center: false,
+		rewind: false,
+		checkVisibility: true,
+
+		mouseDrag: true,
+		touchDrag: true,
+		pullDrag: true,
+		freeDrag: false,
+
+		margin: 0,
+		stagePadding: 0,
+
+		merge: false,
+		mergeFit: true,
+		autoWidth: false,
+
+		startPosition: 0,
+		rtl: false,
+
+		smartSpeed: 250,
+		fluidSpeed: false,
+		dragEndSpeed: false,
+
+		responsive: {},
+		responsiveRefreshRate: 200,
+		responsiveBaseElement: window,
+
+		fallbackEasing: 'swing',
+		slideTransition: '',
+
+		info: false,
+
+		nestedItemSelector: false,
+		itemElement: 'div',
+		stageElement: 'div',
+
+		refreshClass: 'owl-refresh',
+		loadedClass: 'owl-loaded',
+		loadingClass: 'owl-loading',
+		rtlClass: 'owl-rtl',
+		responsiveClass: 'owl-responsive',
+		dragClass: 'owl-drag',
+		itemClass: 'owl-item',
+		stageClass: 'owl-stage',
+		stageOuterClass: 'owl-stage-outer',
+		grabClass: 'owl-grab'
+	};
+
+	/**
+	 * Enumeration for width.
+	 * @public
+	 * @readonly
+	 * @enum {String}
+	 */
+	Owl.Width = {
+		Default: 'default',
+		Inner: 'inner',
+		Outer: 'outer'
+	};
+
+	/**
+	 * Enumeration for types.
+	 * @public
+	 * @readonly
+	 * @enum {String}
+	 */
+	Owl.Type = {
+		Event: 'event',
+		State: 'state'
+	};
+
+	/**
+	 * Contains all registered plugins.
+	 * @public
+	 */
+	Owl.Plugins = {};
+
+	/**
+	 * List of workers involved in the update process.
+	 */
+	Owl.Workers = [ {
+		filter: [ 'width', 'settings' ],
+		run: function() {
+			this._width = this.$element.width();
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function(cache) {
+			cache.current = this._items && this._items[this.relative(this._current)];
+		}
+	}, {
+		filter: [ 'items', 'settings' ],
+		run: function() {
+			this.$stage.children('.cloned').remove();
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function(cache) {
+			var margin = this.settings.margin || '',
+				grid = !this.settings.autoWidth,
+				rtl = this.settings.rtl,
+				css = {
+					'width': 'auto',
+					'margin-left': rtl ? margin : '',
+					'margin-right': rtl ? '' : margin
+				};
+
+			!grid && this.$stage.children().css(css);
+
+			cache.css = css;
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function(cache) {
+			var width = (this.width() / this.settings.items).toFixed(3) - this.settings.margin,
+				merge = null,
+				iterator = this._items.length,
+				grid = !this.settings.autoWidth,
+				widths = [];
+
+			cache.items = {
+				merge: false,
+				width: width
+			};
+
+			while (iterator--) {
+				merge = this._mergers[iterator];
+				merge = this.settings.mergeFit && Math.min(merge, this.settings.items) || merge;
+
+				cache.items.merge = merge > 1 || cache.items.merge;
+
+				widths[iterator] = !grid ? this._items[iterator].width() : width * merge;
+			}
+
+			this._widths = widths;
+		}
+	}, {
+		filter: [ 'items', 'settings' ],
+		run: function() {
+			var clones = [],
+				items = this._items,
+				settings = this.settings,
+				// TODO: Should be computed from number of min width items in stage
+				view = Math.max(settings.items * 2, 4),
+				size = Math.ceil(items.length / 2) * 2,
+				repeat = settings.loop && items.length ? settings.rewind ? view : Math.max(view, size) : 0,
+				append = '',
+				prepend = '';
+
+			repeat /= 2;
+
+			while (repeat > 0) {
+				// Switch to only using appended clones
+				clones.push(this.normalize(clones.length / 2, true));
+				append = append + items[clones[clones.length - 1]][0].outerHTML;
+				clones.push(this.normalize(items.length - 1 - (clones.length - 1) / 2, true));
+				prepend = items[clones[clones.length - 1]][0].outerHTML + prepend;
+				repeat -= 1;
+			}
+
+			this._clones = clones;
+
+			$(append).addClass('cloned').appendTo(this.$stage);
+			$(prepend).addClass('cloned').prependTo(this.$stage);
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function() {
+			var rtl = this.settings.rtl ? 1 : -1,
+				size = this._clones.length + this._items.length,
+				iterator = -1,
+				previous = 0,
+				current = 0,
+				coordinates = [];
+
+			while (++iterator < size) {
+				previous = coordinates[iterator - 1] || 0;
+				current = this._widths[this.relative(iterator)] + this.settings.margin;
+				coordinates.push(previous + current * rtl);
+			}
+
+			this._coordinates = coordinates;
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function() {
+			var padding = this.settings.stagePadding,
+				coordinates = this._coordinates,
+				css = {
+					'width': Math.ceil(Math.abs(coordinates[coordinates.length - 1])) + padding * 2,
+					'padding-left': padding || '',
+					'padding-right': padding || ''
+				};
+
+			this.$stage.css(css);
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function(cache) {
+			var iterator = this._coordinates.length,
+				grid = !this.settings.autoWidth,
+				items = this.$stage.children();
+
+			if (grid && cache.items.merge) {
+				while (iterator--) {
+					cache.css.width = this._widths[this.relative(iterator)];
+					items.eq(iterator).css(cache.css);
+				}
+			} else if (grid) {
+				cache.css.width = cache.items.width;
+				items.css(cache.css);
+			}
+		}
+	}, {
+		filter: [ 'items' ],
+		run: function() {
+			this._coordinates.length < 1 && this.$stage.removeAttr('style');
+		}
+	}, {
+		filter: [ 'width', 'items', 'settings' ],
+		run: function(cache) {
+			cache.current = cache.current ? this.$stage.children().index(cache.current) : 0;
+			cache.current = Math.max(this.minimum(), Math.min(this.maximum(), cache.current));
+			this.reset(cache.current);
+		}
+	}, {
+		filter: [ 'position' ],
+		run: function() {
+			this.animate(this.coordinates(this._current));
+		}
+	}, {
+		filter: [ 'width', 'position', 'items', 'settings' ],
+		run: function() {
+			var rtl = this.settings.rtl ? 1 : -1,
+				padding = this.settings.stagePadding * 2,
+				begin = this.coordinates(this.current()) + padding,
+				end = begin + this.width() * rtl,
+				inner, outer, matches = [], i, n;
+
+			for (i = 0, n = this._coordinates.length; i < n; i++) {
+				inner = this._coordinates[i - 1] || 0;
+				outer = Math.abs(this._coordinates[i]) + padding * rtl;
+
+				if ((this.op(inner, '<=', begin) && (this.op(inner, '>', end)))
+					|| (this.op(outer, '<', begin) && this.op(outer, '>', end))) {
+					matches.push(i);
+				}
+			}
+
+			this.$stage.children('.active').removeClass('active');
+			this.$stage.children(':eq(' + matches.join('), :eq(') + ')').addClass('active');
+
+			this.$stage.children('.center').removeClass('center');
+			if (this.settings.center) {
+				this.$stage.children().eq(this.current()).addClass('center');
+			}
+		}
+	} ];
+
+	/**
+	 * Create the stage DOM element
+	 */
+	Owl.prototype.initializeStage = function() {
+		this.$stage = this.$element.find('.' + this.settings.stageClass);
+
+		// if the stage is already in the DOM, grab it and skip stage initialization
+		if (this.$stage.length) {
+			return;
+		}
+
+		this.$element.addClass(this.options.loadingClass);
+
+		// create stage
+		this.$stage = $('<' + this.settings.stageElement + '>', {
+			"class": this.settings.stageClass
+		}).wrap( $( '<div/>', {
+			"class": this.settings.stageOuterClass
+		}));
+
+		// append stage
+		this.$element.append(this.$stage.parent());
+	};
+
+	/**
+	 * Create item DOM elements
+	 */
+	Owl.prototype.initializeItems = function() {
+		var $items = this.$element.find('.owl-item');
+
+		// if the items are already in the DOM, grab them and skip item initialization
+		if ($items.length) {
+			this._items = $items.get().map(function(item) {
+				return $(item);
+			});
+
+			this._mergers = this._items.map(function() {
+				return 1;
+			});
+
+			this.refresh();
+
+			return;
+		}
+
+		// append content
+		this.replace(this.$element.children().not(this.$stage.parent()));
+
+		// check visibility
+		if (this.isVisible()) {
+			// update view
+			this.refresh();
+		} else {
+			// invalidate width
+			this.invalidate('width');
+		}
+
+		this.$element
+			.removeClass(this.options.loadingClass)
+			.addClass(this.options.loadedClass);
+	};
+
+	/**
+	 * Initializes the carousel.
+	 * @protected
+	 */
+	Owl.prototype.initialize = function() {
+		this.enter('initializing');
+		this.trigger('initialize');
+
+		this.$element.toggleClass(this.settings.rtlClass, this.settings.rtl);
+
+		if (this.settings.autoWidth && !this.is('pre-loading')) {
+			var imgs, nestedSelector, width;
+			imgs = this.$element.find('img');
+			nestedSelector = this.settings.nestedItemSelector ? '.' + this.settings.nestedItemSelector : undefined;
+			width = this.$element.children(nestedSelector).width();
+
+			if (imgs.length && width <= 0) {
+				this.preloadAutoWidthImages(imgs);
+			}
+		}
+
+		this.initializeStage();
+		this.initializeItems();
+
+		// register event handlers
+		this.registerEventHandlers();
+
+		this.leave('initializing');
+		this.trigger('initialized');
+	};
+
+	/**
+	 * @returns {Boolean} visibility of $element
+	 *                    if you know the carousel will always be visible you can set `checkVisibility` to `false` to
+	 *                    prevent the expensive browser layout forced reflow the $element.is(':visible') does
+	 */
+	Owl.prototype.isVisible = function() {
+		return this.settings.checkVisibility
+			? this.$element.is(':visible')
+			: true;
+	};
+
+	/**
+	 * Setups the current settings.
+	 * @todo Remove responsive classes. Why should adaptive designs be brought into IE8?
+	 * @todo Support for media queries by using `matchMedia` would be nice.
+	 * @public
+	 */
+	Owl.prototype.setup = function() {
+		var viewport = this.viewport(),
+			overwrites = this.options.responsive,
+			match = -1,
+			settings = null;
+
+		if (!overwrites) {
+			settings = $.extend({}, this.options);
+		} else {
+			$.each(overwrites, function(breakpoint) {
+				if (breakpoint <= viewport && breakpoint > match) {
+					match = Number(breakpoint);
+				}
+			});
+
+			settings = $.extend({}, this.options, overwrites[match]);
+			if (typeof settings.stagePadding === 'function') {
+				settings.stagePadding = settings.stagePadding();
+			}
+			delete settings.responsive;
+
+			// responsive class
+			if (settings.responsiveClass) {
+				this.$element.attr('class',
+					this.$element.attr('class').replace(new RegExp('(' + this.options.responsiveClass + '-)\\S+\\s', 'g'), '$1' + match)
+				);
+			}
+		}
+
+		this.trigger('change', { property: { name: 'settings', value: settings } });
+		this._breakpoint = match;
+		this.settings = settings;
+		this.invalidate('settings');
+		this.trigger('changed', { property: { name: 'settings', value: this.settings } });
+	};
+
+	/**
+	 * Updates option logic if necessery.
+	 * @protected
+	 */
+	Owl.prototype.optionsLogic = function() {
+		if (this.settings.autoWidth) {
+			this.settings.stagePadding = false;
+			this.settings.merge = false;
+		}
+	};
+
+	/**
+	 * Prepares an item before add.
+	 * @todo Rename event parameter `content` to `item`.
+	 * @protected
+	 * @returns {jQuery|HTMLElement} - The item container.
+	 */
+	Owl.prototype.prepare = function(item) {
+		var event = this.trigger('prepare', { content: item });
+
+		if (!event.data) {
+			event.data = $('<' + this.settings.itemElement + '/>')
+				.addClass(this.options.itemClass).append(item)
+		}
+
+		this.trigger('prepared', { content: event.data });
+
+		return event.data;
+	};
+
+	/**
+	 * Updates the view.
+	 * @public
+	 */
+	Owl.prototype.update = function() {
+		var i = 0,
+			n = this._pipe.length,
+			filter = $.proxy(function(p) { return this[p] }, this._invalidated),
+			cache = {};
+
+		while (i < n) {
+			if (this._invalidated.all || $.grep(this._pipe[i].filter, filter).length > 0) {
+				this._pipe[i].run(cache);
+			}
+			i++;
+		}
+
+		this._invalidated = {};
+
+		!this.is('valid') && this.enter('valid');
+	};
+
+	/**
+	 * Gets the width of the view.
+	 * @public
+	 * @param {Owl.Width} [dimension=Owl.Width.Default] - The dimension to return.
+	 * @returns {Number} - The width of the view in pixel.
+	 */
+	Owl.prototype.width = function(dimension) {
+		dimension = dimension || Owl.Width.Default;
+		switch (dimension) {
+			case Owl.Width.Inner:
+			case Owl.Width.Outer:
+				return this._width;
+			default:
+				return this._width - this.settings.stagePadding * 2 + this.settings.margin;
+		}
+	};
+
+	/**
+	 * Refreshes the carousel primarily for adaptive purposes.
+	 * @public
+	 */
+	Owl.prototype.refresh = function() {
+		this.enter('refreshing');
+		this.trigger('refresh');
+
+		this.setup();
+
+		this.optionsLogic();
+
+		this.$element.addClass(this.options.refreshClass);
+
+		this.update();
+
+		this.$element.removeClass(this.options.refreshClass);
+
+		this.leave('refreshing');
+		this.trigger('refreshed');
+	};
+
+	/**
+	 * Checks window `resize` event.
+	 * @protected
+	 */
+	Owl.prototype.onThrottledResize = function() {
+		window.clearTimeout(this.resizeTimer);
+		this.resizeTimer = window.setTimeout(this._handlers.onResize, this.settings.responsiveRefreshRate);
+	};
+
+	/**
+	 * Checks window `resize` event.
+	 * @protected
+	 */
+	Owl.prototype.onResize = function() {
+		if (!this._items.length) {
+			return false;
+		}
+
+		if (this._width === this.$element.width()) {
+			return false;
+		}
+
+		if (!this.isVisible()) {
+			return false;
+		}
+
+		this.enter('resizing');
+
+		if (this.trigger('resize').isDefaultPrevented()) {
+			this.leave('resizing');
+			return false;
+		}
+
+		this.invalidate('width');
+
+		this.refresh();
+
+		this.leave('resizing');
+		this.trigger('resized');
+	};
+
+	/**
+	 * Registers event handlers.
+	 * @todo Check `msPointerEnabled`
+	 * @todo #261
+	 * @protected
+	 */
+	Owl.prototype.registerEventHandlers = function() {
+		if ($.support.transition) {
+			this.$stage.on($.support.transition.end + '.owl.core', $.proxy(this.onTransitionEnd, this));
+		}
+
+		if (this.settings.responsive !== false) {
+			this.on(window, 'resize', this._handlers.onThrottledResize);
+		}
+
+		if (this.settings.mouseDrag) {
+			this.$element.addClass(this.options.dragClass);
+			this.$stage.on('mousedown.owl.core', $.proxy(this.onDragStart, this));
+			this.$stage.on('dragstart.owl.core selectstart.owl.core', function() { return false });
+		}
+
+		if (this.settings.touchDrag){
+			this.$stage.on('touchstart.owl.core', $.proxy(this.onDragStart, this));
+			this.$stage.on('touchcancel.owl.core', $.proxy(this.onDragEnd, this));
+		}
+	};
+
+	/**
+	 * Handles `touchstart` and `mousedown` events.
+	 * @todo Horizontal swipe threshold as option
+	 * @todo #261
+	 * @protected
+	 * @param {Event} event - The event arguments.
+	 */
+	Owl.prototype.onDragStart = function(event) {
+		var stage = null;
+
+		if (event.which === 3) {
+			return;
+		}
+
+		if ($.support.transform) {
+			stage = this.$stage.css('transform').replace(/.*\(|\)| /g, '').split(',');
+			stage = {
+				x: stage[stage.length === 16 ? 12 : 4],
+				y: stage[stage.length === 16 ? 13 : 5]
+			};
+		} else {
+			stage = this.$stage.position();
+			stage = {
+				x: this.settings.rtl ?
+					stage.left + this.$stage.width() - this.width() + this.settings.margin :
+					stage.left,
+				y: stage.top
+			};
+		}
+
+		if (this.is('animating')) {
+			$.support.transform ? this.animate(stage.x) : this.$stage.stop()
+			this.invalidate('position');
+		}
+
+		this.$element.toggleClass(this.options.grabClass, event.type === 'mousedown');
+
+		this.speed(0);
+
+		this._drag.time = new Date().getTime();
+		this._drag.target = $(event.target);
+		this._drag.stage.start = stage;
+		this._drag.stage.current = stage;
+		this._drag.pointer = this.pointer(event);
+
+		$(document).on('mouseup.owl.core touchend.owl.core', $.proxy(this.onDragEnd, this));
+
+		$(document).one('mousemove.owl.core touchmove.owl.core', $.proxy(function(event) {
+			var delta = this.difference(this._drag.pointer, this.pointer(event));
+
+			$(document).on('mousemove.owl.core touchmove.owl.core', $.proxy(this.onDragMove, this));
+
+			if (Math.abs(delta.x) < Math.abs(delta.y) && this.is('valid')) {
+				return;
+			}
+
+			event.preventDefault();
+
+			this.enter('dragging');
+			this.trigger('drag');
+		}, this));
+	};
+
+	/**
+	 * Handles the `touchmove` and `mousemove` events.
+	 * @todo #261
+	 * @protected
+	 * @param {Event} event - The event arguments.
+	 */
+	Owl.prototype.onDragMove = function(event) {
+		var minimum = null,
+			maximum = null,
+			pull = null,
+			delta = this.difference(this._drag.pointer, this.pointer(event)),
+			stage = this.difference(this._drag.stage.start, delta);
+
+		if (!this.is('dragging')) {
+			return;
+		}
+
+		event.preventDefault();
+
+		if (this.settings.loop) {
+			minimum = this.coordinates(this.minimum());
+			maximum = this.coordinates(this.maximum() + 1) - minimum;
+			stage.x = (((stage.x - minimum) % maximum + maximum) % maximum) + minimum;
+		} else {
+			minimum = this.settings.rtl ? this.coordinates(this.maximum()) : this.coordinates(this.minimum());
+			maximum = this.settings.rtl ? this.coordinates(this.minimum()) : this.coordinates(this.maximum());
+			pull = this.settings.pullDrag ? -1 * delta.x / 5 : 0;
+			stage.x = Math.max(Math.min(stage.x, minimum + pull), maximum + pull);
+		}
+
+		this._drag.stage.current = stage;
+
+		this.animate(stage.x);
+	};
+
+	/**
+	 * Handles the `touchend` and `mouseup` events.
+	 * @todo #261
+	 * @todo Threshold for click event
+	 * @protected
+	 * @param {Event} event - The event arguments.
+	 */
+	Owl.prototype.onDragEnd = function(event) {
+		var delta = this.difference(this._drag.pointer, this.pointer(event)),
+			stage = this._drag.stage.current,
+			direction = delta.x > 0 ^ this.settings.rtl ? 'left' : 'right';
+
+		$(document).off('.owl.core');
+
+		this.$element.removeClass(this.options.grabClass);
+
+		if (delta.x !== 0 && this.is('dragging') || !this.is('valid')) {
+			this.speed(this.settings.dragEndSpeed || this.settings.smartSpeed);
+			this.current(this.closest(stage.x, delta.x !== 0 ? direction : this._drag.direction));
+			this.invalidate('position');
+			this.update();
+
+			this._drag.direction = direction;
+
+			if (Math.abs(delta.x) > 3 || new Date().getTime() - this._drag.time > 300) {
+				this._drag.target.one('click.owl.core', function() { return false; });
+			}
+		}
+
+		if (!this.is('dragging')) {
+			return;
+		}
+
+		this.leave('dragging');
+		this.trigger('dragged');
+	};
+
+	/**
+	 * Gets absolute position of the closest item for a coordinate.
+	 * @todo Setting `freeDrag` makes `closest` not reusable. See #165.
+	 * @protected
+	 * @param {Number} coordinate - The coordinate in pixel.
+	 * @param {String} direction - The direction to check for the closest item. Ether `left` or `right`.
+	 * @return {Number} - The absolute position of the closest item.
+	 */
+	Owl.prototype.closest = function(coordinate, direction) {
+		var position = -1,
+			pull = 30,
+			width = this.width(),
+			coordinates = this.coordinates();
+
+		if (!this.settings.freeDrag) {
+			// check closest item
+			$.each(coordinates, $.proxy(function(index, value) {
+				// on a left pull, check on current index
+				if (direction === 'left' && coordinate > value - pull && coordinate < value + pull) {
+					position = index;
+				// on a right pull, check on previous index
+				// to do so, subtract width from value and set position = index + 1
+				} else if (direction === 'right' && coordinate > value - width - pull && coordinate < value - width + pull) {
+					position = index + 1;
+				} else if (this.op(coordinate, '<', value)
+					&& this.op(coordinate, '>', coordinates[index + 1] !== undefined ? coordinates[index + 1] : value - width)) {
+					position = direction === 'left' ? index + 1 : index;
+				}
+				return position === -1;
+			}, this));
+		}
+
+		if (!this.settings.loop) {
+			// non loop boundries
+			if (this.op(coordinate, '>', coordinates[this.minimum()])) {
+				position = coordinate = this.minimum();
+			} else if (this.op(coordinate, '<', coordinates[this.maximum()])) {
+				position = coordinate = this.maximum();
+			}
+		}
+
+		return position;
+	};
+
+	/**
+	 * Animates the stage.
+	 * @todo #270
+	 * @public
+	 * @param {Number} coordinate - The coordinate in pixels.
+	 */
+	Owl.prototype.animate = function(coordinate) {
+		var animate = this.speed() > 0;
+
+		this.is('animating') && this.onTransitionEnd();
+
+		if (animate) {
+			this.enter('animating');
+			this.trigger('translate');
+		}
+
+		if ($.support.transform3d && $.support.transition) {
+			this.$stage.css({
+				transform: 'translate3d(' + coordinate + 'px,0px,0px)',
+				transition: (this.speed() / 1000) + 's' + (
+					this.settings.slideTransition ? ' ' + this.settings.slideTransition : ''
+				)
+			});
+		} else if (animate) {
+			this.$stage.animate({
+				left: coordinate + 'px'
+			}, this.speed(), this.settings.fallbackEasing, $.proxy(this.onTransitionEnd, this));
+		} else {
+			this.$stage.css({
+				left: coordinate + 'px'
+			});
+		}
+	};
+
+	/**
+	 * Checks whether the carousel is in a specific state or not.
+	 * @param {String} state - The state to check.
+	 * @returns {Boolean} - The flag which indicates if the carousel is busy.
+	 */
+	Owl.prototype.is = function(state) {
+		return this._states.current[state] && this._states.current[state] > 0;
+	};
+
+	/**
+	 * Sets the absolute position of the current item.
+	 * @public
+	 * @param {Number} [position] - The new absolute position or nothing to leave it unchanged.
+	 * @returns {Number} - The absolute position of the current item.
+	 */
+	Owl.prototype.current = function(position) {
+		if (position === undefined) {
+			return this._current;
+		}
+
+		if (this._items.length === 0) {
+			return undefined;
+		}
+
+		position = this.normalize(position);
+
+		if (this._current !== position) {
+			var event = this.trigger('change', { property: { name: 'position', value: position } });
+
+			if (event.data !== undefined) {
+				position = this.normalize(event.data);
+			}
+
+			this._current = position;
+
+			this.invalidate('position');
+
+			this.trigger('changed', { property: { name: 'position', value: this._current } });
+		}
+
+		return this._current;
+	};
+
+	/**
+	 * Invalidates the given part of the update routine.
+	 * @param {String} [part] - The part to invalidate.
+	 * @returns {Array.<String>} - The invalidated parts.
+	 */
+	Owl.prototype.invalidate = function(part) {
+		if ($.type(part) === 'string') {
+			this._invalidated[part] = true;
+			this.is('valid') && this.leave('valid');
+		}
+		return $.map(this._invalidated, function(v, i) { return i });
+	};
+
+	/**
+	 * Resets the absolute position of the current item.
+	 * @public
+	 * @param {Number} position - The absolute position of the new item.
+	 */
+	Owl.prototype.reset = function(position) {
+		position = this.normalize(position);
+
+		if (position === undefined) {
+			return;
+		}
+
+		this._speed = 0;
+		this._current = position;
+
+		this.suppress([ 'translate', 'translated' ]);
+
+		this.animate(this.coordinates(position));
+
+		this.release([ 'translate', 'translated' ]);
+	};
+
+	/**
+	 * Normalizes an absolute or a relative position of an item.
+	 * @public
+	 * @param {Number} position - The absolute or relative position to normalize.
+	 * @param {Boolean} [relative=false] - Whether the given position is relative or not.
+	 * @returns {Number} - The normalized position.
+	 */
+	Owl.prototype.normalize = function(position, relative) {
+		var n = this._items.length,
+			m = relative ? 0 : this._clones.length;
+
+		if (!this.isNumeric(position) || n < 1) {
+			position = undefined;
+		} else if (position < 0 || position >= n + m) {
+			position = ((position - m / 2) % n + n) % n + m / 2;
+		}
+
+		return position;
+	};
+
+	/**
+	 * Converts an absolute position of an item into a relative one.
+	 * @public
+	 * @param {Number} position - The absolute position to convert.
+	 * @returns {Number} - The converted position.
+	 */
+	Owl.prototype.relative = function(position) {
+		position -= this._clones.length / 2;
+		return this.normalize(position, true);
+	};
+
+	/**
+	 * Gets the maximum position for the current item.
+	 * @public
+	 * @param {Boolean} [relative=false] - Whether to return an absolute position or a relative position.
+	 * @returns {Number}
+	 */
+	Owl.prototype.maximum = function(relative) {
+		var settings = this.settings,
+			maximum = this._coordinates.length,
+			iterator,
+			reciprocalItemsWidth,
+			elementWidth;
+
+		if (settings.loop) {
+			maximum = this._clones.length / 2 + this._items.length - 1;
+		} else if (settings.autoWidth || settings.merge) {
+			iterator = this._items.length;
+			if (iterator) {
+				reciprocalItemsWidth = this._items[--iterator].width();
+				elementWidth = this.$element.width();
+				while (iterator--) {
+					reciprocalItemsWidth += this._items[iterator].width() + this.settings.margin;
+					if (reciprocalItemsWidth > elementWidth) {
+						break;
+					}
+				}
+			}
+			maximum = iterator + 1;
+		} else if (settings.center) {
+			maximum = this._items.length - 1;
+		} else {
+			maximum = this._items.length - settings.items;
+		}
+
+		if (relative) {
+			maximum -= this._clones.length / 2;
+		}
+
+		return Math.max(maximum, 0);
+	};
+
+	/**
+	 * Gets the minimum position for the current item.
+	 * @public
+	 * @param {Boolean} [relative=false] - Whether to return an absolute position or a relative position.
+	 * @returns {Number}
+	 */
+	Owl.prototype.minimum = function(relative) {
+		return relative ? 0 : this._clones.length / 2;
+	};
+
+	/**
+	 * Gets an item at the specified relative position.
+	 * @public
+	 * @param {Number} [position] - The relative position of the item.
+	 * @return {jQuery|Array.<jQuery>} - The item at the given position or all items if no position was given.
+	 */
+	Owl.prototype.items = function(position) {
+		if (position === undefined) {
+			return this._items.slice();
+		}
+
+		position = this.normalize(position, true);
+		return this._items[position];
+	};
+
+	/**
+	 * Gets an item at the specified relative position.
+	 * @public
+	 * @param {Number} [position] - The relative position of the item.
+	 * @return {jQuery|Array.<jQuery>} - The item at the given position or all items if no position was given.
+	 */
+	Owl.prototype.mergers = function(position) {
+		if (position === undefined) {
+			return this._mergers.slice();
+		}
+
+		position = this.normalize(position, true);
+		return this._mergers[position];
+	};
+
+	/**
+	 * Gets the absolute positions of clones for an item.
+	 * @public
+	 * @param {Number} [position] - The relative position of the item.
+	 * @returns {Array.<Number>} - The absolute positions of clones for the item or all if no position was given.
+	 */
+	Owl.prototype.clones = function(position) {
+		var odd = this._clones.length / 2,
+			even = odd + this._items.length,
+			map = function(index) { return index % 2 === 0 ? even + index / 2 : odd - (index + 1) / 2 };
+
+		if (position === undefined) {
+			return $.map(this._clones, function(v, i) { return map(i) });
+		}
+
+		return $.map(this._clones, function(v, i) { return v === position ? map(i) : null });
+	};
+
+	/**
+	 * Sets the current animation speed.
+	 * @public
+	 * @param {Number} [speed] - The animation speed in milliseconds or nothing to leave it unchanged.
+	 * @returns {Number} - The current animation speed in milliseconds.
+	 */
+	Owl.prototype.speed = function(speed) {
+		if (speed !== undefined) {
+			this._speed = speed;
+		}
+
+		return this._speed;
+	};
+
+	/**
+	 * Gets the coordinate of an item.
+	 * @todo The name of this method is missleanding.
+	 * @public
+	 * @param {Number} position - The absolute position of the item within `minimum()` and `maximum()`.
+	 * @returns {Number|Array.<Number>} - The coordinate of the item in pixel or all coordinates.
+	 */
+	Owl.prototype.coordinates = function(position) {
+		var multiplier = 1,
+			newPosition = position - 1,
+			coordinate;
+
+		if (position === undefined) {
+			return $.map(this._coordinates, $.proxy(function(coordinate, index) {
+				return this.coordinates(index);
+			}, this));
+		}
+
+		if (this.settings.center) {
+			if (this.settings.rtl) {
+				multiplier = -1;
+				newPosition = position + 1;
+			}
+
+			coordinate = this._coordinates[position];
+			coordinate += (this.width() - coordinate + (this._coordinates[newPosition] || 0)) / 2 * multiplier;
+		} else {
+			coordinate = this._coordinates[newPosition] || 0;
+		}
+
+		coordinate = Math.ceil(coordinate);
+
+		return coordinate;
+	};
+
+	/**
+	 * Calculates the speed for a translation.
+	 * @protected
+	 * @param {Number} from - The absolute position of the start item.
+	 * @param {Number} to - The absolute position of the target item.
+	 * @param {Number} [factor=undefined] - The time factor in milliseconds.
+	 * @returns {Number} - The time in milliseconds for the translation.
+	 */
+	Owl.prototype.duration = function(from, to, factor) {
+		if (factor === 0) {
+			return 0;
+		}
+
+		return Math.min(Math.max(Math.abs(to - from), 1), 6) * Math.abs((factor || this.settings.smartSpeed));
+	};
+
+	/**
+	 * Slides to the specified item.
+	 * @public
+	 * @param {Number} position - The position of the item.
+	 * @param {Number} [speed] - The time in milliseconds for the transition.
+	 */
+	Owl.prototype.to = function(position, speed) {
+		var current = this.current(),
+			revert = null,
+			distance = position - this.relative(current),
+			direction = (distance > 0) - (distance < 0),
+			items = this._items.length,
+			minimum = this.minimum(),
+			maximum = this.maximum();
+
+		if (this.settings.loop) {
+			if (!this.settings.rewind && Math.abs(distance) > items / 2) {
+				distance += direction * -1 * items;
+			}
+
+			position = current + distance;
+			revert = ((position - minimum) % items + items) % items + minimum;
+
+			if (revert !== position && revert - distance <= maximum && revert - distance > 0) {
+				current = revert - distance;
+				position = revert;
+				this.reset(current);
+			}
+		} else if (this.settings.rewind) {
+			maximum += 1;
+			position = (position % maximum + maximum) % maximum;
+		} else {
+			position = Math.max(minimum, Math.min(maximum, position));
+		}
+
+		this.speed(this.duration(current, position, speed));
+		this.current(position);
+
+		if (this.isVisible()) {
+			this.update();
+		}
+	};
+
+	/**
+	 * Slides to the next item.
+	 * @public
+	 * @param {Number} [speed] - The time in milliseconds for the transition.
+	 */
+	Owl.prototype.next = function(speed) {
+		speed = speed || false;
+		this.to(this.relative(this.current()) + 1, speed);
+	};
+
+	/**
+	 * Slides to the previous item.
+	 * @public
+	 * @param {Number} [speed] - The time in milliseconds for the transition.
+	 */
+	Owl.prototype.prev = function(speed) {
+		speed = speed || false;
+		this.to(this.relative(this.current()) - 1, speed);
+	};
+
+	/**
+	 * Handles the end of an animation.
+	 * @protected
+	 * @param {Event} event - The event arguments.
+	 */
+	Owl.prototype.onTransitionEnd = function(event) {
+
+		// if css2 animation then event object is undefined
+		if (event !== undefined) {
+			event.stopPropagation();
+
+			// Catch only owl-stage transitionEnd event
+			if ((event.target || event.srcElement || event.originalTarget) !== this.$stage.get(0)) {
+				return false;
+			}
+		}
+
+		this.leave('animating');
+		this.trigger('translated');
+	};
+
+	/**
+	 * Gets viewport width.
+	 * @protected
+	 * @return {Number} - The width in pixel.
+	 */
+	Owl.prototype.viewport = function() {
+		var width;
+		if (this.options.responsiveBaseElement !== window) {
+			width = $(this.options.responsiveBaseElement).width();
+		} else if (window.innerWidth) {
+			width = window.innerWidth;
+		} else if (document.documentElement && document.documentElement.clientWidth) {
+			width = document.documentElement.clientWidth;
+		} else {
+			console.warn('Can not detect viewport width.');
+		}
+		return width;
+	};
+
+	/**
+	 * Replaces the current content.
+	 * @public
+	 * @param {HTMLElement|jQuery|String} content - The new content.
+	 */
+	Owl.prototype.replace = function(content) {
+		this.$stage.empty();
+		this._items = [];
+
+		if (content) {
+			content = (content instanceof jQuery) ? content : $(content);
+		}
+
+		if (this.settings.nestedItemSelector) {
+			content = content.find('.' + this.settings.nestedItemSelector);
+		}
+
+		content.filter(function() {
+			return this.nodeType === 1;
+		}).each($.proxy(function(index, item) {
+			item = this.prepare(item);
+			this.$stage.append(item);
+			this._items.push(item);
+			this._mergers.push(item.find('[data-merge]').addBack('[data-merge]').attr('data-merge') * 1 || 1);
+		}, this));
+
+		this.reset(this.isNumeric(this.settings.startPosition) ? this.settings.startPosition : 0);
+
+		this.invalidate('items');
+	};
+
+	/**
+	 * Adds an item.
+	 * @todo Use `item` instead of `content` for the event arguments.
+	 * @public
+	 * @param {HTMLElement|jQuery|String} content - The item content to add.
+	 * @param {Number} [position] - The relative position at which to insert the item otherwise the item will be added to the end.
+	 */
+	Owl.prototype.add = function(content, position) {
+		var current = this.relative(this._current);
+
+		position = position === undefined ? this._items.length : this.normalize(position, true);
+		content = content instanceof jQuery ? content : $(content);
+
+		this.trigger('add', { content: content, position: position });
+
+		content = this.prepare(content);
+
+		if (this._items.length === 0 || position === this._items.length) {
+			this._items.length === 0 && this.$stage.append(content);
+			this._items.length !== 0 && this._items[position - 1].after(content);
+			this._items.push(content);
+			this._mergers.push(content.find('[data-merge]').addBack('[data-merge]').attr('data-merge') * 1 || 1);
+		} else {
+			this._items[position].before(content);
+			this._items.splice(position, 0, content);
+			this._mergers.splice(position, 0, content.find('[data-merge]').addBack('[data-merge]').attr('data-merge') * 1 || 1);
+		}
+
+		this._items[current] && this.reset(this._items[current].index());
+
+		this.invalidate('items');
+
+		this.trigger('added', { content: content, position: position });
+	};
+
+	/**
+	 * Removes an item by its position.
+	 * @todo Use `item` instead of `content` for the event arguments.
+	 * @public
+	 * @param {Number} position - The relative position of the item to remove.
+	 */
+	Owl.prototype.remove = function(position) {
+		position = this.normalize(position, true);
+
+		if (position === undefined) {
+			return;
+		}
+
+		this.trigger('remove', { content: this._items[position], position: position });
+
+		this._items[position].remove();
+		this._items.splice(position, 1);
+		this._mergers.splice(position, 1);
+
+		this.invalidate('items');
+
+		this.trigger('removed', { content: null, position: position });
+	};
+
+	/**
+	 * Preloads images with auto width.
+	 * @todo Replace by a more generic approach
+	 * @protected
+	 */
+	Owl.prototype.preloadAutoWidthImages = function(images) {
+		images.each($.proxy(function(i, element) {
+			this.enter('pre-loading');
+			element = $(element);
+			$(new Image()).one('load', $.proxy(function(e) {
+				element.attr('src', e.target.src);
+				element.css('opacity', 1);
+				this.leave('pre-loading');
+				!this.is('pre-loading') && !this.is('initializing') && this.refresh();
+			}, this)).attr('src', element.attr('src') || element.attr('data-src') || element.attr('data-src-retina'));
+		}, this));
+	};
+
+	/**
+	 * Destroys the carousel.
+	 * @public
+	 */
+	Owl.prototype.destroy = function() {
+
+		this.$element.off('.owl.core');
+		this.$stage.off('.owl.core');
+		$(document).off('.owl.core');
+
+		if (this.settings.responsive !== false) {
+			window.clearTimeout(this.resizeTimer);
+			this.off(window, 'resize', this._handlers.onThrottledResize);
+		}
+
+		for (var i in this._plugins) {
+			this._plugins[i].destroy();
+		}
+
+		this.$stage.children('.cloned').remove();
+
+		this.$stage.unwrap();
+		this.$stage.children().contents().unwrap();
+		this.$stage.children().unwrap();
+		this.$stage.remove();
+		this.$element
+			.removeClass(this.options.refreshClass)
+			.removeClass(this.options.loadingClass)
+			.removeClass(this.options.loadedClass)
+			.removeClass(this.options.rtlClass)
+			.removeClass(this.options.dragClass)
+			.removeClass(this.options.grabClass)
+			.attr('class', this.$element.attr('class').replace(new RegExp(this.options.responsiveClass + '-\\S+\\s', 'g'), ''))
+			.removeData('owl.carousel');
+	};
+
+	/**
+	 * Operators to calculate right-to-left and left-to-right.
+	 * @protected
+	 * @param {Number} [a] - The left side operand.
+	 * @param {String} [o] - The operator.
+	 * @param {Number} [b] - The right side operand.
+	 */
+	Owl.prototype.op = function(a, o, b) {
+		var rtl = this.settings.rtl;
+		switch (o) {
+			case '<':
+				return rtl ? a > b : a < b;
+			case '>':
+				return rtl ? a < b : a > b;
+			case '>=':
+				return rtl ? a <= b : a >= b;
+			case '<=':
+				return rtl ? a >= b : a <= b;
+			default:
+				break;
+		}
+	};
+
+	/**
+	 * Attaches to an internal event.
+	 * @protected
+	 * @param {HTMLElement} element - The event source.
+	 * @param {String} event - The event name.
+	 * @param {Function} listener - The event handler to attach.
+	 * @param {Boolean} capture - Wether the event should be handled at the capturing phase or not.
+	 */
+	Owl.prototype.on = function(element, event, listener, capture) {
+		if (element.addEventListener) {
+			element.addEventListener(event, listener, capture);
+		} else if (element.attachEvent) {
+			element.attachEvent('on' + event, listener);
+		}
+	};
+
+	/**
+	 * Detaches from an internal event.
+	 * @protected
+	 * @param {HTMLElement} element - The event source.
+	 * @param {String} event - The event name.
+	 * @param {Function} listener - The attached event handler to detach.
+	 * @param {Boolean} capture - Wether the attached event handler was registered as a capturing listener or not.
+	 */
+	Owl.prototype.off = function(element, event, listener, capture) {
+		if (element.removeEventListener) {
+			element.removeEventListener(event, listener, capture);
+		} else if (element.detachEvent) {
+			element.detachEvent('on' + event, listener);
+		}
+	};
+
+	/**
+	 * Triggers a public event.
+	 * @todo Remove `status`, `relatedTarget` should be used instead.
+	 * @protected
+	 * @param {String} name - The event name.
+	 * @param {*} [data=null] - The event data.
+	 * @param {String} [namespace=carousel] - The event namespace.
+	 * @param {String} [state] - The state which is associated with the event.
+	 * @param {Boolean} [enter=false] - Indicates if the call enters the specified state or not.
+	 * @returns {Event} - The event arguments.
+	 */
+	Owl.prototype.trigger = function(name, data, namespace, state, enter) {
+		var status = {
+			item: { count: this._items.length, index: this.current() }
+		}, handler = $.camelCase(
+			$.grep([ 'on', name, namespace ], function(v) { return v })
+				.join('-').toLowerCase()
+		), event = $.Event(
+			[ name, 'owl', namespace || 'carousel' ].join('.').toLowerCase(),
+			$.extend({ relatedTarget: this }, status, data)
+		);
+
+		if (!this._supress[name]) {
+			$.each(this._plugins, function(name, plugin) {
+				if (plugin.onTrigger) {
+					plugin.onTrigger(event);
+				}
+			});
+
+			this.register({ type: Owl.Type.Event, name: name });
+			this.$element.trigger(event);
+
+			if (this.settings && typeof this.settings[handler] === 'function') {
+				this.settings[handler].call(this, event);
+			}
+		}
+
+		return event;
+	};
+
+	/**
+	 * Enters a state.
+	 * @param name - The state name.
+	 */
+	Owl.prototype.enter = function(name) {
+		$.each([ name ].concat(this._states.tags[name] || []), $.proxy(function(i, name) {
+			if (this._states.current[name] === undefined) {
+				this._states.current[name] = 0;
+			}
+
+			this._states.current[name]++;
+		}, this));
+	};
+
+	/**
+	 * Leaves a state.
+	 * @param name - The state name.
+	 */
+	Owl.prototype.leave = function(name) {
+		$.each([ name ].concat(this._states.tags[name] || []), $.proxy(function(i, name) {
+			this._states.current[name]--;
+		}, this));
+	};
+
+	/**
+	 * Registers an event or state.
+	 * @public
+	 * @param {Object} object - The event or state to register.
+	 */
+	Owl.prototype.register = function(object) {
+		if (object.type === Owl.Type.Event) {
+			if (!$.event.special[object.name]) {
+				$.event.special[object.name] = {};
+			}
+
+			if (!$.event.special[object.name].owl) {
+				var _default = $.event.special[object.name]._default;
+				$.event.special[object.name]._default = function(e) {
+					if (_default && _default.apply && (!e.namespace || e.namespace.indexOf('owl') === -1)) {
+						return _default.apply(this, arguments);
+					}
+					return e.namespace && e.namespace.indexOf('owl') > -1;
+				};
+				$.event.special[object.name].owl = true;
+			}
+		} else if (object.type === Owl.Type.State) {
+			if (!this._states.tags[object.name]) {
+				this._states.tags[object.name] = object.tags;
+			} else {
+				this._states.tags[object.name] = this._states.tags[object.name].concat(object.tags);
+			}
+
+			this._states.tags[object.name] = $.grep(this._states.tags[object.name], $.proxy(function(tag, i) {
+				return $.inArray(tag, this._states.tags[object.name]) === i;
+			}, this));
+		}
+	};
+
+	/**
+	 * Suppresses events.
+	 * @protected
+	 * @param {Array.<String>} events - The events to suppress.
+	 */
+	Owl.prototype.suppress = function(events) {
+		$.each(events, $.proxy(function(index, event) {
+			this._supress[event] = true;
+		}, this));
+	};
+
+	/**
+	 * Releases suppressed events.
+	 * @protected
+	 * @param {Array.<String>} events - The events to release.
+	 */
+	Owl.prototype.release = function(events) {
+		$.each(events, $.proxy(function(index, event) {
+			delete this._supress[event];
+		}, this));
+	};
+
+	/**
+	 * Gets unified pointer coordinates from event.
+	 * @todo #261
+	 * @protected
+	 * @param {Event} - The `mousedown` or `touchstart` event.
+	 * @returns {Object} - Contains `x` and `y` coordinates of current pointer position.
+	 */
+	Owl.prototype.pointer = function(event) {
+		var result = { x: null, y: null };
+
+		event = event.originalEvent || event || window.event;
+
+		event = event.touches && event.touches.length ?
+			event.touches[0] : event.changedTouches && event.changedTouches.length ?
+				event.changedTouches[0] : event;
+
+		if (event.pageX) {
+			result.x = event.pageX;
+			result.y = event.pageY;
+		} else {
+			result.x = event.clientX;
+			result.y = event.clientY;
+		}
+
+		return result;
+	};
+
+	/**
+	 * Determines if the input is a Number or something that can be coerced to a Number
+	 * @protected
+	 * @param {Number|String|Object|Array|Boolean|RegExp|Function|Symbol} - The input to be tested
+	 * @returns {Boolean} - An indication if the input is a Number or can be coerced to a Number
+	 */
+	Owl.prototype.isNumeric = function(number) {
+		return !isNaN(parseFloat(number));
+	};
+
+	/**
+	 * Gets the difference of two vectors.
+	 * @todo #261
+	 * @protected
+	 * @param {Object} - The first vector.
+	 * @param {Object} - The second vector.
+	 * @returns {Object} - The difference.
+	 */
+	Owl.prototype.difference = function(first, second) {
+		return {
+			x: first.x - second.x,
+			y: first.y - second.y
+		};
+	};
+
+	/**
+	 * The jQuery Plugin for the Owl Carousel
+	 * @todo Navigation plugin `next` and `prev`
+	 * @public
+	 */
+	$.fn.owlCarousel = function(option) {
+		var args = Array.prototype.slice.call(arguments, 1);
+
+		return this.each(function() {
+			var $this = $(this),
+				data = $this.data('owl.carousel');
+
+			if (!data) {
+				data = new Owl(this, typeof option == 'object' && option);
+				$this.data('owl.carousel', data);
+
+				$.each([
+					'next', 'prev', 'to', 'destroy', 'refresh', 'replace', 'add', 'remove'
+				], function(i, event) {
+					data.register({ type: Owl.Type.Event, name: event });
+					data.$element.on(event + '.owl.carousel.core', $.proxy(function(e) {
+						if (e.namespace && e.relatedTarget !== this) {
+							this.suppress([ event ]);
+							data[event].apply(this, [].slice.call(arguments, 1));
+							this.release([ event ]);
+						}
+					}, data));
+				});
+			}
+
+			if (typeof option == 'string' && option.charAt(0) !== '_') {
+				data[option].apply(data, args);
+			}
+		});
+	};
+
+	/**
+	 * The constructor for the jQuery Plugin
+	 * @public
+	 */
+	$.fn.owlCarousel.Constructor = Owl;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * AutoRefresh Plugin
+ * @version 2.3.4
+ * @author Artus Kolanowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates the auto refresh plugin.
+	 * @class The Auto Refresh Plugin
+	 * @param {Owl} carousel - The Owl Carousel
+	 */
+	var AutoRefresh = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		/**
+		 * Refresh interval.
+		 * @protected
+		 * @type {number}
+		 */
+		this._interval = null;
+
+		/**
+		 * Whether the element is currently visible or not.
+		 * @protected
+		 * @type {Boolean}
+		 */
+		this._visible = null;
+
+		/**
+		 * All event handlers.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'initialized.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.autoRefresh) {
+					this.watch();
+				}
+			}, this)
+		};
+
+		// set default options
+		this._core.options = $.extend({}, AutoRefresh.Defaults, this._core.options);
+
+		// register event handlers
+		this._core.$element.on(this._handlers);
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	AutoRefresh.Defaults = {
+		autoRefresh: true,
+		autoRefreshInterval: 500
+	};
+
+	/**
+	 * Watches the element.
+	 */
+	AutoRefresh.prototype.watch = function() {
+		if (this._interval) {
+			return;
+		}
+
+		this._visible = this._core.isVisible();
+		this._interval = window.setInterval($.proxy(this.refresh, this), this._core.settings.autoRefreshInterval);
+	};
+
+	/**
+	 * Refreshes the element.
+	 */
+	AutoRefresh.prototype.refresh = function() {
+		if (this._core.isVisible() === this._visible) {
+			return;
+		}
+
+		this._visible = !this._visible;
+
+		this._core.$element.toggleClass('owl-hidden', !this._visible);
+
+		this._visible && (this._core.invalidate('width') && this._core.refresh());
+	};
+
+	/**
+	 * Destroys the plugin.
+	 */
+	AutoRefresh.prototype.destroy = function() {
+		var handler, property;
+
+		window.clearInterval(this._interval);
+
+		for (handler in this._handlers) {
+			this._core.$element.off(handler, this._handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.AutoRefresh = AutoRefresh;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Lazy Plugin
+ * @version 2.3.4
+ * @author Bartosz Wojciechowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates the lazy plugin.
+	 * @class The Lazy Plugin
+	 * @param {Owl} carousel - The Owl Carousel
+	 */
+	var Lazy = function(carousel) {
+
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		/**
+		 * Already loaded items.
+		 * @protected
+		 * @type {Array.<jQuery>}
+		 */
+		this._loaded = [];
+
+		/**
+		 * Event handlers.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'initialized.owl.carousel change.owl.carousel resized.owl.carousel': $.proxy(function(e) {
+				if (!e.namespace) {
+					return;
+				}
+
+				if (!this._core.settings || !this._core.settings.lazyLoad) {
+					return;
+				}
+
+				if ((e.property && e.property.name == 'position') || e.type == 'initialized') {
+					var settings = this._core.settings,
+						n = (settings.center && Math.ceil(settings.items / 2) || settings.items),
+						i = ((settings.center && n * -1) || 0),
+						position = (e.property && e.property.value !== undefined ? e.property.value : this._core.current()) + i,
+						clones = this._core.clones().length,
+						load = $.proxy(function(i, v) { this.load(v) }, this);
+					//TODO: Need documentation for this new option
+					if (settings.lazyLoadEager > 0) {
+						n += settings.lazyLoadEager;
+						// If the carousel is looping also preload images that are to the "left"
+						if (settings.loop) {
+              position -= settings.lazyLoadEager;
+              n++;
+            }
+					}
+
+					while (i++ < n) {
+						this.load(clones / 2 + this._core.relative(position));
+						clones && $.each(this._core.clones(this._core.relative(position)), load);
+						position++;
+					}
+				}
+			}, this)
+		};
+
+		// set the default options
+		this._core.options = $.extend({}, Lazy.Defaults, this._core.options);
+
+		// register event handler
+		this._core.$element.on(this._handlers);
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	Lazy.Defaults = {
+		lazyLoad: false,
+		lazyLoadEager: 0
+	};
+
+	/**
+	 * Loads all resources of an item at the specified position.
+	 * @param {Number} position - The absolute position of the item.
+	 * @protected
+	 */
+	Lazy.prototype.load = function(position) {
+		var $item = this._core.$stage.children().eq(position),
+			$elements = $item && $item.find('.owl-lazy');
+
+		if (!$elements || $.inArray($item.get(0), this._loaded) > -1) {
+			return;
+		}
+
+		$elements.each($.proxy(function(index, element) {
+			var $element = $(element), image,
+                url = (window.devicePixelRatio > 1 && $element.attr('data-src-retina')) || $element.attr('data-src') || $element.attr('data-srcset');
+
+			this._core.trigger('load', { element: $element, url: url }, 'lazy');
+
+			if ($element.is('img')) {
+				$element.one('load.owl.lazy', $.proxy(function() {
+					$element.css('opacity', 1);
+					this._core.trigger('loaded', { element: $element, url: url }, 'lazy');
+				}, this)).attr('src', url);
+            } else if ($element.is('source')) {
+                $element.one('load.owl.lazy', $.proxy(function() {
+                    this._core.trigger('loaded', { element: $element, url: url }, 'lazy');
+                }, this)).attr('srcset', url);
+			} else {
+				image = new Image();
+				image.onload = $.proxy(function() {
+					$element.css({
+						'background-image': 'url("' + url + '")',
+						'opacity': '1'
+					});
+					this._core.trigger('loaded', { element: $element, url: url }, 'lazy');
+				}, this);
+				image.src = url;
+			}
+		}, this));
+
+		this._loaded.push($item.get(0));
+	};
+
+	/**
+	 * Destroys the plugin.
+	 * @public
+	 */
+	Lazy.prototype.destroy = function() {
+		var handler, property;
+
+		for (handler in this.handlers) {
+			this._core.$element.off(handler, this.handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.Lazy = Lazy;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * AutoHeight Plugin
+ * @version 2.3.4
+ * @author Bartosz Wojciechowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates the auto height plugin.
+	 * @class The Auto Height Plugin
+	 * @param {Owl} carousel - The Owl Carousel
+	 */
+	var AutoHeight = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		this._previousHeight = null;
+
+		/**
+		 * All event handlers.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'initialized.owl.carousel refreshed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.autoHeight) {
+					this.update();
+				}
+			}, this),
+			'changed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.autoHeight && e.property.name === 'position'){
+					this.update();
+				}
+			}, this),
+			'loaded.owl.lazy': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.autoHeight
+					&& e.element.closest('.' + this._core.settings.itemClass).index() === this._core.current()) {
+					this.update();
+				}
+			}, this)
+		};
+
+		// set default options
+		this._core.options = $.extend({}, AutoHeight.Defaults, this._core.options);
+
+		// register event handlers
+		this._core.$element.on(this._handlers);
+		this._intervalId = null;
+		var refThis = this;
+
+		// These changes have been taken from a PR by gavrochelegnou proposed in #1575
+		// and have been made compatible with the latest jQuery version
+		$(window).on('load', function() {
+			if (refThis._core.settings.autoHeight) {
+				refThis.update();
+			}
+		});
+
+		// Autoresize the height of the carousel when window is resized
+		// When carousel has images, the height is dependent on the width
+		// and should also change on resize
+		$(window).resize(function() {
+			if (refThis._core.settings.autoHeight) {
+				if (refThis._intervalId != null) {
+					clearTimeout(refThis._intervalId);
+				}
+
+				refThis._intervalId = setTimeout(function() {
+					refThis.update();
+				}, 250);
+			}
+		});
+
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	AutoHeight.Defaults = {
+		autoHeight: false,
+		autoHeightClass: 'owl-height'
+	};
+
+	/**
+	 * Updates the view.
+	 */
+	AutoHeight.prototype.update = function() {
+		var start = this._core._current,
+			end = start + this._core.settings.items,
+			lazyLoadEnabled = this._core.settings.lazyLoad,
+			visible = this._core.$stage.children().toArray().slice(start, end),
+			heights = [],
+			maxheight = 0;
+
+		$.each(visible, function(index, item) {
+			heights.push($(item).height());
+		});
+
+		maxheight = Math.max.apply(null, heights);
+
+		if (maxheight <= 1 && lazyLoadEnabled && this._previousHeight) {
+			maxheight = this._previousHeight;
+		}
+
+		this._previousHeight = maxheight;
+
+		this._core.$stage.parent()
+			.height(maxheight)
+			.addClass(this._core.settings.autoHeightClass);
+	};
+
+	AutoHeight.prototype.destroy = function() {
+		var handler, property;
+
+		for (handler in this._handlers) {
+			this._core.$element.off(handler, this._handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] !== 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.AutoHeight = AutoHeight;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Video Plugin
+ * @version 2.3.4
+ * @author Bartosz Wojciechowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates the video plugin.
+	 * @class The Video Plugin
+	 * @param {Owl} carousel - The Owl Carousel
+	 */
+	var Video = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		/**
+		 * Cache all video URLs.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._videos = {};
+
+		/**
+		 * Current playing item.
+		 * @protected
+		 * @type {jQuery}
+		 */
+		this._playing = null;
+
+		/**
+		 * All event handlers.
+		 * @todo The cloned content removale is too late
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'initialized.owl.carousel': $.proxy(function(e) {
+				if (e.namespace) {
+					this._core.register({ type: 'state', name: 'playing', tags: [ 'interacting' ] });
+				}
+			}, this),
+			'resize.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.video && this.isInFullScreen()) {
+					e.preventDefault();
+				}
+			}, this),
+			'refreshed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.is('resizing')) {
+					this._core.$stage.find('.cloned .owl-video-frame').remove();
+				}
+			}, this),
+			'changed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name === 'position' && this._playing) {
+					this.stop();
+				}
+			}, this),
+			'prepared.owl.carousel': $.proxy(function(e) {
+				if (!e.namespace) {
+					return;
+				}
+
+				var $element = $(e.content).find('.owl-video');
+
+				if ($element.length) {
+					$element.css('display', 'none');
+					this.fetch($element, $(e.content));
+				}
+			}, this)
+		};
+
+		// set default options
+		this._core.options = $.extend({}, Video.Defaults, this._core.options);
+
+		// register event handlers
+		this._core.$element.on(this._handlers);
+
+		this._core.$element.on('click.owl.video', '.owl-video-play-icon', $.proxy(function(e) {
+			this.play(e);
+		}, this));
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	Video.Defaults = {
+		video: false,
+		videoHeight: false,
+		videoWidth: false
+	};
+
+	/**
+	 * Gets the video ID and the type (YouTube/Vimeo/vzaar only).
+	 * @protected
+	 * @param {jQuery} target - The target containing the video data.
+	 * @param {jQuery} item - The item containing the video.
+	 */
+	Video.prototype.fetch = function(target, item) {
+			var type = (function() {
+					if (target.attr('data-vimeo-id')) {
+						return 'vimeo';
+					} else if (target.attr('data-vzaar-id')) {
+						return 'vzaar'
+					} else {
+						return 'youtube';
+					}
+				})(),
+				id = target.attr('data-vimeo-id') || target.attr('data-youtube-id') || target.attr('data-vzaar-id'),
+				width = target.attr('data-width') || this._core.settings.videoWidth,
+				height = target.attr('data-height') || this._core.settings.videoHeight,
+				url = target.attr('href');
+
+		if (url) {
+
+			/*
+					Parses the id's out of the following urls (and probably more):
+					https://www.youtube.com/watch?v=:id
+					https://youtu.be/:id
+					https://vimeo.com/:id
+					https://vimeo.com/channels/:channel/:id
+					https://vimeo.com/groups/:group/videos/:id
+					https://app.vzaar.com/videos/:id
+
+					Visual example: https://regexper.com/#(http%3A%7Chttps%3A%7C)%5C%2F%5C%2F(player.%7Cwww.%7Capp.)%3F(vimeo%5C.com%7Cyoutu(be%5C.com%7C%5C.be%7Cbe%5C.googleapis%5C.com)%7Cvzaar%5C.com)%5C%2F(video%5C%2F%7Cvideos%5C%2F%7Cembed%5C%2F%7Cchannels%5C%2F.%2B%5C%2F%7Cgroups%5C%2F.%2B%5C%2F%7Cwatch%5C%3Fv%3D%7Cv%5C%2F)%3F(%5BA-Za-z0-9._%25-%5D*)(%5C%26%5CS%2B)%3F
+			*/
+
+			id = url.match(/(http:|https:|)\/\/(player.|www.|app.)?(vimeo\.com|youtu(be\.com|\.be|be\.googleapis\.com|be\-nocookie\.com)|vzaar\.com)\/(video\/|videos\/|embed\/|channels\/.+\/|groups\/.+\/|watch\?v=|v\/)?([A-Za-z0-9._%-]*)(\&\S+)?/);
+
+			if (id[3].indexOf('youtu') > -1) {
+				type = 'youtube';
+			} else if (id[3].indexOf('vimeo') > -1) {
+				type = 'vimeo';
+			} else if (id[3].indexOf('vzaar') > -1) {
+				type = 'vzaar';
+			} else {
+				throw new Error('Video URL not supported.');
+			}
+			id = id[6];
+		} else {
+			throw new Error('Missing video URL.');
+		}
+
+		this._videos[url] = {
+			type: type,
+			id: id,
+			width: width,
+			height: height
+		};
+
+		item.attr('data-video', url);
+
+		this.thumbnail(target, this._videos[url]);
+	};
+
+	/**
+	 * Creates video thumbnail.
+	 * @protected
+	 * @param {jQuery} target - The target containing the video data.
+	 * @param {Object} info - The video info object.
+	 * @see `fetch`
+	 */
+	Video.prototype.thumbnail = function(target, video) {
+		var tnLink,
+			icon,
+			path,
+			dimensions = video.width && video.height ? 'width:' + video.width + 'px;height:' + video.height + 'px;' : '',
+			customTn = target.find('img'),
+			srcType = 'src',
+			lazyClass = '',
+			settings = this._core.settings,
+			create = function(path) {
+				icon = '<div class="owl-video-play-icon"></div>';
+
+				if (settings.lazyLoad) {
+					tnLink = $('<div/>',{
+						"class": 'owl-video-tn ' + lazyClass,
+						"srcType": path
+					});
+				} else {
+					tnLink = $( '<div/>', {
+						"class": "owl-video-tn",
+						"style": 'opacity:1;background-image:url(' + path + ')'
+					});
+				}
+				target.after(tnLink);
+				target.after(icon);
+			};
+
+		// wrap video content into owl-video-wrapper div
+		target.wrap( $( '<div/>', {
+			"class": "owl-video-wrapper",
+			"style": dimensions
+		}));
+
+		if (this._core.settings.lazyLoad) {
+			srcType = 'data-src';
+			lazyClass = 'owl-lazy';
+		}
+
+		// custom thumbnail
+		if (customTn.length) {
+			create(customTn.attr(srcType));
+			customTn.remove();
+			return false;
+		}
+
+		if (video.type === 'youtube') {
+			path = "//img.youtube.com/vi/" + video.id + "/hqdefault.jpg";
+			create(path);
+		} else if (video.type === 'vimeo') {
+			$.ajax({
+				type: 'GET',
+				url: '//vimeo.com/api/v2/video/' + video.id + '.json',
+				jsonp: 'callback',
+				dataType: 'jsonp',
+				success: function(data) {
+					path = data[0].thumbnail_large;
+					create(path);
+				}
+			});
+		} else if (video.type === 'vzaar') {
+			$.ajax({
+				type: 'GET',
+				url: '//vzaar.com/api/videos/' + video.id + '.json',
+				jsonp: 'callback',
+				dataType: 'jsonp',
+				success: function(data) {
+					path = data.framegrab_url;
+					create(path);
+				}
+			});
+		}
+	};
+
+	/**
+	 * Stops the current video.
+	 * @public
+	 */
+	Video.prototype.stop = function() {
+		this._core.trigger('stop', null, 'video');
+		this._playing.find('.owl-video-frame').remove();
+		this._playing.removeClass('owl-video-playing');
+		this._playing = null;
+		this._core.leave('playing');
+		this._core.trigger('stopped', null, 'video');
+	};
+
+	/**
+	 * Starts the current video.
+	 * @public
+	 * @param {Event} event - The event arguments.
+	 */
+	Video.prototype.play = function(event) {
+		var target = $(event.target),
+			item = target.closest('.' + this._core.settings.itemClass),
+			video = this._videos[item.attr('data-video')],
+			width = video.width || '100%',
+			height = video.height || this._core.$stage.height(),
+			html,
+			iframe;
+
+		if (this._playing) {
+			return;
+		}
+
+		this._core.enter('playing');
+		this._core.trigger('play', null, 'video');
+
+		item = this._core.items(this._core.relative(item.index()));
+
+		this._core.reset(item.index());
+
+		html = $( '<iframe frameborder="0" allowfullscreen mozallowfullscreen webkitAllowFullScreen ></iframe>' );
+		html.attr( 'height', height );
+		html.attr( 'width', width );
+		if (video.type === 'youtube') {
+			html.attr( 'src', '//www.youtube.com/embed/' + video.id + '?autoplay=1&rel=0&v=' + video.id );
+		} else if (video.type === 'vimeo') {
+			html.attr( 'src', '//player.vimeo.com/video/' + video.id + '?autoplay=1' );
+		} else if (video.type === 'vzaar') {
+			html.attr( 'src', '//view.vzaar.com/' + video.id + '/player?autoplay=true' );
+		}
+
+		iframe = $(html).wrap( '<div class="owl-video-frame" />' ).insertAfter(item.find('.owl-video'));
+
+		this._playing = item.addClass('owl-video-playing');
+	};
+
+	/**
+	 * Checks whether an video is currently in full screen mode or not.
+	 * @todo Bad style because looks like a readonly method but changes members.
+	 * @protected
+	 * @returns {Boolean}
+	 */
+	Video.prototype.isInFullScreen = function() {
+		var element = document.fullscreenElement || document.mozFullScreenElement ||
+				document.webkitFullscreenElement;
+
+		return element && $(element).parent().hasClass('owl-video-frame');
+	};
+
+	/**
+	 * Destroys the plugin.
+	 */
+	Video.prototype.destroy = function() {
+		var handler, property;
+
+		this._core.$element.off('click.owl.video');
+
+		for (handler in this._handlers) {
+			this._core.$element.off(handler, this._handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.Video = Video;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Animate Plugin
+ * @version 2.3.4
+ * @author Bartosz Wojciechowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates the animate plugin.
+	 * @class The Navigation Plugin
+	 * @param {Owl} scope - The Owl Carousel
+	 */
+	var Animate = function(scope) {
+		this.core = scope;
+		this.core.options = $.extend({}, Animate.Defaults, this.core.options);
+		this.swapping = true;
+		this.previous = undefined;
+		this.next = undefined;
+
+		this.handlers = {
+			'change.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name == 'position') {
+					this.previous = this.core.current();
+					this.next = e.property.value;
+				}
+			}, this),
+			'drag.owl.carousel dragged.owl.carousel translated.owl.carousel': $.proxy(function(e) {
+				if (e.namespace) {
+					this.swapping = e.type == 'translated';
+				}
+			}, this),
+			'translate.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this.swapping && (this.core.options.animateOut || this.core.options.animateIn)) {
+					this.swap();
+				}
+			}, this)
+		};
+
+		this.core.$element.on(this.handlers);
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	Animate.Defaults = {
+		animateOut: false,
+		animateIn: false
+	};
+
+	/**
+	 * Toggles the animation classes whenever an translations starts.
+	 * @protected
+	 * @returns {Boolean|undefined}
+	 */
+	Animate.prototype.swap = function() {
+
+		if (this.core.settings.items !== 1) {
+			return;
+		}
+
+		if (!$.support.animation || !$.support.transition) {
+			return;
+		}
+
+		this.core.speed(0);
+
+		var left,
+			clear = $.proxy(this.clear, this),
+			previous = this.core.$stage.children().eq(this.previous),
+			next = this.core.$stage.children().eq(this.next),
+			incoming = this.core.settings.animateIn,
+			outgoing = this.core.settings.animateOut;
+
+		if (this.core.current() === this.previous) {
+			return;
+		}
+
+		if (outgoing) {
+			left = this.core.coordinates(this.previous) - this.core.coordinates(this.next);
+			previous.one($.support.animation.end, clear)
+				.css( { 'left': left + 'px' } )
+				.addClass('animated owl-animated-out')
+				.addClass(outgoing);
+		}
+
+		if (incoming) {
+			next.one($.support.animation.end, clear)
+				.addClass('animated owl-animated-in')
+				.addClass(incoming);
+		}
+	};
+
+	Animate.prototype.clear = function(e) {
+		$(e.target).css( { 'left': '' } )
+			.removeClass('animated owl-animated-out owl-animated-in')
+			.removeClass(this.core.settings.animateIn)
+			.removeClass(this.core.settings.animateOut);
+		this.core.onTransitionEnd();
+	};
+
+	/**
+	 * Destroys the plugin.
+	 * @public
+	 */
+	Animate.prototype.destroy = function() {
+		var handler, property;
+
+		for (handler in this.handlers) {
+			this.core.$element.off(handler, this.handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.Animate = Animate;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Autoplay Plugin
+ * @version 2.3.4
+ * @author Bartosz Wojciechowski
+ * @author Artus Kolanowski
+ * @author David Deutsch
+ * @author Tom De Caluwé
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	/**
+	 * Creates the autoplay plugin.
+	 * @class The Autoplay Plugin
+	 * @param {Owl} scope - The Owl Carousel
+	 */
+	var Autoplay = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		/**
+		 * The autoplay timeout id.
+		 * @type {Number}
+		 */
+		this._call = null;
+
+		/**
+		 * Depending on the state of the plugin, this variable contains either
+		 * the start time of the timer or the current timer value if it's
+		 * paused. Since we start in a paused state we initialize the timer
+		 * value.
+		 * @type {Number}
+		 */
+		this._time = 0;
+
+		/**
+		 * Stores the timeout currently used.
+		 * @type {Number}
+		 */
+		this._timeout = 0;
+
+		/**
+		 * Indicates whenever the autoplay is paused.
+		 * @type {Boolean}
+		 */
+		this._paused = true;
+
+		/**
+		 * All event handlers.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'changed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name === 'settings') {
+					if (this._core.settings.autoplay) {
+						this.play();
+					} else {
+						this.stop();
+					}
+				} else if (e.namespace && e.property.name === 'position' && this._paused) {
+					// Reset the timer. This code is triggered when the position
+					// of the carousel was changed through user interaction.
+					this._time = 0;
+				}
+			}, this),
+			'initialized.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.autoplay) {
+					this.play();
+				}
+			}, this),
+			'play.owl.autoplay': $.proxy(function(e, t, s) {
+				if (e.namespace) {
+					this.play(t, s);
+				}
+			}, this),
+			'stop.owl.autoplay': $.proxy(function(e) {
+				if (e.namespace) {
+					this.stop();
+				}
+			}, this),
+			'mouseover.owl.autoplay': $.proxy(function() {
+				if (this._core.settings.autoplayHoverPause && this._core.is('rotating')) {
+					this.pause();
+				}
+			}, this),
+			'mouseleave.owl.autoplay': $.proxy(function() {
+				if (this._core.settings.autoplayHoverPause && this._core.is('rotating')) {
+					this.play();
+				}
+			}, this),
+			'touchstart.owl.core': $.proxy(function() {
+				if (this._core.settings.autoplayHoverPause && this._core.is('rotating')) {
+					this.pause();
+				}
+			}, this),
+			'touchend.owl.core': $.proxy(function() {
+				if (this._core.settings.autoplayHoverPause) {
+					this.play();
+				}
+			}, this)
+		};
+
+		// register event handlers
+		this._core.$element.on(this._handlers);
+
+		// set default options
+		this._core.options = $.extend({}, Autoplay.Defaults, this._core.options);
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	Autoplay.Defaults = {
+		autoplay: false,
+		autoplayTimeout: 5000,
+		autoplayHoverPause: false,
+		autoplaySpeed: false
+	};
+
+	/**
+	 * Transition to the next slide and set a timeout for the next transition.
+	 * @private
+	 * @param {Number} [speed] - The animation speed for the animations.
+	 */
+	Autoplay.prototype._next = function(speed) {
+		this._call = window.setTimeout(
+			$.proxy(this._next, this, speed),
+			this._timeout * (Math.round(this.read() / this._timeout) + 1) - this.read()
+		);
+
+		if (this._core.is('interacting') || document.hidden) {
+			return;
+		}
+		this._core.next(speed || this._core.settings.autoplaySpeed);
+	}
+
+	/**
+	 * Reads the current timer value when the timer is playing.
+	 * @public
+	 */
+	Autoplay.prototype.read = function() {
+		return new Date().getTime() - this._time;
+	};
+
+	/**
+	 * Starts the autoplay.
+	 * @public
+	 * @param {Number} [timeout] - The interval before the next animation starts.
+	 * @param {Number} [speed] - The animation speed for the animations.
+	 */
+	Autoplay.prototype.play = function(timeout, speed) {
+		var elapsed;
+
+		if (!this._core.is('rotating')) {
+			this._core.enter('rotating');
+		}
+
+		timeout = timeout || this._core.settings.autoplayTimeout;
+
+		// Calculate the elapsed time since the last transition. If the carousel
+		// wasn't playing this calculation will yield zero.
+		elapsed = Math.min(this._time % (this._timeout || timeout), timeout);
+
+		if (this._paused) {
+			// Start the clock.
+			this._time = this.read();
+			this._paused = false;
+		} else {
+			// Clear the active timeout to allow replacement.
+			window.clearTimeout(this._call);
+		}
+
+		// Adjust the origin of the timer to match the new timeout value.
+		this._time += this.read() % timeout - elapsed;
+
+		this._timeout = timeout;
+		this._call = window.setTimeout($.proxy(this._next, this, speed), timeout - elapsed);
+	};
+
+	/**
+	 * Stops the autoplay.
+	 * @public
+	 */
+	Autoplay.prototype.stop = function() {
+		if (this._core.is('rotating')) {
+			// Reset the clock.
+			this._time = 0;
+			this._paused = true;
+
+			window.clearTimeout(this._call);
+			this._core.leave('rotating');
+		}
+	};
+
+	/**
+	 * Pauses the autoplay.
+	 * @public
+	 */
+	Autoplay.prototype.pause = function() {
+		if (this._core.is('rotating') && !this._paused) {
+			// Pause the clock.
+			this._time = this.read();
+			this._paused = true;
+
+			window.clearTimeout(this._call);
+		}
+	};
+
+	/**
+	 * Destroys the plugin.
+	 */
+	Autoplay.prototype.destroy = function() {
+		var handler, property;
+
+		this.stop();
+
+		for (handler in this._handlers) {
+			this._core.$element.off(handler, this._handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.autoplay = Autoplay;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Navigation Plugin
+ * @version 2.3.4
+ * @author Artus Kolanowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+	'use strict';
+
+	/**
+	 * Creates the navigation plugin.
+	 * @class The Navigation Plugin
+	 * @param {Owl} carousel - The Owl Carousel.
+	 */
+	var Navigation = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		/**
+		 * Indicates whether the plugin is initialized or not.
+		 * @protected
+		 * @type {Boolean}
+		 */
+		this._initialized = false;
+
+		/**
+		 * The current paging indexes.
+		 * @protected
+		 * @type {Array}
+		 */
+		this._pages = [];
+
+		/**
+		 * All DOM elements of the user interface.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._controls = {};
+
+		/**
+		 * Markup for an indicator.
+		 * @protected
+		 * @type {Array.<String>}
+		 */
+		this._templates = [];
+
+		/**
+		 * The carousel element.
+		 * @type {jQuery}
+		 */
+		this.$element = this._core.$element;
+
+		/**
+		 * Overridden methods of the carousel.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._overrides = {
+			next: this._core.next,
+			prev: this._core.prev,
+			to: this._core.to
+		};
+
+		/**
+		 * All event handlers.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'prepared.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.dotsData) {
+					this._templates.push('<div class="' + this._core.settings.dotClass + '">' +
+						$(e.content).find('[data-dot]').addBack('[data-dot]').attr('data-dot') + '</div>');
+				}
+			}, this),
+			'added.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.dotsData) {
+					this._templates.splice(e.position, 0, this._templates.pop());
+				}
+			}, this),
+			'remove.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.dotsData) {
+					this._templates.splice(e.position, 1);
+				}
+			}, this),
+			'changed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name == 'position') {
+					this.draw();
+				}
+			}, this),
+			'initialized.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && !this._initialized) {
+					this._core.trigger('initialize', null, 'navigation');
+					this.initialize();
+					this.update();
+					this.draw();
+					this._initialized = true;
+					this._core.trigger('initialized', null, 'navigation');
+				}
+			}, this),
+			'refreshed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._initialized) {
+					this._core.trigger('refresh', null, 'navigation');
+					this.update();
+					this.draw();
+					this._core.trigger('refreshed', null, 'navigation');
+				}
+			}, this)
+		};
+
+		// set default options
+		this._core.options = $.extend({}, Navigation.Defaults, this._core.options);
+
+		// register event handlers
+		this.$element.on(this._handlers);
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 * @todo Rename `slideBy` to `navBy`
+	 */
+	Navigation.Defaults = {
+		nav: false,
+		navText: [
+			'<span aria-label="' + 'Previous' + '">&#x2039;</span>',
+			'<span aria-label="' + 'Next' + '">&#x203a;</span>'
+		],
+		navSpeed: false,
+		navElement: 'button type="button" role="presentation"',
+		navContainer: false,
+		navContainerClass: 'owl-nav',
+		navClass: [
+			'owl-prev',
+			'owl-next'
+		],
+		slideBy: 1,
+		dotClass: 'owl-dot',
+		dotsClass: 'owl-dots',
+		dots: true,
+		dotsEach: false,
+		dotsData: false,
+		dotsSpeed: false,
+		dotsContainer: false
+	};
+
+	/**
+	 * Initializes the layout of the plugin and extends the carousel.
+	 * @protected
+	 */
+	Navigation.prototype.initialize = function() {
+		var override,
+			settings = this._core.settings;
+
+		// create DOM structure for relative navigation
+		this._controls.$relative = (settings.navContainer ? $(settings.navContainer)
+			: $('<div>').addClass(settings.navContainerClass).appendTo(this.$element)).addClass('disabled');
+
+		this._controls.$previous = $('<' + settings.navElement + '>')
+			.addClass(settings.navClass[0])
+			.html(settings.navText[0])
+			.prependTo(this._controls.$relative)
+			.on('click', $.proxy(function(e) {
+				this.prev(settings.navSpeed);
+			}, this));
+		this._controls.$next = $('<' + settings.navElement + '>')
+			.addClass(settings.navClass[1])
+			.html(settings.navText[1])
+			.appendTo(this._controls.$relative)
+			.on('click', $.proxy(function(e) {
+				this.next(settings.navSpeed);
+			}, this));
+
+		// create DOM structure for absolute navigation
+		if (!settings.dotsData) {
+			this._templates = [ $('<button role="button">')
+				.addClass(settings.dotClass)
+				.append($('<span>'))
+				.prop('outerHTML') ];
+		}
+
+		this._controls.$absolute = (settings.dotsContainer ? $(settings.dotsContainer)
+			: $('<div>').addClass(settings.dotsClass).appendTo(this.$element)).addClass('disabled');
+
+		this._controls.$absolute.on('click', 'button', $.proxy(function(e) {
+			var index = $(e.target).parent().is(this._controls.$absolute)
+				? $(e.target).index() : $(e.target).parent().index();
+
+			e.preventDefault();
+
+			this.to(index, settings.dotsSpeed);
+		}, this));
+
+		/*$el.on('focusin', function() {
+			$(document).off(".carousel");
+
+			$(document).on('keydown.carousel', function(e) {
+				if(e.keyCode == 37) {
+					$el.trigger('prev.owl')
+				}
+				if(e.keyCode == 39) {
+					$el.trigger('next.owl')
+				}
+			});
+		});*/
+
+		// override public methods of the carousel
+		for (override in this._overrides) {
+			this._core[override] = $.proxy(this[override], this);
+		}
+	};
+
+	/**
+	 * Destroys the plugin.
+	 * @protected
+	 */
+	Navigation.prototype.destroy = function() {
+		var handler, control, property, override, settings;
+		settings = this._core.settings;
+
+		for (handler in this._handlers) {
+			this.$element.off(handler, this._handlers[handler]);
+		}
+		for (control in this._controls) {
+			if (control === '$relative' && settings.navContainer) {
+				this._controls[control].html('');
+			} else {
+				this._controls[control].remove();
+			}
+		}
+		for (override in this.overides) {
+			this._core[override] = this._overrides[override];
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	/**
+	 * Updates the internal state.
+	 * @protected
+	 */
+	Navigation.prototype.update = function() {
+		var i, j, k,
+			lower = this._core.clones().length / 2,
+			upper = lower + this._core.items().length,
+			maximum = this._core.maximum(true),
+			settings = this._core.settings,
+			size = settings.center || settings.autoWidth || settings.dotsData
+				? 1 : settings.dotsEach || settings.items;
+
+		if (settings.slideBy !== 'page') {
+			settings.slideBy = Math.min(settings.slideBy, settings.items);
+		}
+
+		if (settings.dots || settings.slideBy == 'page') {
+			this._pages = [];
+
+			for (i = lower, j = 0, k = 0; i < upper; i++) {
+				if (j >= size || j === 0) {
+					this._pages.push({
+						start: Math.min(maximum, i - lower),
+						end: i - lower + size - 1
+					});
+					if (Math.min(maximum, i - lower) === maximum) {
+						break;
+					}
+					j = 0, ++k;
+				}
+				j += this._core.mergers(this._core.relative(i));
+			}
+		}
+	};
+
+	/**
+	 * Draws the user interface.
+	 * @todo The option `dotsData` wont work.
+	 * @protected
+	 */
+	Navigation.prototype.draw = function() {
+		var difference,
+			settings = this._core.settings,
+			disabled = this._core.items().length <= settings.items,
+			index = this._core.relative(this._core.current()),
+			loop = settings.loop || settings.rewind;
+
+		this._controls.$relative.toggleClass('disabled', !settings.nav || disabled);
+
+		if (settings.nav) {
+			this._controls.$previous.toggleClass('disabled', !loop && index <= this._core.minimum(true));
+			this._controls.$next.toggleClass('disabled', !loop && index >= this._core.maximum(true));
+		}
+
+		this._controls.$absolute.toggleClass('disabled', !settings.dots || disabled);
+
+		if (settings.dots) {
+			difference = this._pages.length - this._controls.$absolute.children().length;
+
+			if (settings.dotsData && difference !== 0) {
+				this._controls.$absolute.html(this._templates.join(''));
+			} else if (difference > 0) {
+				this._controls.$absolute.append(new Array(difference + 1).join(this._templates[0]));
+			} else if (difference < 0) {
+				this._controls.$absolute.children().slice(difference).remove();
+			}
+
+			this._controls.$absolute.find('.active').removeClass('active');
+			this._controls.$absolute.children().eq($.inArray(this.current(), this._pages)).addClass('active');
+		}
+	};
+
+	/**
+	 * Extends event data.
+	 * @protected
+	 * @param {Event} event - The event object which gets thrown.
+	 */
+	Navigation.prototype.onTrigger = function(event) {
+		var settings = this._core.settings;
+
+		event.page = {
+			index: $.inArray(this.current(), this._pages),
+			count: this._pages.length,
+			size: settings && (settings.center || settings.autoWidth || settings.dotsData
+				? 1 : settings.dotsEach || settings.items)
+		};
+	};
+
+	/**
+	 * Gets the current page position of the carousel.
+	 * @protected
+	 * @returns {Number}
+	 */
+	Navigation.prototype.current = function() {
+		var current = this._core.relative(this._core.current());
+		return $.grep(this._pages, $.proxy(function(page, index) {
+			return page.start <= current && page.end >= current;
+		}, this)).pop();
+	};
+
+	/**
+	 * Gets the current succesor/predecessor position.
+	 * @protected
+	 * @returns {Number}
+	 */
+	Navigation.prototype.getPosition = function(successor) {
+		var position, length,
+			settings = this._core.settings;
+
+		if (settings.slideBy == 'page') {
+			position = $.inArray(this.current(), this._pages);
+			length = this._pages.length;
+			successor ? ++position : --position;
+			position = this._pages[((position % length) + length) % length].start;
+		} else {
+			position = this._core.relative(this._core.current());
+			length = this._core.items().length;
+			successor ? position += settings.slideBy : position -= settings.slideBy;
+		}
+
+		return position;
+	};
+
+	/**
+	 * Slides to the next item or page.
+	 * @public
+	 * @param {Number} [speed=false] - The time in milliseconds for the transition.
+	 */
+	Navigation.prototype.next = function(speed) {
+		$.proxy(this._overrides.to, this._core)(this.getPosition(true), speed);
+	};
+
+	/**
+	 * Slides to the previous item or page.
+	 * @public
+	 * @param {Number} [speed=false] - The time in milliseconds for the transition.
+	 */
+	Navigation.prototype.prev = function(speed) {
+		$.proxy(this._overrides.to, this._core)(this.getPosition(false), speed);
+	};
+
+	/**
+	 * Slides to the specified item or page.
+	 * @public
+	 * @param {Number} position - The position of the item or page.
+	 * @param {Number} [speed] - The time in milliseconds for the transition.
+	 * @param {Boolean} [standard=false] - Whether to use the standard behaviour or not.
+	 */
+	Navigation.prototype.to = function(position, speed, standard) {
+		var length;
+
+		if (!standard && this._pages.length) {
+			length = this._pages.length;
+			$.proxy(this._overrides.to, this._core)(this._pages[((position % length) + length) % length].start, speed);
+		} else {
+			$.proxy(this._overrides.to, this._core)(position, speed);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.Navigation = Navigation;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Hash Plugin
+ * @version 2.3.4
+ * @author Artus Kolanowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+	'use strict';
+
+	/**
+	 * Creates the hash plugin.
+	 * @class The Hash Plugin
+	 * @param {Owl} carousel - The Owl Carousel
+	 */
+	var Hash = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
+
+		/**
+		 * Hash index for the items.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._hashes = {};
+
+		/**
+		 * The carousel element.
+		 * @type {jQuery}
+		 */
+		this.$element = this._core.$element;
+
+		/**
+		 * All event handlers.
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'initialized.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && this._core.settings.startPosition === 'URLHash') {
+					$(window).trigger('hashchange.owl.navigation');
+				}
+			}, this),
+			'prepared.owl.carousel': $.proxy(function(e) {
+				if (e.namespace) {
+					var hash = $(e.content).find('[data-hash]').addBack('[data-hash]').attr('data-hash');
+
+					if (!hash) {
+						return;
+					}
+
+					this._hashes[hash] = e.content;
+				}
+			}, this),
+			'changed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name === 'position') {
+					var current = this._core.items(this._core.relative(this._core.current())),
+						hash = $.map(this._hashes, function(item, hash) {
+							return item === current ? hash : null;
+						}).join();
+
+					if (!hash || window.location.hash.slice(1) === hash) {
+						return;
+					}
+
+					window.location.hash = hash;
+				}
+			}, this)
+		};
+
+		// set default options
+		this._core.options = $.extend({}, Hash.Defaults, this._core.options);
+
+		// register the event handlers
+		this.$element.on(this._handlers);
+
+		// register event listener for hash navigation
+		$(window).on('hashchange.owl.navigation', $.proxy(function(e) {
+			var hash = window.location.hash.substring(1),
+				items = this._core.$stage.children(),
+				position = this._hashes[hash] && items.index(this._hashes[hash]);
+
+			if (position === undefined || position === this._core.current()) {
+				return;
+			}
+
+			this._core.to(this._core.relative(position), false, true);
+		}, this));
+	};
+
+	/**
+	 * Default options.
+	 * @public
+	 */
+	Hash.Defaults = {
+		URLhashListener: false
+	};
+
+	/**
+	 * Destroys the plugin.
+	 * @public
+	 */
+	Hash.prototype.destroy = function() {
+		var handler, property;
+
+		$(window).off('hashchange.owl.navigation');
+
+		for (handler in this._handlers) {
+			this._core.$element.off(handler, this._handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
+
+	$.fn.owlCarousel.Constructor.Plugins.Hash = Hash;
+
+})(window.Zepto || window.jQuery, window, document);
+
+/**
+ * Support Plugin
+ *
+ * @version 2.3.4
+ * @author Vivid Planet Software GmbH
+ * @author Artus Kolanowski
+ * @author David Deutsch
+ * @license The MIT License (MIT)
+ */
+;(function($, window, document, undefined) {
+
+	var style = $('<support>').get(0).style,
+		prefixes = 'Webkit Moz O ms'.split(' '),
+		events = {
+			transition: {
+				end: {
+					WebkitTransition: 'webkitTransitionEnd',
+					MozTransition: 'transitionend',
+					OTransition: 'oTransitionEnd',
+					transition: 'transitionend'
+				}
+			},
+			animation: {
+				end: {
+					WebkitAnimation: 'webkitAnimationEnd',
+					MozAnimation: 'animationend',
+					OAnimation: 'oAnimationEnd',
+					animation: 'animationend'
+				}
+			}
+		},
+		tests = {
+			csstransforms: function() {
+				return !!test('transform');
+			},
+			csstransforms3d: function() {
+				return !!test('perspective');
+			},
+			csstransitions: function() {
+				return !!test('transition');
+			},
+			cssanimations: function() {
+				return !!test('animation');
+			}
+		};
+
+	function test(property, prefixed) {
+		var result = false,
+			upper = property.charAt(0).toUpperCase() + property.slice(1);
+
+		$.each((property + ' ' + prefixes.join(upper + ' ') + upper).split(' '), function(i, property) {
+			if (style[property] !== undefined) {
+				result = prefixed ? property : true;
+				return false;
+			}
+		});
+
+		return result;
+	}
+
+	function prefixed(property) {
+		return test(property, true);
+	}
+
+	if (tests.csstransitions()) {
+		/* jshint -W053 */
+		$.support.transition = new String(prefixed('transition'))
+		$.support.transition.end = events.transition.end[ $.support.transition ];
+	}
+
+	if (tests.cssanimations()) {
+		/* jshint -W053 */
+		$.support.animation = new String(prefixed('animation'))
+		$.support.animation.end = events.animation.end[ $.support.animation ];
+	}
+
+	if (tests.csstransforms()) {
+		/* jshint -W053 */
+		$.support.transform = new String(prefixed('transform'));
+		$.support.transform3d = tests.csstransforms3d();
+	}
+
+})(window.Zepto || window.jQuery, window, document);
+/**
  * CLDR JavaScript Library v0.4.8
  * http://jquery.com/
  *
@@ -37810,15 +40551,12 @@ return Globalize;
 
 }));
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -37948,15 +40686,12 @@ if(typeof(GenericEventListener) === "undefined" || !GenericEventListener || !Gen
 	};
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -39765,15 +42500,12 @@ if(typeof(CoremetricsEventListener) === "undefined" || !CoremetricsEventListener
 	});
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /* global $, window */
@@ -39865,16 +42597,14 @@ var arrayUtils = arrayUtils || {
         }
         return newArr;
     }
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /* An dictionary of commonly used key codes, listed numerically by key code */
@@ -39889,16 +42619,14 @@ var KeyCodes = KeyCodes || {
     UP_ARROW: 38,
 	RIGHT_ARROW: 39,	
     DOWN_ARROW: 40
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /* global jQuery, $, console */
@@ -40020,16 +42748,14 @@ jQuery.Topic = function (id) {
     };
 
     return topic;
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /* global $, window */
@@ -40636,6 +43362,21 @@ var Utils = Utils || {
             return Globalize.formatNumber(amount, options);
         }
     },
+	
+	/**
+     * Format numbers from en_US locale into a localized locale according to localized information
+     * example: Utils.formatNumber("123.4", {maximumFractionDigits: 2, minimumFractionDigits: 2})
+     * 
+     * @param amount {string}
+     * @param options {object} may include minimumFractionDigits, maximumFractionDigits, etc.
+     */
+    formatEnUSLocaleNumberIntoTargetLocaleNumber: function(amount, options) {
+        amount = amount.replace(/[^0-9\.\,]/g, '');
+        if (GlobalizeLoaded) {
+            amount = Globalize('en').parseNumber(amount);
+            return Globalize.formatNumber(amount, options);
+        }
+    },
 
     /**
      * Returns the locale.
@@ -40783,16 +43524,14 @@ var Utils = Utils || {
         });
         return origString;
     }
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -40956,9 +43695,9 @@ jQuery(document).ready(function($) {
                         //redirect to a full page for sign in
                         console.debug('error type: ERR_SESSION_TIMEOUT - use session has timed out');
                         var serviceResponse = parseJsonCommentFiltered(data);
-                        var timeoutURL = "Logoff?";
+                        var timeoutURL = "RestLogout?";
                         if (serviceResponse.exceptionData.isBecomeUser == 'true') {
-                            timeoutURL = "RestoreOriginalUserSetInSession?URL=Logoff&";
+                            timeoutURL = "RestoreOriginalUserSetInSession?URL=RestLogout&";
                         }
                         if (serviceResponse.exceptionData.rememberMe == 'true'){
                             var myURL = timeoutURL + 'rememberMe=true&storeId=' + storeId + "&catalogId=" + catalogId + "&langId=" + langId;
@@ -41066,15 +43805,12 @@ jQuery(document).ready(function($) {
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 wcRenderContext={
@@ -41190,15 +43926,12 @@ wcRenderContext={
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -41430,9 +44163,9 @@ wcRenderContext={
                         else if (errorCode == '2510') {
                             //redirect to a full page for sign in
                             console.debug('error type: ERR_SESSION_TIMEOUT - use session has timed out');
-                            var timeoutURL = "Logoff?";
+                            var timeoutURL = "RestLogout?";
                             if (serviceResponse.exceptionData.isBecomeUser == 'true') {
-                                timeoutURL = "RestoreOriginalUserSetInSession?URL=Logoff&";
+                                timeoutURL = "RestoreOriginalUserSetInSession?URL=RestLogout&";
                             }
                             if (serviceResponse.exceptionData.rememberMe == 'true'){
                                 var myURL = timeoutURL + 'rememberMe=true&storeId=' + storeId + "&catalogId=" + catalogId + "&langId=" + langId;
@@ -41623,15 +44356,12 @@ wcService={
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 /* global Utils, document, jQuery */
 
@@ -41881,16 +44611,14 @@ var WCWidgetParser;
         WCWidgetParser.parse();
         WCWidgetParser.parseRefreshArea();
     });
-}(jQuery));//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}(jQuery));
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /*global jQuery, $, window, setTimeout, clearTimeout, Utils */
@@ -41901,22 +44629,22 @@ var WCWidgetParser;
  * so it's not written as a jQuery UI Widget, otherwise we would extend the Owl Carousel Widget.
  *
  */
-(function () {
+(function() {
 
     /*
      * New options (in addition to ones inherited from $.Widget):
      *
      * OPTIONAL:
      * prevButton: {string}
-     *             jQuery selector for the previous button, can have falsy 
+     *             jQuery selector for the previous button, can have falsy
      *             value if there is no previous button.
-     * nextButton: {string} 
+     * nextButton: {string}
      *             jQuery selector for the next button, can have falsy value
      *             if there is no previous button.
      * paginationButtons: {string}
-     *             jQuery selector for the previous button, can have falsy 
+     *             jQuery selector for the previous button, can have falsy
      *             value if there are no pagination buttons.
-     * overflowVisible: {boolean} 
+     * overflowVisible: {boolean}
      *             true if content that overflows the container should be shown,
      *             false otherwise.
      * REQUIRED:
@@ -41930,113 +44658,118 @@ var WCWidgetParser;
             contentContainer: "div.content",
             overflowVisible: false,
             owlCarouselOptions: {
-                autoHeight: false,
-                autoWidth: true,
+                loadedClass: 'owl-loaded owl-carousel owl-carousel owl-theme',
                 pagination: false, // We're generating our own pagination control
-                slideSpeed: 2000,
-                //touchDrag: false, // Need to disable touch drag if we want this to work
+                dots: false,
+                rewind: true,
+                touchDrag: false, // Need to disable touch drag if we want this to work
                 // with gridster
-                //mouseDrag: false,
-                afterMove: function (elem) {                    
-                    if (this.options.paginationButtons) {                        
+                mouseDrag: false,
+                lazyLoad: true,
+                afterMove: function() {
+                    if (this.options.paginationButtons) {
                         this.paginationButtons.removeClass("selected")
-                        // Highlight the selected element after pagination move
-                        .eq(this.owlCarousel.currentItem).attr("class", "selected");
-                    }                    
-                },
-                afterUpdate: function() {
-                    // Only hide/show next/prev buttons after update has finished
-                    this._togglePrevNextButtons();
+                            // Highlight the selected element after pagination move
+                            .eq(this.owlCarousel._current).attr("class", "selected");
+                    }
                 }
             }
         },
 
         /**
-        * Attach "this" to a function passed to the owlCarousel option
-        */
+         * Attach "this" to a function passed to the owlCarousel option
+         */
         _proxyFunction: function(optionName) {
             if ($.isFunction(this.options.owlCarouselOptions[optionName])) {
                 this.options.owlCarouselOptions[optionName] = $.proxy(this.options.owlCarouselOptions[optionName], this);
             }
         },
-        
-        _create: function () {
+
+        _create: function() {
             this._super(this);
+
 
             // Stores a handle to the underlying Owl Carousel
             this.content = $(this.options.contentContainer, this.element);
             this._proxyFunction("afterMove");
-            this._proxyFunction("afterUpdate");
-            
-            if (this.options.columnCountByWidth) {
-                var columnCountByWidth = this.options.columnCountByWidth;
-                if (Utils.isObject(columnCountByWidth)) {
-                    var windowWidth = $(window).width(),
-                        // Grab all the screen sizes and sort them
-                        screenSizes = Object.keys(columnCountByWidth)
-                                            .map(function(str) {
-                                                return parseInt(str, 10);
-                                            });
-                    screenSizes.sort(function(a, b) { return a - b });
-                    screenSizes = screenSizes.map(function(size) {
-                        return [size, columnCountByWidth[size.toString()]];
-                    });
-                    this.options.owlCarouselOptions.itemsCustom = screenSizes;
-                } else {
-                    console.error("columnCountByWidth is not an object: " + this.options.columnCountByWidth);
-                }
+            if (this.options.owlCarouselOptions.singleItem || this.options.owlCarouselOptions.singleItem == 'true') {
+                //old version of owl Carousel
+                this.options.owlCarouselOptions.items = 1;
+            } else {
+                this.options.owlCarouselOptions.responsive = this._normalizeColumnCountByWidth();
             }
-            
-            this.owlCarousel = this.content.owlCarousel(this.options.owlCarouselOptions).data('owlCarousel');
+
+            this.owlCarousel = this.content.owlCarousel(this.options.owlCarouselOptions).data('owl.carousel');
+            //RTC DEFECT#153115 the carousel disableTextSelect event handling result in invocation of event.stopPropagation()
+            if ((this.owlCarousel.options.mouseDrag !== false || this.owlCarousel.options.touchDrag !== false) &&
+                this.owlCarousel.disabledEvents && typeof this.owlCarousel.disabledEvents === "function") {
+                this.owlCarousel.$elem.off("mousedown.disableTextSelect");
+                this.owlCarousel.$elem.on("mousedown.disableTextSelect", function(e) {
+                    if (!$(e.target).is('input, textarea, select, option')) {
+                        e.preventDefault();
+                    };
+                });
+            }
 
             if (this.options.overflowVisible) {
-                $(".owl-wrapper-outer", this.element).addClass("overflow-visible");
+                $(".owl-stage-outer", this.element).addClass("overflow-visible");
             }
-            
+
             $(window).resize($.proxy(function() {
-                this.owlCarousel.reload();
+                this.owlCarousel.options.responsive = this.options.owlCarouselOptions.responsive;
+                this.owlCarousel.refresh();
+                this._toggleResponsive();
                 this._togglePrevNextButtons();
             }, this));
-            
-            
-            
-//            $(window).resize($.proxy(function () {
-//                // Reposition the dialog after window resize, otherwise
-//                // the dialog will stay in the same position
-//                this.reposition();
-//            }, this));
 
+			this._moveThumbnail();
             this._add_event_handlers();
+            this._toggleResponsive();
             this._togglePrevNextButtons();
         },
 
+        _moveThumbnail: function() {
+			
+			var pageControl = $(".pageControl.thumbnail",this.element);
+			if(pageControl.length > 0){
+				var pageControlThumbnails = $("[data-carousel-pageButton]",this.content);
+				if(pageControlThumbnails.length > 0){
+					pageControlThumbnails.each(function () { 
+						pageControl.append(this);
+					});
+				}
+			}
+        },
+		
         /**
-        * Show/hide custom pagination buttons depending on the number of items 
-        * being shown
-        */
+         * Show/hide custom pagination buttons depending on the number of items
+         * being shown
+         */
         _togglePrevNextButtons: function() {
             // Require pagination if the total number of items is greater than
             // the number of items being shown
-            var requirePagination = (this.owlCarousel.itemsAmount > this.owlCarousel.options.items);
-            
+            if (this.options.owlCarouselOptions.responsive && this.owlCarousel.options.responsive)
+                this.options.owlCarouselOptions.items = this.options.owlCarouselOptions.responsive[this.owlCarousel._breakpoint].items;
+            var requirePagination = (this.owlCarousel._items.length > this.options.owlCarouselOptions.items);
+
             if (requirePagination) {
                 if (this.options.nextButton) {
                     this.$nextButton.show();
-                }      
+                }
                 if (this.options.prevButton) {
                     this.$prevButton.show();
-                }  
+                }
             } else {
                 if (this.options.nextButton) {
                     this.$nextButton.hide();
-                }      
+                }
                 if (this.options.prevButton) {
                     this.$prevButton.hide();
-                }  
+                }
             }
         },
-        
-        _add_event_handlers: function () {
+
+        _add_event_handlers: function() {
             var carousel = this.owlCarousel;
 
             this.element.on("resized.owl.carousel", function() {
@@ -42046,55 +44779,84 @@ var WCWidgetParser;
             // Previous button
             if (this.options.prevButton) {
                 this.$prevButton = $(this.options.prevButton, this.element);
-                this.$prevButton.click(function (e) {
+                this.$prevButton.click(function(e) {
                     carousel.prev();
+                    carousel.options.afterMove();
                     e.preventDefault();
-                });           
+                });
             }
 
             // Next button
             if (this.options.nextButton) {
                 this.$nextButton = $(this.options.nextButton, this.element);
-                this.$nextButton.click(function (e) {
+                this.$nextButton.click(function(e) {
                     carousel.next();
+                    carousel.options.afterMove();
                     e.preventDefault();
                 });
-            }           
-
-            // Pagination buttons (either dots or numbers)
-            // Highlight the first element on startup
+            }
             if (this.options.paginationButtons) {
                 this.paginationButtons = $(this.options.paginationButtons, this.element);
                 this.paginationButtons.first().attr("class", "selected");
                 this.paginationButtons.each(function(i, button) {
                     $(button).click(function(e) {
-                        carousel.goTo(i);
+                        carousel.to(i);
+                        carousel.options.afterMove();
                         e.preventDefault();
-                    });                    
+                    });
                 });
-            }            
+            }
         },
-        
-        _destroy: function () {
+
+        _destroy: function() {
             this.owlCarousel.destroy();
-            
+
             // remove the event handlers
-            //this.element.off("mouseenter.wcToolTip");  
-            //this.element.off("mouseleave.wcToolTip");  
+            //this.element.off("mouseenter.wcToolTip");
+            //this.element.off("mouseleave.wcToolTip");
+        },
+
+        _toggleResponsive: function() {
+            if (this.options.owlCarouselOptions.responsive && this.owlCarousel.options.responsive) {
+                this.options.owlCarouselOptions.items = this.options.owlCarouselOptions.responsive[this.owlCarousel._breakpoint].items;
+
+                if (this.owlCarousel._items.length < this.options.owlCarouselOptions.items) {
+                    this.owlCarousel.options.items = this.owlCarousel._items.length;
+                    this.owlCarousel.options.responsive = null;
+                    this.owlCarousel.refresh();
+                }
+            }
+        },
+
+        _normalizeColumnCountByWidth: function() {
+            if (!this.options.columnCountByWidth) {
+                return this.options.columnCountByWidth;
+            }
+            var columnCountByWidth = $.extend({}, this.options.columnCountByWidth);
+            var responsive = {};
+            $.each(columnCountByWidth, function(breakpoint, items) {
+                if (!!items['items']) {
+                    //new format
+                    responsive = columnCountByWidth;
+                    return false;
+                }
+                responsive[breakpoint] = {
+                    "items": items
+                };
+            });
+            return responsive;
         }
 
     });
 
-}());//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}());
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /*global jQuery, Utils, window, document */
@@ -42320,16 +45082,14 @@ var WCWidgetParser;
 
     });
 
-}(jQuery));//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}(jQuery));
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /*global jQuery, Utils, window, document */
@@ -42475,16 +45235,14 @@ var WCWidgetParser;
         
     });
 
-}(jQuery));//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}(jQuery));
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /*global jQuery, $, window, setTimeout, clearTimeout, Utils */
@@ -42643,16 +45401,14 @@ var WCWidgetParser;
         }
     });
 
-}());//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}());
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /*global jQuery, $, window, setTimeout, clearTimeout, Utils */
@@ -42895,16 +45651,14 @@ var WCWidgetParser;
 
     });
 
-}());//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}());
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 (function ($) {
@@ -42982,15 +45736,12 @@ var WCWidgetParser;
     });
 }(jQuery));
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2017 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 AddressBookDetailJS = {
@@ -43282,16 +46033,14 @@ var declareAccountaddressDetailRefreshArea = function() {
 
     // initialize widget
     myWidgetObj.refreshWidget({renderContextChangedHandler: renderContextChangedHandler, postRefreshHandler: postRefreshHandler});
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2017 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 AddressBookListJS = {
@@ -43481,16 +46230,14 @@ var declareAccountAddressBookRefreshArea = function() {
     
     // initialize widget
     myWidgetObj.refreshWidget({renderContextChangedHandler: renderContextChangedHandler, postRefreshHandler: postRefreshHandler});
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -43597,16 +46344,14 @@ var declareAccountAddressBookRefreshArea = function() {
 			wcService.invoke('AjaxRejectRequest',params);		
 		}
 
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -43825,16 +46570,14 @@ var declareAccountAddressBookRefreshArea = function() {
 				$("#" + this.toolbarId).attr("aria-expanded", this.toolbarExpanded);
 			}
 		}
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 // Declare context and refresh controller which are used in pagination controls of SearchBasedNavigationDisplay -- both products and articles+videos
@@ -44675,15 +47418,12 @@ if (typeof(SearchBasedNavigationDisplayJS) == "undefined" || SearchBasedNavigati
     };
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -44719,16 +47459,14 @@ window.onload=function() {
 			document.getElementById('promotionTitle').style.display = 'none';
 		}
 	}
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 var FindByCSRUtilities = function(){
@@ -44967,15 +47705,12 @@ wcService.declare({
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 var FindOrders = function(){
@@ -45368,15 +48103,12 @@ wcService.declare({
 
 });
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -45598,15 +48330,12 @@ wcService.declare({
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -46168,16 +48897,14 @@ wcService.declare({
         }
         cursor_clear();
     }
-});//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+});
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -46489,6 +49216,14 @@ GlobalLoginJS = {
         var params = {
             widgetId: widgetId
         };
+        var privacyCookie = getCookie('WC_PrivacyNoticeVersion_' + WCParamJS.storeId);
+        var marketingConsentCookie = getCookie('WC_MarketingTrackingConsent_' + WCParamJS.storeId);
+        if (privacyCookie != null){
+            params['privacyNoticeVersion'] = privacyCookie;
+        }
+        if (marketingConsentCookie != null){
+            params['marketingTrackingConsent'] = marketingConsentCookie;
+        }
 
         /*For Handling multiple clicks. */
         if (!submitRequest()) {
@@ -46496,6 +49231,15 @@ GlobalLoginJS = {
         }
         cursor_wait();
         wcService.invoke('globalLoginAjaxLogon', params);
+    },
+    
+    submitOauthSignIn: function(formId, provider) {
+    	 service = wcService.getServiceById('OauthLoginAjaxLogon');
+         service.setFormId(formId);
+    	var params = { 			
+    			authorizationProvider: provider
+    	};
+    	wcService.invoke('OauthLoginAjaxLogon', params);
     },
 
     /**
@@ -46591,20 +49335,18 @@ GlobalLoginJS = {
             }, this);
         }
     }
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
-$(document).ready(function () {
-    window.setTimeout(function () {
+$(document).ready(function() {
+    window.setTimeout(function() {
         var href = document.location.href,
             index = href.lastIndexOf("s", 4),
             widgetId = 'Header_GlobalLogin';
@@ -46629,9 +49371,10 @@ $(document).ready(function () {
             }
         } else {
             var logonUserCookie = getCookie("WC_LogonUserId_" + WCParamJS.storeId);
+            var buyerCookie = getCookie("WC_BuyOnBehalf_" + WCParamJS.storeId);
             if (logonUserCookie != undefined && logonUserCookie != null && logonUserCookie != "") {
                 var logonUserName = logonUserCookie.toString(),
-                //update both the sign out links
+                    //update both the sign out links
                     widgetIds = GlobalLoginJS.widgetsLoadedOnPage;
                 if (Utils.existsAndNotEmpty(widgetIds)) {
                     // TODO: test
@@ -46641,7 +49384,7 @@ $(document).ready(function () {
                         if ($("#" + idPrefix + "signOutQuickLink").length) {
                             var logonUserName = logonUserCookie.toString();
                             $("#" + idPrefix + "signOutQuickLinkUser").html(escapeXml(logonUserName, true));
-	                        
+
                             if (Utils.varExists(GlobalLoginShopOnBehalfJS)) {
                                 GlobalLoginShopOnBehalfJS.updateSignOutLink(registeredWidgetId);
                             }
@@ -46650,9 +49393,16 @@ $(document).ready(function () {
                 }
             }
             var displayContractPanel = getCookie("WC_DisplayContractPanel_" + WCParamJS.storeId);
-            if ((displayContractPanel != undefined && displayContractPanel != null && displayContractPanel.toString() == "true") || (logonUserCookie == undefined && logonUserCookie == null)) {
+            var buyerNameUpdate = isOnBehalfOfSession ?
+                buyerCookie === undefined ?
+                true : false :
+                buyerCookie === undefined ?
+                false : true;
+
+            if (WCParamJS.omitHeader != 1 && (
+                    (displayContractPanel != undefined && displayContractPanel != null && displayContractPanel.toString() == "true") || (logonUserCookie == undefined && logonUserCookie == null)) || buyerNameUpdate) {
                 if (typeof isOnPasswordUpdateForm === 'undefined' || isOnPasswordUpdateForm == false) {
-                    //Right after user logged in, perform Global Login Ajax call and display Global Login Contract panel.				
+                    //Right after user logged in, perform Global Login Ajax call and display Global Login Contract panel.
                     GlobalLoginJS.updateGlobalLoginContent(widgetId);
                 } else if (isOnPasswordUpdateForm == true) {
                     GlobalLoginJS.updateGlobalLoginUserDisplay("...");
@@ -46661,16 +49411,14 @@ $(document).ready(function () {
             }
         }
     }, 100);
-});//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+});
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 function declareSignInRefreshArea (thisRefreshAreaId) {
@@ -46746,6 +49494,7 @@ function declareSignOutRefreshArea(thisRefreshAreaId) {
         }
 
         var userDisplayNameField = $("#" + idPrefix + "userDisplayNameField");
+        var buyerDisplayNameField = $("#" + idPrefix + "buyerDisplayNameField");
         //get the user name from the display name field.
         if (userDisplayNameField !== null) {
             //clear the old cookie and write it afresh.
@@ -46761,6 +49510,23 @@ function declareSignOutRefreshArea(thisRefreshAreaId) {
                 path: '/',
                 domain: cookieDomain
             });
+            if (buyerDisplayNameField !== null) {
+                var buyerCookie = getCookie("WC_BuyOnBehalf_" + WCParamJS.storeId);
+                if (buyerCookie != null) {
+                    setCookie("WC_BuyOnBehalf_" + WCParamJS.storeId, null, {
+                        expires: -1,
+                        path: '/',
+                        domain: cookieDomain
+                    });
+                }
+                var buyerName = String(buyerDisplayNameField.val()).trim();
+                if (buyerName != "") {
+	                setCookie("WC_BuyOnBehalf_" + WCParamJS.storeId, buyerName, {
+	                    path: '/',
+	                    domain: cookieDomain
+	                });
+                }
+            }
 
             var updateLogonUserCookie = getCookie("WC_LogonUserId_" + WCParamJS.storeId);
             if (updateLogonUserCookie !== 'undefined' && updateLogonUserCookie.length) {
@@ -46828,15 +49594,12 @@ function declareSignOutRefreshArea(thisRefreshAreaId) {
 
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -46977,6 +49740,10 @@ wcService.declare({
                     }
                 }
             }
+            if (getCookie('WC_PrivacyNoticeVersion_' + WCParamJS.storeId) != serviceResponse.privacyNoticeVersion
+                    || getCookie('WC_MarketingTrackingConsent_' + WCParamJS.storeId) != serviceResponse.marketingTrackingConsent){
+                        setCookie("WC_PrivacyNoticeVersion_" + WCParamJS.storeId, null, {path: "/", domain: cookieDomain, expires: -1});
+            }
 
             if (serviceResponse["MERGE_CART_FAILED_SHOPCART_THRESHOLD"] == "1") {
                 setCookie("MERGE_CART_FAILED_SHOPCART_THRESHOLD", "1", {path: "/", domain: cookieDomain});
@@ -47000,16 +49767,54 @@ wcService.declare({
         }
         cursor_clear();
     }
-});//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}),
+
+
+wcService.declare({
+    id: "OauthLoginAjaxLogon",
+    actionId: "OauthLoginAjaxLogon",
+    url: getAbsoluteURL() + "OauthLogon",
+    formId: ""
+
+        /**
+         *  Copies all the items from the existing order to the shopping cart and redirects to the shopping cart page.
+        *  @param (object) serviceResponse The service response object, which is the
+        *  JSON object returned by the service invocation.
+        */
+    ,successHandler: function(serviceResponse) {
+    	cursor_clear();
+    	//if (serviceResponse.redirectUrl != null) {
+    	var currUri = window.location.href;
+    	var url = serviceResponse.redirectUrl.replace(/&amp;/g, '&');
+    	var postLogonUrl = serviceResponse.URL.replace(/&amp;/g, '&');
+    	var provider = serviceResponse.provider;
+    	var redirectUrl = currUri.substring(0, currUri.lastIndexOf("\/")) + '/OauthLoginView?storeId=' +WCParamJS.storeId+ '&provider='+provider+ '&URL=' +postLogonUrl;
+    	//alert(currUri);
+    	//redirectUrl = redirectUrl.replace('&', /&amp;/g);
+    	url = url + "&redirect_uri=" +encodeURIComponent(redirectUrl);
+    	//alert(url);
+    	window.location = url;
+    	//}
+    	
+    }
+
+    /**
+    * display an error message.
+    * @param (object) serviceResponse The service response object, which is the
+    * JSON object returned by the service invocation.
+    */
+    ,failureHandler: function(serviceResponse) {
+        console.log('failed!');
+        cursor_clear();
+    }
+})
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /* global KeyCodes */
@@ -47799,15 +50604,12 @@ wcService.declare({
 });
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2012, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -47916,15 +50718,12 @@ function io_rec_zp(a_product_ids,zone,symbolic,target_id,category,rec_attributes
 	}
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -47994,16 +50793,14 @@ var declareNumberOfBuyerApprovalsController = function() {
 
         }
     });
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -48127,12 +50924,12 @@ var declareNumberOfBuyerApprovalsController = function() {
 		* @param (Object) data The object that contains data used by pagination control 
 		*/
 		showResultsPage:function(data){
-			var pageNumber = data[0]['pageNumber'],
-                pageSize = data[0]['pageSize'];
+			var pageNumber = data['pageNumber'],
+                pageSize = data['pageSize'];
 			pageNumber = parseInt(pageNumber);
 			pageSize = parseInt(pageSize);
 
-			setCurrentId(data[0]["linkId"]);
+			setCurrentId(data["linkId"]);
 
 			if(!submitRequest()){
 				return;
@@ -48226,16 +51023,14 @@ var declareNumberOfBuyerApprovalsController = function() {
 				$("#" + this.toolbarId).attr("aria-expanded", this.toolbarExpanded);
 			}
 		}
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -48578,6 +51373,7 @@ OrderListJS = {
         cursor_wait();
 
         var params = {
+            orderId: "null",
             subscriptionId: subscriptionId,
             URL: "",
             storeId: OrderListServicesDeclarationJS.storeId,
@@ -48913,15 +51709,12 @@ OrderListJS = {
     }
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -48977,21 +51770,19 @@ var declareOrderDisplayRefreshArea = function(widgetPrefix) {
     
     // initialize widget
     myWidgetObj.refreshWidget({renderContextChangedHandler: renderContextChangedHandler, postRefreshHandler: postRefreshHandler});
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
  * @fileOverview This javascript contains declarations of AJAX services used within
- * WebSphere Commerce.
+ * HCL Commerce.
  */
 
 /**
@@ -49662,16 +52453,14 @@ wcService.declare({
         }
         cursor_clear();
     }
-})//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+})
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -50027,16 +52816,14 @@ organizationListJS = {
 
 };
 
-});//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+});
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -50166,16 +52953,14 @@ organizationMemberApprovalGroupJS = {
 			}
 		}
 	}
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -50431,16 +53216,14 @@ organizationRolesJS = {
 			});
 		});
 	}
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -50952,16 +53735,14 @@ organizationSummaryJS = {
 			})
 		});
  	}
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -51333,15 +54114,12 @@ wcService.declare({
 	};
  	
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -51397,16 +54175,14 @@ function declareOrganizationUserInfo_userAddress_controller() {
 			widgetCommonJS.initializeEditSectionToggleEvent();
 		}
 	});
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -51682,16 +54458,14 @@ OrganizationUsersListJS ={
 			});
 		});
 	}
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -51734,16 +54508,14 @@ function declareOrganizationUsersListTable_controller() {
 			cursor_clear();			 
 		}
 	});
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 function AddToRequisitionListsJS(storeId, catalogId, langId, dropDownMenuId, selectListMenuId, createListMenuId, listTypeMenuId, listNameFieldId, listTypeFieldId, addResultMenuId, buttonStyle, jsObjectName) {
@@ -52302,7 +55074,7 @@ function AddToRequisitionListsJS(storeId, catalogId, langId, dropDownMenuId, sel
                 buttonStyle: this.buttonStyle,
                 name: this.params.name,
                 status: this.params.status,
-                requisitionListId: this.params.requisitionListId,
+                requisitionListId: this.params.requisitionListId ? this.params.requisitionListId : "",
                 quantity: quantity
             };
             if (quantity < 1) {
@@ -52345,7 +55117,7 @@ function AddToRequisitionListsJS(storeId, catalogId, langId, dropDownMenuId, sel
                 buttonStyle: this.buttonStyle,
                 name: this.params.name,
                 status: this.params.status,
-                requisitionListId: this.params.requisitionListId,
+                requisitionListId: this.params.requisitionListId ? this.params.requisitionListId : "",
                 requisitionOrderItemId: requisitionOrderItemId,
                 quantity: quantity
             };
@@ -52422,7 +55194,11 @@ function AddToRequisitionListsJS(storeId, catalogId, langId, dropDownMenuId, sel
             } else if ($("#ProductInfoImage_" + catEntryId).length) {
                 productThumbnail = $("#" + "ProductInfoImage_" + catEntryId).val();
             }
-
+            var curRefershAreas = wcRenderContext.getRefreshAreaIds("requisitionLists_content_context");
+            $.each(curRefershAreas, function(i, refreshDivId) {
+                var pageName = refreshDivId.replace("requisitionlists_content_widget", "");
+                declareRequsitionListsContentController(pageName);
+            });
             // Refresh the widget's refresh area and show item was added to a list
             wcRenderContext.updateRenderContext("requisitionLists_content_context", {
                 "showSuccess": "true",
@@ -52486,6 +55262,12 @@ function AddToRequisitionListsJS(storeId, catalogId, langId, dropDownMenuId, sel
                 productThumbnail = document.getElementById("catalogEntry_img_" + serviceResponse.requisitionOrderItemId).childNodes[1].src;
             }
 
+            var curRefershAreas = wcRenderContext.getRefreshAreaIds("requisitionLists_content_context");
+            $.each(curRefershAreas, function(i, refreshDivId) {
+                var pageName = refreshDivId.replace("requisitionlists_content_widget", "");
+                declareRequsitionListsContentController(pageName);
+            });
+            
             // Refresh the widget's refresh area and show item was added to a list
             wcRenderContext.updateRenderContext("requisitionLists_content_context", {
                 "showSuccess": "true",
@@ -52721,15 +55503,12 @@ var declareRequsitionListsContentController = function (widgetPrefix) {
     });
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -52752,16 +55531,14 @@ var declareRequsitionListsContentController = function (widgetPrefix) {
 					currentAngleImgId = angleImgId;
 					document.getElementById(angleImgId).className ='selected';
 					document.getElementById("productMainImage").src = imgsrc;
-			}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+			}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -53037,15 +55814,12 @@ function InventoryStatusJS(storeParams, catEntryParams, physicalStores, productI
     }
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 if (typeof (MerchandisingAssociationJS) == "undefined" || MerchandisingAssociationJS == null || !MerchandisingAssociationJS) {
@@ -53362,9 +56136,6 @@ if (typeof (MerchandisingAssociationJS) == "undefined" || MerchandisingAssociati
 
 }
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 // Declare refresh controller which are used in pagination controls of SearchBasedNavigationDisplay -- both products and articles+videos
@@ -53413,15 +56184,12 @@ wc.render.declareRefreshController({
     }
 }); */
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -54376,15 +57144,12 @@ var declareSKUListTable_WidgetRefreshArea = function (productId) {
     });
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -54601,15 +57366,12 @@ B2BLogonForm ={
     },
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -54737,16 +57499,14 @@ B2BLogonForm ={
 			return false;
 		},
 
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -54754,32 +57514,54 @@ B2BLogonForm ={
  */
 
 	ReqListItemsJS = {
-			
-		/** 
+
+		/**
 		 * This variable stores the ID of the language that the store currently uses. Its default value is set to -1, which corresponds to United States English.
 		 * @private
 		 */
 		langId: "-1",
-		
-		/** 
+
+		/**
 		 * This variable stores the ID of the current store. Its default value is empty.
 		 * @private
 		 */
 		storeId: "",
-		
-		/** 
+
+		/**
 		 * This variable stores the ID of the catalog. Its default value is empty.
 		 * @private
 		 */
 		catalogId: "",
-		
+
 		/**
 		* This variable stores the ID of the requisition list. Its default value is empty.
 		*/
 		requisitionListId: "",
 
+		addPDK: false,
+
+		addDK: false,
+
+		configurationXML: "",
+
+	    setAddPDK: function (addpdk) {
+	        this.addPDK = addpdk;
+	    },
+
+		setAddDK: function(adddk) {
+			this.addDK = adddk;
+		},
+
+		setConfigurationXML: function(configXML) {
+			this.configurationXML = configXML;
+		},
+
+		unEscapeXml: function(str){
+			return str.replace(/&lt;/gm, "<").replace(/&gt;/gm, ">").replace(/&#034;/gm,"\"");
+		},
+
 		/**
-		 * Sets the common parameters for the current page. 
+		 * Sets the common parameters for the current page.
 		 * For example, the language ID, store ID, and catalog ID.
 		 *
 		 * @param {Integer} langId The ID of the language that the store currently uses.
@@ -54808,7 +57590,7 @@ B2BLogonForm ={
 			}else if (!this.isNumber(form.quantityAdd.value.replace(/^\s+|\s+$/g, '')) || form.quantityAdd.value.replace(/^\s+|\s+$/g, '') <= 0) {
 				MessageHelper.formErrorHandleClient(form.quantityAdd.id,MessageHelper.messages["ERROR_REQUISITION_LIST_QUANTITY_ONE_OR_MORE"]); return;
 			}
-			
+
 			var params = {
 			requisitionListId: form.requisitionListId.value,
 			partNumber: form.skuAdd.value.replace(/^\s+|\s+$/g, ''),
@@ -54816,16 +57598,16 @@ B2BLogonForm ={
 			operation: "addItem",
 			storeId: this.storeId,
 			catalogId: this.catalogId,
-			langId: this.langId			
+			langId: this.langId
 			};
 			/*For Handling multiple clicks. */
 			if(!submitRequest()){
 				return;
-			}			
+			}
 			cursor_wait();
 			wcService.invoke('requisitionListAddItem',params);
 		},
-	
+
 		/**
 		 * Updates the quantities of each item in the requisition list, if the quantities are changed.
 		 * This function is automatically called by the sucessHandler of requisitionListUpdate.
@@ -54834,7 +57616,7 @@ B2BLogonForm ={
 		 * @param (string) requisitionListId The ID of the requisition list to update.
 		 */
 		updateItemQuantity:function (qtyDiv, orderItemId, row) {
-		
+
 			var params={
 			requisitionListId: this.requisitionListId,
 			quantity: $(qtyDiv).val(),
@@ -54855,7 +57637,7 @@ B2BLogonForm ={
 		/**
 		* Shows the "quantity updated" message next to quantity input
 		* @param {Integer} row The row number of the quantity input in the table
-		*/		
+		*/
 		showUpdatedMessage: function(row) {
 			$('#reqItem_msg_qty_updated_'+row).css('display','block');
 			$('#table_r'+row+'_input2').css('border','1px solid #006ecc');
@@ -54865,12 +57647,12 @@ B2BLogonForm ={
 		/**
 		* Hides the "quantity updated" message next to quantity input
 		* @param {Integer} row The row number of the quantity input in the table
-		*/		
+		*/
 		hideUpdatedMessage: function(row) {
 			$('#reqItem_msg_qty_updated_'+row).css('display','none');
 			$('#table_r'+row+'_input2').css('border','1px solid #b7b7b7');
 		},
-		
+
 		/**
 		 * Deletes an item from the requisition list for the Ajax flow.
 		 * @param (string) orderItemId The item to delete from the requisition list.
@@ -54882,13 +57664,13 @@ B2BLogonForm ={
 			quantity: "0",
 			storeId: this.storeId,
 			catalogId: this.catalogId,
-			langId: this.langId,	
+			langId: this.langId,
 			operation: "deleteItem"
 			};
 			/*For Handling multiple clicks. */
 			if(!submitRequest()){
 				return;
-			}			
+			}
 			cursor_wait();
 			wcService.invoke('requisitionListDeleteItem',params);
 		},
@@ -54908,19 +57690,19 @@ B2BLogonForm ={
 					params[formElements[i].name] = formElements[i].value;
 				}
 			}
-									
+
 			MessageHelper.hideAndClearMessage();
-	
+
 			//For Handling multiple clicks
 			if(!submitRequest()){
 				return;
-			} 
-			
+			}
+
 			cursor_wait();
 			service = wcService.getServiceById('requisitionListAjaxPlaceOrder');
 			service.formId = form;
 			wcService.invoke('requisitionListAjaxPlaceOrder', params);
-		},			
+		},
 
 		/**
 		 * Adds selected item from the current requisition list to the current order.
@@ -54932,12 +57714,17 @@ B2BLogonForm ={
 			var form = document.forms["RequisitionListAddToCartForm"];
 			var formElements = form.elements;
 			var params = {};
-			
+
 			for(var i = 0; i < formElements.length; i++) {
 				if (formElements[i].name.indexOf("quantity") != -1) {
-					if(formElements[i].name.indexOf("quantity_"+row) != -1) {
+					if(formElements[i].name === ("quantity_"+row)) {
 						// just add quantity of the specified row to params
 						params["quantity"] = formElements[i].value;
+					}
+				} if (formElements[i].name.indexOf("catEntryId") != -1) {
+					if(formElements[i].name === ("catEntryId_"+row)) {
+						// just add catEntryId of the specified row to params
+						params["catEntryId"] = formElements[i].value;
 					}
 				} else if (formElements[i].name.indexOf("ProductInfo") == -1) {
 					// ingore all hidden "ProductInfo" inputs - do not add to params
@@ -54947,29 +57734,36 @@ B2BLogonForm ={
 			params["partNumber"] = partNumber;
 			params["inventoryValidation"] = true;
 			params["orderId"] = ".";
-			
+
+			if (this.addDK){
+				params.configXML = this.unEscapeXml(this.configurationXML);
+				wcService.getServiceById("ReqListAddOrderItem").setUrl(getAbsoluteURL() + "AjaxRESTOrderAddConfigurationToCart");
+			}else {
+				wcService.getServiceById("ReqListAddOrderItem").setUrl(getAbsoluteURL() + "AjaxRESTOrderAddPreConfigurationToCart");
+			}
+
 			// used by mini shopcart
 			var selectedAttrList = new Object();
 			shoppingActionsJS.saveAddedProductInfo(params["quantity"], catEntryId, catEntryId, selectedAttrList);
-			
+
 			MessageHelper.hideAndClearMessage();
-	
+
 			//For Handling multiple clicks
 			if(!submitRequest()){
 				return;
-			} 
-			
+			}
+
 			cursor_wait();
 			wcService.invoke('ReqListAddOrderItem',params);
-			
+
 			// close action dropdown
 			hideMenu($('#RequisitionListItems_actionButton'+row));
 			hideMenu($('#RequisitionListItems_actionDropdown'+row));
-		},	
-			
+		},
+
 		/**
 		* This function is called when user selects a different page from the current page
-		* @param (Object) data The object that contains data used by pagination control 
+		* @param (Object) data The object that contains data used by pagination control
 		*/
 		showResultsPage:function(data){
 			var pageNumber = data['pageNumber'];
@@ -54989,7 +57783,7 @@ B2BLogonForm ={
 			wcRenderContext.updateRenderContext('RequisitionListItemTable_Context', {"beginIndex": beginIndex, "requisitionListId":this.requisitionListId});
 			MessageHelper.hideAndClearMessage();
 		},
-		
+
 		/**
 		 * Checks if the string is an integer.
 		 * @param (string) str The string to check.
@@ -54998,8 +57792,8 @@ B2BLogonForm ={
 		isNumber:function (str) {
 			if ((str*0)==0) return true;
 			else return false;
-		},		
-		
+		},
+
 		/**
 		 * Checks if a string is null or empty.
 		 * @param (string) str The string to check.
@@ -55013,16 +57807,14 @@ B2BLogonForm ={
 			return false;
 		},
 
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -55237,15 +58029,12 @@ $( document ).ready(function() {
 	};
 });
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -55294,15 +58083,12 @@ function declareRequisitionListTableRefreshArea() {
 });
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -55492,15 +58278,12 @@ wcService.declare({
 	}
 })
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -55616,15 +58399,12 @@ wcService.declare({
 	}
   
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -55667,6 +58447,10 @@ wcService.declare({
 			/** The URL of the shopping cart used to forward the page when an order is converted to the current order. **/
 			shoppingCartURL : "",
 			
+			unEscapeXml: function(str){
+				return str.replace(/&lt;/gm, "<").replace(/&gt;/gm, ">").replace(/&#034;/gm,"\"");
+			},
+
 			/**
 			 * Sets the common parameters for the current page. 
 			 * For example, the language ID, store ID, and catalog ID.
@@ -55761,13 +58545,15 @@ wcService.declare({
 				wcService.invoke('AjaxAddSavedOrderItem',params);
 			},
 
+			
+	
 			/**
 			 * Adds item to the current order
 			 * @param {Integer} partNumber The partNumber of the item to add to the current order.
 			 * @param (string) row The row number of the quantity input in the table.
 			 * @param (string) catEntryId The catentry ID of the item
 			 */
-			addItemToCurrentOrder:function(partNumber, row, catEntryId){
+			addItemToCurrentOrder:function(partNumber, row, catEntryId, configXML, catentryType){
 				var params = {
 					storeId: this.storeId,
 					catalogId: this.catalogId,
@@ -55777,11 +58563,13 @@ wcService.declare({
 					mergeToCurrentPendingOrder: "Y",
 					URL: "",
 					partNumber: partNumber,
+					catEntryId:catEntryId,
 					inventoryValidation: true,
 					orderId: ".",
 					quantity: $("#orderItem_input_" + row).val()
 				};
 				
+								
 				// used by mini shopcart
 				var selectedAttrList = new Object();
 				shoppingActionsJS.saveAddedProductInfo(params["quantity"], catEntryId, catEntryId, selectedAttrList);
@@ -55793,7 +58581,13 @@ wcService.declare({
 					return;
 				}
 				cursor_wait();
-				wcService.invoke('AddOrderItem',params);
+				if (catentryType == 'DynamicKitBean') {
+					params.configXML = this.unEscapeXml(configXML.toString());
+					wcService.getServiceById("AddOrderItem").setUrl(getAbsoluteURL() + "AjaxRESTOrderAddConfigurationToCart");
+				}else if (catentryType == 'PredDynaKitBean'){
+					wcService.getServiceById("AddOrderItem").setUrl(getAbsoluteURL() + "AjaxRESTOrderAddPreConfigurationToCart");
+				}
+				wcService.invoke('AddOrderItem', params);
 				// close action dropdown
 				hideMenu($('#actionButton' + row)[0]);
 				hideMenu($('#actionDropdown' + row)[0]);
@@ -55940,16 +58734,14 @@ wcService.declare({
 				}
 				return false;
 			}
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -56298,15 +59090,12 @@ UserMemberGroupManagementJS = {
 	}
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -56339,15 +59128,12 @@ function declareUserMemberGroupManagement_controller() {
 	});
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -57296,16 +60082,14 @@ UserRoleManagementJS = {
 		}
 	}
 	
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -57394,15 +60178,12 @@ function declareUserRoleManagement_OrgList_controller() {
 	});
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -57491,15 +60272,12 @@ if (WishListDetailJS == null || typeof(WishListDetailJS) != "object") {
 	};
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -57533,15 +60311,12 @@ if (WishListEmailJS == null || typeof(WishListEmailJS) != "object") {
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -57638,16 +60413,14 @@ var declareApprovalCommentController = function() {
             myWidgetObj.refreshWidget("refresh", wcRenderContext.getRenderContextProperties("ApprovalComment_Context"));
         }
     });
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -57899,265 +60672,32 @@ wcService.declare({
 	
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2017 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 productDisplayJS = {
 
-    /** The language ID currently in use **/
-    langId: "-1",
-
-    /** The store ID currently in use **/
-    storeId: "",
-
-    /** The catalog ID currently in use **;/
-    catalogId: "",
-
-    /** Holds the current user type such as guest or registered user. Allowed values are 'G' for guest and 'R' for registered.**/
-    userType: "",
-
-    /** A boolean used in a variety of the add to cart methods to tell whether or not the base item was added to the cart. **/
-    baseItemAddedToCart: false,
-
-    /** An array of entitled items which is used in various methods throughout ShoppingActions.js **/
-    entitledItems: [],
-
-    /** a JSON object that holds attributes of an entitled item **/
-    entitledItemJsonObject: null,
-
-    /** A map of attribute name value pairs for the currently selected attribute values **/
-    selectedAttributesList: {},
-
-    /** A map of currently selected attribute values for a catalog entry **/
-    selectedAttributeValues: {},
-
-    /** A map of HTML element ids associated with an attribute name **/
-    registeredAttributeIds: {},
-
-    /** A variable used to form the url dynamically for the more info link in the Quickinfo popup */
-    moreInfoUrl: "",
-
-    /**
-     * A boolean used to to determine is it from a Qick info popup or not. 
-     **/
-    isPopup: false,
-
-    /**
-     * A boolean used to to determine whether or not to display the price range when the catEntry is selected. 
-     **/
-    displayPriceRange: true,
-
-    /**
-     * This array holds the json object returned from the service, holding the price information of the catEntry.
-     **/
-    itemPriceJsonOject: [],
-
-    /** 
-     * stores all name and value of all swatches 
-     * this is a 2 dimension array and each record i contains the following information:
-     * allSwatchesArray[i][0] - attribute name of the swatch
-     * allSwatchesArray[i][1] - attribute value of the swatch
-     * allSwatchesArray[i][2] - image1 of swatch (image to use for enabled state)
-     * allSwatchesArray[i][3] - image2 of swatch (image to use for disabled state)
-     * allSwatchesArray[i][4] - onclick action of the swatch when enabled
-     **/
-    allSwatchesArrayList: {},
-
-    /**
-     * stores all name and id of all dropdowns 
-     **/
-    allDropdownsList: {},
-
-    /**
-     * Holds the ID of the image used for swatch
-     **/
-    skuImageId: "",
-
-    /**
-     * The prefix of the cookie key that is used to store item IDs. 
-     */
-    cookieKeyPrefix: "CompareItems_",
-
-    /**
-     * The delimiter used to separate item IDs in the cookie.
-     */
-    cookieDelimiter: ";",
-
-    /**
-     * The maximum number of items allowed in the compare zone. 
-     */
-    maxNumberProductsAllowedToCompare: 4,
-
-    /**
-     * The minimum number of items allowed in the compare zone. 
-     */
-    minNumberProductsAllowedToCompare: 2,
-
-    /**
-     * Id of the base catalog entry. 
-     */
-    baseCatalogEntryId: 0,
-
-    /**
-     * An map which holds the attributes of a set of products
-     */
-    selectedProducts: {},
-
-    /**
-     * An array to keep the quantity of the products in a list (bundle)
-     */
-    productList: {},
-
-    /**
-     * stores the currency symbol
-     */
-    currencySymbol: "",
-
-    /**
-     * stores the compare return page name
-     */
-    compareReturnName: "",
-    /**
-     * stores the search term
-     */
-    searchTerm: "",
-
-    search01: "'",
-
-    search02: '"',
-
-    replaceStr01: /\\\'/g,
-
-    replaceStr02: /\\\"/g,
-
-    ampersandChar: /&/g,
-
-    ampersandEntityName: "&amp;",
-
     singleSKUProductWithoutDefiningAttribute: false,
 
-    replaceStr001: "&#039;",
-    replaceStr002: "&#034;",
-
     setCommonParameters: function (langId, storeId, catalogId, userType, currencySymbol) {
-        productDisplayJS.langId = langId;
-        productDisplayJS.storeId = storeId;
-        productDisplayJS.catalogId = catalogId;
-        productDisplayJS.userType = userType;
-        productDisplayJS.currencySymbol = currencySymbol;
+        shoppingActionsJS.setCommonParameters(langId, storeId, catalogId, userType, currencySymbol);
     },
 
     setEntitledItems: function (entitledItemArray) {
-        productDisplayJS.entitledItems = entitledItemArray;
+        shoppingActionsJS.setEntitledItems(entitledItemArray);
     },
 
     getCatalogEntryId: function (entitledItemId) {
-        var attributeArray = [];
-        var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
-        for (attribute in selectedAttributes) {
-            attributeArray.push(attribute + "_|_" + selectedAttributes[attribute]);
-        }
-        // there are no selected attribute and no entitled item, this must be a single sku item without defining attribute
-        if (selectedAttributes == null && this.entitledItems == null) {
-            return entitledItemId.substring(entitledItemId.indexOf("_") + 1);
-        }
-        return productDisplayJS.resolveSKU(attributeArray);
+        shoppingActionsJS.getCatalogEntryId(entitledItemId);
     },
 
-    /**
-     * getCatalogEntryIdforProduct Returns the catalog entry ID for a catalog entry that has the same attribute values as a specified product's selected attributes as passed in via the selectedAttributes parameter.
-     *
-     * @param {String[]} selectedAttributes The array of selected attributes upon which to resolve the SKU.
-     *
-     * @return {String} catalog entry ID of the SKU.
-     *
-     **/
-    getCatalogEntryIdforProduct: function (selectedAttributes) {
-        var attributeArray = [];
-        for (attribute in selectedAttributes) {
-            attributeArray.push(attribute + "_|_" + selectedAttributes[attribute]);
-        }
-        return productDisplayJS.resolveSKU(attributeArray);
-    },
-
-    /**
-     * retrieves the entitledItemJsonObject
-     */
     getEntitledItemJsonObject: function () {
-        return productDisplayJS.entitledItemJsonObject;
-    },
-
-    /**
-     * resolveSKU Resolves a SKU using an array of defining attributes.
-     *
-     * @param {String[]} attributeArray An array of defining attributes upon which to resolve a SKU.
-     *
-     * @return {String} catentry_id The catalog entry ID of the SKU.
-     *
-     **/
-    resolveSKU: function (attributeArray) {
-        console.debug("Resolving SKU >> " + attributeArray + ">>" + this.entitledItems);
-        var catentry_id = "";
-        var attributeArrayCount = attributeArray.length;
-
-        // if there is only one item, no need to check the attributes to resolve the sku
-        if (this.entitledItems.length == 1) {
-            return this.entitledItems[0].catentry_id;
-        }
-        for (x in this.entitledItems) {
-            var catentry_id = this.entitledItems[x].catentry_id;
-            var Attributes = this.entitledItems[x].Attributes;
-            var attributeCount = 0;
-            for (index in Attributes) {
-                attributeCount++;
-            }
-
-            // Handle special case where a catalog entry has one sku with no attributes
-            if (attributeArrayCount == 0 && attributeCount == 0) {
-                return catentry_id;
-            }
-            if (attributeCount != 0 && attributeArrayCount >= attributeCount) {
-                var matchedAttributeCount = 0;
-
-                for (attributeName in attributeArray) {
-                    var attributeValue = attributeArray[attributeName];
-                    if (attributeValue in Attributes) {
-                        matchedAttributeCount++;
-                    }
-                }
-
-                if (attributeCount == matchedAttributeCount) {
-                    console.debug("CatEntryId:" + catentry_id + " for Attribute: " + attributeArray);
-                    this.disableBuyButtonforUnbuyable(x);
-                    return catentry_id;
-                }
-            }
-        }
-        return null;
-    },
-
-    /**
-     * disables add2cart button in case where the buyable flag is set to false
-     */
-    disableBuyButtonforUnbuyable: function (entitledItemIndex) {
-        var buyableFlag = this.entitledItems[entitledItemIndex].buyable;
-        //disable the add to cart button
-        var btn = document.getElementById("add2CartBtn");
-        if (buyableFlag != null && btn != null) {
-            if (buyableFlag == 'false') {
-                btn.className += " add2CartButtonDisabled";
-            } else {
-                btn.className = btn.className.replace(" add2CartButtonDisabled", "");
-            }
-        }
+        shoppingActionsJS.getEntitledItemJsonObject();
     },
 
     /**
@@ -58169,37 +60709,13 @@ productDisplayJS = {
      *
      **/
     registerAttributeIds: function (attributeName, entitledItemId, ids) {
-        var attributeIds = productDisplayJS.registeredAttributeIds[entitledItemId];
-        if (attributeIds == null) {
-            attributeIds = {};
-            productDisplayJS.registeredAttributeIds[entitledItemId] = attributeIds;
-        }
-
-        attributeIds[productDisplayJS.removeQuotes(attributeName)] = ids;
-    },
-
-    /**
-     * getAttributeIds Get the map of ids of HTML attributes that are associated with the specified attribute.
-     *
-     * @param {String} attributeName The name of the attribute.
-     * @param {String} entitledItemId The element id where the json object of the sku is stored
-     *
-     * @return {Object} ids Map of named HTML element ids
-     *
-     **/
-    getAttributeIds: function (attributeName, entitledItemId) {
-        var ids = null;
-        var attributeIds = productDisplayJS.registeredAttributeIds[entitledItemId];
-        if (attributeIds != null) {
-            ids = attributeIds[productDisplayJS.removeQuotes(attributeName)];
-        }
-        return ids;
+        shoppingActionsJS.registerAttributeIds(attributeName, entitledItemId, ids);
     },
 
     /**
      * setSelectedAttribute Sets the selected attribute value for a particular attribute not in reference to any catalog entry.
-     *					   One place this function is used is on CachedProductOnlyDisplay.jsp where there is a drop down box of attributes.
-     *					   When an attribute is selected from that drop down this method is called to update the selected value for that attribute.
+     *                     One place this function is used is on CachedProductOnlyDisplay.jsp where there is a drop down box of attributes.
+     *                     When an attribute is selected from that drop down this method is called to update the selected value for that attribute.
      *
      * @param {String} selectedAttributeName The name of the attribute.
      * @param {String} selectedAttributeValue The value of the selected attribute.
@@ -58210,63 +60726,7 @@ productDisplayJS = {
      *
      **/
     setSelectedAttribute: function (selectedAttributeName, selectedAttributeValue, entitledItemId, skuImageId, imageField, selectedAttributeDisplayValue) {
-        var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
-        if (selectedAttributes == null) {
-            selectedAttributes = {};
-        }
-        selectedAttributeValue = selectedAttributeValue.replace(productDisplayJS.replaceStr001, productDisplayJS.search01);
-        selectedAttributeValue = selectedAttributeValue.replace(productDisplayJS.replaceStr002, productDisplayJS.search02);
-        selectedAttributeValue = selectedAttributeValue.replace(productDisplayJS.replaceStr01, productDisplayJS.search01);
-        selectedAttributeValue = selectedAttributeValue.replace(productDisplayJS.replaceStr02, productDisplayJS.search02);
-        selectedAttributeValue = selectedAttributeValue.replace(productDisplayJS.ampersandChar, productDisplayJS.ampersandEntityName);
-        selectedAttributes[selectedAttributeName] = selectedAttributeValue;
-        productDisplayJS.moreInfoUrl = productDisplayJS.moreInfoUrl + '&' + selectedAttributeName + '=' + selectedAttributeValue;
-        productDisplayJS.selectedAttributesList[entitledItemId] = selectedAttributes;
-        if (skuImageId != undefined) {
-            productDisplayJS.setSKUImageId(skuImageId);
-        }
-        var entitledItemJSON;
-        if ($("#" + entitledItemId).length && !productDisplayJS.isPopup) {
-            //the json object for entitled items are already in the HTML. 
-            entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
-        } else {
-            //if $("#" + entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object. 
-            //in this case, it must have been set in catalogentryThumbnailDisplay.js when the quick info
-            entitledItemJSON = productDisplayJS.getEntitledItemJsonObject();
-        }
-        productDisplayJS.setEntitledItems(entitledItemJSON);
-        var attributeIds = productDisplayJS.getAttributeIds(selectedAttributeName, entitledItemId);
-        if (attributeIds != null) {
-            var usedFilterValue = $("#" + attributeIds.usedFilterValueId);
-            if (usedFilterValue != null) {
-                if (selectedAttributeDisplayValue) {
-                    $(usedFilterValue).html(selectedAttributeDisplayValue);
-                } else {
-                    $(usedFilterValue).html(selectedAttributeValue);
-                }
-            }
-            if (selectedAttributeValue === "") {
-                $("#" + attributeIds.usedFilterId).removeClass("visible");
-                var hideCurrentUsedFilters = true;
-                var dropdownList = this.allDropdownsList[entitledItemId];
-                for (var i in dropdownList) {
-                    if (selectedAttributes[dropdownList[i].name] !== "") {
-                        hideCurrentUsedFilters = false;
-                        break;
-                    }
-                }
-                if (hideCurrentUsedFilters) {
-                    $("#currentUsedFilters_" + entitledItemId).addClass("hidden");
-                }
-            } else {
-                $("#" + attributeIds.usedFilterId).addClass("visible");
-                $("#currentUsedFilters_" + entitledItemId).removeClass("hidden");
-                var selectedAttributeNameId = selectedAttributeName.replace(productDisplayJS.search01, "\\\'").replace(productDisplayJS.search02, '\\\"');
-                $("[id='attr_" + entitledItemId + '_' + selectedAttributeNameId + "']").addClass("hidden");
-            }
-
-            productDisplayJS.makeDropdownSelection(selectedAttributeName, selectedAttributeValue, entitledItemId);
-        }
+        shoppingActionsJS.setSelectedAttribute(selectedAttributeName, selectedAttributeValue, entitledItemId, skuImageId, imageField, selectedAttributeDisplayValue);
     },
 
     /**
@@ -58278,10 +60738,10 @@ productDisplayJS = {
      *
      **/
     resetSelectedAttribute: function (attributeName, entitledItemId) {
-        var attributeName = attributeName.replace(productDisplayJS.search01, "\\\'").replace(productDisplayJS.search02, '\\\"');
+        var attributeName = attributeName.replace(shoppingActionsJS.search01, "\\\'").replace(shoppingActionsJS.search02, '\\\"');
         $("[id='attr_" + entitledItemId + '_' + attributeName + "']").removeClass("hidden");
 
-        var attributeIds = productDisplayJS.getAttributeIds(attributeName, entitledItemId);
+        var attributeIds = shoppingActionsJS.getAttributeIds(attributeName, entitledItemId);
         if (attributeIds != null) {
             var selectWidget = $(attributeIds.selectAttributeValueId);
             if (selectWidget.length) {
@@ -58290,7 +60750,7 @@ productDisplayJS = {
             }
         }
 
-        var dropdownList = this.allDropdownsList[entitledItemId];
+        var dropdownList = shoppingActionsJS.allDropdownsList[entitledItemId];
         var remainingSelectedAttributes = {};
 
         for (var i = 0; i < dropdownList.length; i++) {
@@ -58342,160 +60802,32 @@ productDisplayJS = {
      *
      **/
     setSelectedAttributeName: function (attributeName, entitledItemId) {
-        var oldSelectedAttributeValuesId = productDisplayJS.selectedAttributeValues[entitledItemId];
+        var oldSelectedAttributeValuesId = shoppingActionsJS.selectedAttributeValues[entitledItemId];
         if (oldSelectedAttributeValuesId != null && oldSelectedAttributeValuesId !== "") {
             $("#" + oldSelectedAttributeValuesId).addClass("mobileHidden");
         }
         var selectedAttributeValuesId = null;
-        var attributeIds = productDisplayJS.getAttributeIds(attributeName, entitledItemId);
+        var attributeIds = shoppingActionsJS.getAttributeIds(attributeName, entitledItemId);
         if (attributeIds != null) {
             selectedAttributeValuesId = attributeIds.attributeValuesId;
         }
         if (selectedAttributeValuesId != null && selectedAttributeValuesId !== "") {
             $("#" + selectedAttributeValuesId).removeClass("mobileHidden");
         }
-        productDisplayJS.selectedAttributeValues[entitledItemId] = selectedAttributeValuesId;
+        shoppingActionsJS.selectedAttributeValues[entitledItemId] = selectedAttributeValuesId;
     },
 
     /**
      * Add2ShopCartAjax This function is used to add a catalog entry to the shopping cart using an AJAX call. This will resolve the catentryId using entitledItemId and adds the item to the cart.
-     *				This function will resolve the SKU based on the entitledItemId passed in and call {@link productDisplayJS.AddItem2ShopCartAjax}.
+     *              This function will resolve the SKU based on the entitledItemId passed in and call {@link productDisplayJS.AddItem2ShopCartAjax}.
      * @param {String} entitledItemId A DIV containing a JSON object which holds information about a catalog entry. You can reference CachedProductOnlyDisplay.jsp to see how that div is constructed.
      * @param {int} quantity The quantity of the item to add to the cart.
-     * @param {String} isPopup If the value is true, then this implies that the function was called from a quick info pop-up. 	
+     * @param {String} isPopup If the value is true, then this implies that the function was called from a quick info pop-up.
      * @param {Object} customParams - Any additional parameters that needs to be passed during service invocation.
      *
      **/
     Add2ShopCartAjax: function (entitledItemId, quantity, isPopup, customParams) {
-        var dialog = $('#quick_cart_container').data("wc-WCDialog");
-        if (dialog) {
-            dialog.close();
-        }
-        if (browseOnly) {
-            MessageHelper.displayErrorMessage(Utils.getLocalizationMessage('ERROR_ADD2CART_BROWSE_ONLY'));
-            return;
-        }
-        var entitledItemJSON;
-
-        if ($("#" + entitledItemId).length) {
-            //the json object for entitled items are already in the HTML. 
-            entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
-        } else {
-            //if $("#" + entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object. 
-            //in this case, it must have been set in catalogentryThumbnailDisplay.js when the quick info
-            entitledItemJSON = this.getEntitledItemJsonObject();
-        }
-
-        productDisplayJS.setEntitledItems(entitledItemJSON);
-        var catalogEntryId = productDisplayJS.getCatalogEntryId(entitledItemId);
-
-        if (catalogEntryId != null) {
-            var productId = entitledItemId.substring(entitledItemId.indexOf("_") + 1);
-            productDisplayJS.AddItem2ShopCartAjax(catalogEntryId, quantity, customParams, productId);
-            productDisplayJS.baseItemAddedToCart = true;
-
-        } else if (isPopup == true) {
-            $('#second_level_category_popup').css("zIndex", '1');
-            MessageHelper.formErrorHandleClient('addToCartLinkAjax', Utils.getLocalizationMessage('ERR_RESOLVING_SKU'));
-        } else {
-            MessageHelper.displayErrorMessage(Utils.getLocalizationMessage('ERR_RESOLVING_SKU'));
-            productDisplayJS.baseItemAddedToCart = false;
-        }
-    },
-
-    AddItem2ShopCartAjax: function (catEntryIdentifier, quantity, customParams, productId) {
-        if (browseOnly) {
-            MessageHelper.displayErrorMessage(Utils.getLocalizationMessage('ERROR_ADD2CART_BROWSE_ONLY'));
-            return;
-        }
-        var params = {
-            storeId: this.storeId,
-            catalogId: this.catalogId,
-            langId: this.langId,
-            orderId: "."
-        };
-        // Remove calculations for performance
-        // params.calculationUsage = "-1,-2,-5,-6,-7";
-        params.inventoryValidation = "true";
-        params.calculateOrder = "0";
-        var ajaxShopCartService = "AddOrderItem";
-
-        shoppingActionsJS.productAddedList = {};
-        if (Array.isArray(catEntryIdentifier) && Array.isArray(quantity)) {
-            for (var i = 0; i < catEntryIdentifier.length; i++) {
-                if (!isPositiveInteger(quantity[i])) {
-                    MessageHelper.displayErrorMessage(Utils.getLocalizationMessage('QUANTITY_INPUT_ERROR'));
-                    return;
-                }
-                params["catEntryId_" + (i + 1)] = catEntryIdentifier[i];
-                params["quantity_" + (i + 1)] = quantity[i];
-            }
-        } else {
-            if (!isPositiveInteger(quantity)) {
-                MessageHelper.displayErrorMessage(Utils.getLocalizationMessage('QUANTITY_INPUT_ERROR'));
-                return;
-            }
-            params.catEntryId = catEntryIdentifier;
-            params.quantity = quantity;
-
-            var selectedAttrList = {};
-            for (attr in productDisplayJS.selectedAttributesList['entitledItem_' + productId]) {
-                selectedAttrList[attr] = productDisplayJS.selectedAttributesList['entitledItem_' + productId][attr];
-            }
-
-            if (productId == undefined) {
-                shoppingActionsJS.saveAddedProductInfo(quantity, catEntryIdentifier, catEntryIdentifier, selectedAttrList);
-            } else {
-                shoppingActionsJS.saveAddedProductInfo(quantity, productId, catEntryIdentifier, selectedAttrList);
-            }
-        }
-
-        //Pass any other customParams set by other add on features
-        if (customParams != null && customParams != 'undefined') {
-            for (i in customParams) {
-                params[i] = customParams[i];
-            }
-            if (customParams['catalogEntryType'] == 'dynamicKit') {
-                ajaxShopCartService = "AddPreConfigurationToCart";
-            }
-        }
-
-        var contractIdElements = document.getElementsByName('contractSelectForm_contractId');
-        if (contractIdElements != null && contractIdElements != "undefined") {
-            for (i = 0; i < contractIdElements.length; i++) {
-                if (contractIdElements[i].checked) {
-                    params.contractId = contractIdElements[i].value;
-                    break;
-                }
-            }
-        }
-
-        //For Handling multiple clicks
-        if (!submitRequest()) {
-            return;
-        }
-		
-		cursor_wait();
-		var addToCartEventConsumed = false;
-
-		if(typeof callCenterIntegrationJS != 'undefined' && callCenterIntegrationJS != undefined && callCenterIntegrationJS != null){
-			var catEntry = productDisplayJS.itemPriceJsonOject[params.catEntryId].catalogEntry;
-			var partNumber = catEntry.catalogEntryIdentifier.externalIdentifier.partNumber;
-			var wccParams = {};
-			wccParams["partNumber"] = partNumber;
-			addToCartEventConsumed = callCenterIntegrationJS.consumeAddToCartEvent(params,wccParams);
-		}
-
-		if(!addToCartEventConsumed) {
-			wcService.invoke(ajaxShopCartService, params);
-		}
-        productDisplayJS.baseItemAddedToCart = true;
-
-        if (document.getElementById("headerShopCartLink") && document.getElementById("headerShopCartLink").style.display != "none") {
-            $("#headerShopCart").focus();
-        } else {
-            $("#headerShopCart1").focus();
-        }
+        shoppingActionsJS.Add2ShopCartAjax(entitledItemId, quantity, isPopup, customParams);
     },
 
     /* SwatchCode start */
@@ -58505,85 +60837,8 @@ productDisplayJS = {
      * @param {String} skuImageId The ID of the full image element.
      **/
     setSKUImageId: function (skuImageId) {
-        productDisplayJS.skuImageId = skuImageId;
+        shoppingActionsJS.setSKUImageId(skuImageId);
     },
-
-    /**
-     * getImageForSKU Returns the full image of the catalog entry with the selected attributes as specified in the {@link productDisplayJS.selectedAttributes} value.
-     *					This method uses resolveImageForSKU to find the SKU image with the selected attributes values.
-     *
-     * @param {String} imageField, the field name from which the image should be picked
-     * @return {String} path to the SKU image.
-     * 
-     *
-     **/
-    getImageForSKU: function (entitledItemId, imageField) {
-        var attributeArray = [];
-        var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
-        for (attribute in selectedAttributes) {
-            attributeArray.push(attribute + "_|_" + selectedAttributes[attribute]);
-        }
-        return productDisplayJS.resolveImageForSKU(attributeArray, imageField);
-    },
-
-    /**
-     * resolveImageForSKU Resolves image of a SKU using an array of defining attributes.
-     *
-     * @param {String[]} attributeArray An array of defining attributes upon which to resolve a SKU.
-     * @param {String} imageField, the field name from which the image should be picked
-     *
-     * @return {String} imagePath The location of SKU image.
-     *
-     **/
-    resolveImageForSKU: function (attributeArray, imageField) {
-        console.debug("Resolving SKU >> " + attributeArray + ">>" + this.entitledItems);
-        var imagePath = "";
-        var attributeArrayCount = attributeArray.length;
-
-        for (x in this.entitledItems) {
-            if (null != imageField) {
-                var imagePath = this.entitledItems[x][imageField];
-            } else {
-                var imagePath = this.entitledItems[x].ItemImage467;
-            }
-
-            var Attributes = this.entitledItems[x].Attributes;
-            var attributeCount = 0;
-            for (index in Attributes) {
-                attributeCount++;
-            }
-
-            // Handle special case where a catalog entry has one sku with no attributes
-            if (attributeArrayCount == 0 && attributeCount == 0) {
-                return imagePath;
-            }
-            if (attributeCount != 0 && attributeArrayCount >= attributeCount) {
-                var matchedAttributeCount = 0;
-
-                for (attributeName in attributeArray) {
-                    var attributeValue = attributeArray[attributeName];
-                    if (attributeValue in Attributes) {
-                        matchedAttributeCount++;
-                    }
-                }
-
-                if (attributeCount == matchedAttributeCount) {
-                    console.debug("ItemImage:" + imagePath + " for Attribute: " + attributeArray);
-                    var imageArray = [];
-                    imageArray.push(imagePath);
-                    imageArray.push(this.entitledItems[x].ItemThumbnailImage);
-                    if (this.entitledItems[x].ItemAngleThumbnail != null && this.entitledItems[x].ItemAngleThumbnail != undefined) {
-                        imageArray.push(this.entitledItems[x].ItemAngleThumbnail);
-                        imageArray.push(this.entitledItems[x].ItemAngleFullImage);
-                        imageArray.push(this.entitledItems[x].ItemAngleThumbnailShortDesc);
-                    }
-                    return imageArray;
-                }
-            }
-        }
-        return null;
-    },
-
 
     /**
      * changeViewImages Updates the angle views of the SKU.
@@ -58649,30 +60904,6 @@ productDisplayJS = {
     },
 
     /**
-     * Updates the swatches selections on list view.
-     * Sets up the swatches array and sku images, then selects a default swatch value.
-     **/
-    updateSwatchListView: function () {
-        var swatchArray = $("a[id^='swatch_array_']");
-        for (var i = 0; i < swatchArray.length; i++) {
-            var swatchArrayElement = $(swatchArray[i]);
-            eval($(swatchArrayElement).attr("href"));
-        }
-
-        var swatchSkuImage = $("a[id^='swatch_setSkuImage_']");
-        for (var i = 0; i < swatchSkuImage.length; i++) {
-            var swatchSkuImageElement = $(swatchSkuImage[i]);
-            eval(swatchSkuImageElement.attr("href"));
-        }
-
-        var swatchDefault = $("a[id^='swatch_selectDefault_']");
-        for (var i = 0; i < swatchDefault.length; i++) {
-            var swatchDefaultElement = swatchDefault[i];
-            eval(swatchDefaultElement.attr("href"));
-        }
-    },
-
-    /**
      * Handles the case when a swatch is selected. Set the border of the selected swatch.
      * @param {String} selectedAttributeName The name of the selected swatch attribute.
      * @param {String} selectedAttributeValue The value of the selected swatch attribute.
@@ -58682,417 +60913,29 @@ productDisplayJS = {
      * @return boolean Whether the swatch is available for selection
      **/
     selectSwatch: function (selectedAttributeName, selectedAttributeValue, entitledItemId, doNotDisable, selectedAttributeDisplayValue, skuImageId, imageField) {
-        if ($("#swatch_" + entitledItemId + "_" + selectedAttributeValue).hasClass("color_swatch_disabled")) {
-            return;
-        }
-        var selectedAttributes = this.selectedAttributesList[entitledItemId];
-        for (attribute in selectedAttributes) {
-            if (attribute == selectedAttributeName) {
-                // case when the selected swatch is already selected with a value, if the value is different than
-                // what's being selected, reset other swatches and deselect the previous value and update selection
-                if (selectedAttributes[attribute] != selectedAttributeValue) {
-                    // deselect previous value and update swatch selection
-                    var swatchElement = document.getElementById("swatch_" + entitledItemId + "_" + selectedAttributes[attribute]);
-                    swatchElement.className = "color_swatch";
-                    swatchElement.src = swatchElement.src.replace("_disabled.png", "_enabled.png");
-
-                    //change the title text of the swatch link
-                    document.getElementById("swatch_link_" + entitledItemId + "_" + selectedAttributes[attribute]).title = swatchElement.alt;
-                }
-            }
-            $("#swatch_link_" + entitledItemId + "_" + selectedAttributes[attribute]).attr("aria-checked", "false");
-        }
-        this.makeSwatchSelection(selectedAttributeName, selectedAttributeValue, entitledItemId, doNotDisable, selectedAttributeDisplayValue, skuImageId, imageField);
-    },
-
-    /**
-     * Make swatch selection - add to selectedAttribute, select image, and update other swatches and SKU image based on current selection.
-     * @param {String} swatchAttrName The name of the selected swatch attribute.
-     * @param {String} swatchAttrValue The value of the selected swatch attribute.
-     * @param {String} entitledItemId The ID of the SKU.
-     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.	
-     * @param {String} skuImageId This is optional. The element id of the product image - image element id is different in product page and category list view. Product page need not pass it because it is set separately
-     * @param {String} imageField This is optional. The json field from which image should be picked. Pass value if a different size image need to be picked
-     **/
-    makeSwatchSelection: function (swatchAttrName, swatchAttrValue, entitledItemId, doNotDisable, selectedAttributeDisplayValue, skuImageId, imageField) {
-        productDisplayJS.setSelectedAttribute(swatchAttrName, swatchAttrValue, entitledItemId, skuImageId, imageField);
-        document.getElementById("swatch_" + entitledItemId + "_" + swatchAttrValue).className = "color_swatch_selected";
-        $("#swatch_link_" + entitledItemId + "_" + swatchAttrValue).attr("aria-checked", "true");
-        document.getElementById("swatch_selection_label_" + entitledItemId + "_" + swatchAttrName).className = "header color_swatch_label";
-        if ($("#swatch_selection_" + entitledItemId + "_" + swatchAttrName).css("display") == "none") {
-            document.getElementById("swatch_selection_" + entitledItemId + "_" + swatchAttrName).style.display = "inline";
-        }
-        if (selectedAttributeDisplayValue != null) {
-            $("#swatch_selection_" + entitledItemId + "_" + swatchAttrName).html(selectedAttributeDisplayValue);
-        } else {
-            $("#swatch_selection_" + entitledItemId + "_" + swatchAttrName).html(swatchAttrValue);
-        }
-        productDisplayJS.updateSwatchImages(swatchAttrName, entitledItemId, doNotDisable, imageField);
-    },
-
-    /**
-     * Make dropdown selection.
-     * @param {String} selectedAttrName The name of the selected dropdown attribute.
-     * @param {String} selectedAttrValue The value of the selected dropdown attribute.
-     * @param {String} entitledItemId The ID of the SKU.
-     **/
-    makeDropdownSelection: function (selectedAttrName, selectedAttrValue, entitledItemId) {
-        //Add indexOf function to arrays for IE8
-        if (!Array.prototype.indexOf) {
-            Array.prototype.indexOf = function (obj, start) {
-                for (var i = (start || 0), j = this.length; i < j; i++) {
-                    if (this[i] === obj) {
-                        return i;
-                    }
-                }
-                return -1;
-            };
-        }
-
-        var dropdownsToUpdate = [];
-        var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
-        var selectedAttrValues = selectedAttributes[selectedAttrName];
-        var dropdownList = productDisplayJS.allDropdownsList[entitledItemId];
-
-        // finds out which dropdowns needs to be updated, add to dropdownsToUpdate array
-        for (var i = 0; i < dropdownList.length; i++) {
-            if (productDisplayJS.removeQuotes(dropdownList[i].name) != productDisplayJS.removeQuotes(selectedAttrName)) {
-                dropdownsToUpdate.push(dropdownList[i]);
-            }
-        }
-
-        //Finds out which attributes are entitled and add them to list of enabled
-        var attributesToEnable = {};
-        for (var x in productDisplayJS.entitledItems) {
-            var Attributes = productDisplayJS.entitledItems[x].Attributes;
-
-            // Turn Attributes into object
-            var attrList = {};
-            for (var y in Attributes) {
-                var index = y.indexOf("_|_");
-                var entitledDropdownName = y.substring(0, index);
-                var entitledDropdownValue = y.substring(index + 3);
-
-                attrList[entitledDropdownName] = entitledDropdownValue;
-            }
-
-            for (var attrName in attrList) {
-                //the current entitled item has the selected attribute value
-                if (productDisplayJS.removeQuotes(attrName) == productDisplayJS.removeQuotes(selectedAttrName) && (attrList[attrName] == selectedAttrValue || selectedAttrValue === '')) {
-                    //go through the other attributes that are available to the selected attribute
-                    for (var attrName2 in attrList) {
-                        var attrName2NQ = productDisplayJS.removeQuotes(attrName2);
-                        //only check the non-selected attribute
-                        if (productDisplayJS.removeQuotes(attrName) != attrName2NQ) {
-                            // Find all entitled items that match the current list of selected attributes other than attrName2
-                            var matchSelectedAttributes = true;
-                            for (var selected in selectedAttributes) {
-                                if (productDisplayJS.removeQuotes(selected) != attrName2NQ) {
-                                    if (selectedAttributes[selected] && selectedAttributes[selected] !== attrList[selected]) {
-                                        matchSelectedAttributes = false;
-                                    }
-                                }
-                            }
-
-                            // Find all enabled values for the unselected attributes
-                            if (matchSelectedAttributes && attrList[attrName2]) {
-                                if (!attributesToEnable[attrName2NQ]) {
-                                    attributesToEnable[attrName2NQ] = [];
-                                }
-                                if (attributesToEnable[attrName2NQ].indexOf(attrList[attrName2].replace(/^\s+|\s+$/g, '')) == -1) {
-                                    attributesToEnable[attrName2NQ].push(attrList[attrName2].replace(/^\s+|\s+$/g, ''));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        //Flag all attributes that should be enabled as enabled
-        for (var i in dropdownsToUpdate) {
-            var attrValues = attributesToEnable[productDisplayJS.removeQuotes(dropdownsToUpdate[i].name)];
-            if (attrValues) {
-                for (var j = 0; j < dropdownsToUpdate[i].options.length; j++) {
-                    var dropdownToUpdateOption = dropdownsToUpdate[i].options[j];
-                    if (attrValues.indexOf(dropdownToUpdateOption.value.replace(/^\s+|\s+$/g, '')) != -1 || dropdownToUpdateOption.value === '') {
-                        dropdownToUpdateOption.enabled = true;
-                    }
-                }
-            }
-        }
-
-        //Set all dropdown options that are enabled to disabled = false, others to disabled = true
-        for (var i in dropdownsToUpdate) {
-            if (dropdownsToUpdate[i].options) {
-                for (var j = 0; j < dropdownsToUpdate[i].options.length; j++) {
-                    var dropdownToUpdateOption = dropdownsToUpdate[i].options[j];
-
-                    if (dropdownToUpdateOption.enabled) {
-                        dropdownToUpdateOption.disabled = false;
-                    } else {
-                        dropdownToUpdateOption.disabled = true;
-                    }
-
-                    delete dropdownToUpdateOption.enabled;
-                }
-
-                var dropdown = $(dropdownsToUpdate[i].node);
-                dropdown.Select("refresh");
-            }
-        }
+        shoppingActionsJS.selectSwatch(selectedAttributeName, selectedAttributeValue, entitledItemId, doNotDisable, selectedAttributeDisplayValue, skuImageId, imageField);
     },
 
     /**
      * Constructs record and add to this.allSwatchesArray.
      * @param {String} swatchName The name of the swatch attribute.
-     * @param {String} swatchValue The value of the swatch attribute.	
+     * @param {String} swatchValue The value of the swatch attribute.
      * @param {String} swatchImg1 The path to the swatch image.
-	* @param {String} swatchImg2 The path to the swatch image representing disabled state.
+    * @param {String} swatchImg2 The path to the swatch image representing disabled state.
      **/
-	addToAllSwatchsArray: function(swatchName, swatchValue, swatchImg1, entitledItemId, swatchDisplayValue, swatchImg2) {
-        var swatchList = this.allSwatchesArrayList[entitledItemId];
-        if (swatchList == null) {
-            swatchList = [];;
-        }
-        if (!this.existInAllSwatchsArray(swatchName, swatchValue, swatchList)) {
-            var swatchRecord = [];
-            swatchRecord[0] = swatchName;
-            swatchRecord[1] = swatchValue;
-            swatchRecord[2] = swatchImg1;
-            swatchRecord[3] = swatchImg2;
-            swatchRecord[4] = document.getElementById("swatch_link_" + entitledItemId + "_" + swatchValue).onclick;
-            swatchRecord[5] = null;
-            swatchRecord[6] = swatchDisplayValue;
-            swatchList.push(swatchRecord);
-            this.allSwatchesArrayList[entitledItemId] = swatchList;
-        }
+    addToAllSwatchsArray: function(swatchName, swatchValue, swatchImg1, entitledItemId, swatchDisplayValue, swatchImg2) {
+        shoppingActionsJS.addToAllSwatchsArray(swatchName, swatchValue, swatchImg1, entitledItemId, swatchDisplayValue, swatchImg2);
     },
 
     /**
      * Constructs record and add to this.allDropdownsArray.
      * @param {String} attributeName The name of the dropdown attribute.
-     * @param {String} dropdownId The id of the dropdown.	
+     * @param {String} dropdownId The id of the dropdown.
      **/
     addToAllDropdownsArray: function (attributeName, dropdownId, entitledItemId) {
-        var dropdownList = this.allDropdownsList[entitledItemId];
-        if (dropdownList == null) {
-            dropdownList = [];
-        }
-
-        var dropdownNode = productDisplayJS.findDropdownById(dropdownId);
-
-        if (!this.existInAllDropdownsArray(attributeName, dropdownId, dropdownList)) {
-            dropdownList.push({
-                name: attributeName,
-                id: dropdownId,
-                node: dropdownNode,
-                options: $(dropdownNode).find("option"),
-            });
-            this.allDropdownsList[entitledItemId] = dropdownList;
-        }
+        shoppingActionsJS.addToAllDropdownsArray(attributeName, dropdownId, entitledItemId);
     },
 
-    /**
-     * Checks if a swatch is already exist in this.allSwatchesArray.
-     * @param {String} swatchName The name of the swatch attribute.
-     * @param {String} swatchValue The value of the swatch attribute.		
-     * @return boolean Value indicating whether or not the specified swatch name and value exists in the allSwatchesArray.
-     */
-    existInAllSwatchsArray: function (swatchName, swatchValue, swatchList) {
-        for (var i = 0; i < swatchList.length; i++) {
-            var attrName = swatchList[i][0];
-            var attrValue = swatchList[i][1];
-            if (attrName == swatchName && attrValue == swatchValue) {
-                return true;
-            }
-        }
-        return false;
-    },
-
-    /**
-     * Checks if a dropdown already exists in this.allDropdownsArray.
-     * @param {String} dropdownName The name of the dropdown.
-     * @param {String} dropdownId The id of the dropdown.		
-     * @return boolean Value indicating whether or not the specified dropdown name and value exists in the allDropdownsArray.
-     */
-    existInAllDropdownsArray: function (dropdownName, dropdownId, dropdownsList) {
-        for (var i = 0; i < dropdownsList.length; i++) {
-            if (dropdownsList[i].name == dropdownName && dropdownsList[i].id == dropdownId) {
-                return true;
-            }
-        }
-        return false;
-    },
-
-    /**
-     * Check the entitledItems array and pre-select the first entitled SKU as the default swatch selection.
-     * @param {String} entitledItemId The ID of the SKU.
-     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.		
-     **/
-    makeDefaultSwatchSelection: function (entitledItemId, doNotDisable) {
-        if (this.entitledItems.length == 0) {
-            if ($("#" + entitledItemId).length) {
-                entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
-            }
-            productDisplayJS.setEntitledItems(entitledItemJSON);
-        }
-
-        // need to make selection for every single swatch
-        for (x in this.entitledItems) {
-            var Attributes = this.entitledItems[x].Attributes;
-            for (y in Attributes) {
-                var index = y.indexOf("_|_");
-                var swatchName = y.substring(0, index);
-                var swatchValue = y.substring(index + 3);
-                this.makeSwatchSelection(swatchName, swatchValue, entitledItemId, doNotDisable, null, imageField);
-            }
-            break;
-        }
-    },
-
-    /**
-     * Update swatch images - this is called after selection of a swatch is made, and this function checks for
-     * entitlement and disable swatches that are not available
-     * @param {String} selectedAttrName The attribute that is selected
-     * @param {String} entitledItemId The ID of the SKU.
-     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.	
-     **/
-    updateSwatchImages: function (selectedAttrName, entitledItemId, doNotDisable, imageField) {
-        var swatchToUpdate = [];
-        var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
-        var selectedAttrValue = selectedAttributes[selectedAttrName];
-        var swatchList = productDisplayJS.allSwatchesArrayList[entitledItemId];
-
-        // finds out which swatch needs to be updated, add to swatchToUpdate array
-        for (var i = 0; i < swatchList.length; i++) {
-            var attrName = swatchList[i][0];
-            var attrValue = swatchList[i][1];
-            var attrImg1 = swatchList[i][2];
-            var attrImg2 = swatchList[i][3];
-            var attrOnclick = swatchList[i][4];
-            var attrDisplayValue = swatchList[i][6];
-
-            if (attrName != doNotDisable && attrName != selectedAttrName) {
-                var swatchRecord = [];
-                swatchRecord[0] = attrName;
-                swatchRecord[1] = attrValue;
-                swatchRecord[2] = attrImg1;
-                swatchRecord[3] = attrImg2;
-                swatchRecord[4] = attrOnclick;
-                swatchRecord[5] = false;
-                swatchRecord[6] = attrDisplayValue;
-                swatchToUpdate.push(swatchRecord);
-            }
-        }
-
-        // finds out which swatch is entitled, if it is, image should be set to enabled
-        // go through entitledItems array and find out swatches that are entitled 
-        for (x in productDisplayJS.entitledItems) {
-            var Attributes = productDisplayJS.entitledItems[x].Attributes;
-
-            for (y in Attributes) {
-                var index = y.indexOf("_|_");
-                var entitledSwatchName = y.substring(0, index);
-                var entitledSwatchValue = y.substring(index + 3);
-
-                //the current entitled item has the selected attribute value
-                if (entitledSwatchName == selectedAttrName && entitledSwatchValue == selectedAttrValue) {
-                    //go through the other attributes that are available to the selected attribute
-                    //exclude the one that is selected
-                    for (z in Attributes) {
-                        var index2 = z.indexOf("_|_");
-                        var entitledSwatchName2 = z.substring(0, index2);
-                        var entitledSwatchValue2 = z.substring(index2 + 3);
-
-                        if (y != z) { //only check the attributes that are not the one selected
-                            for (i in swatchToUpdate) {
-                                var swatchToUpdateName = swatchToUpdate[i][0];
-                                var swatchToUpdateValue = swatchToUpdate[i][1];
-
-                                if (entitledSwatchName2 == swatchToUpdateName && entitledSwatchValue2 == swatchToUpdateValue) {
-                                    swatchToUpdate[i][5] = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Now go through swatchToUpdate array, and update swatch images
-        var disabledAttributes = [];
-        for (i in swatchToUpdate) {
-            var swatchToUpdateName = swatchToUpdate[i][0];
-            var swatchToUpdateValue = swatchToUpdate[i][1];
-            var swatchToUpdateImg1 = swatchToUpdate[i][2];
-            var swatchToUpdateImg2 = swatchToUpdate[i][3];
-            var swatchToUpdateOnclick = swatchToUpdate[i][4];
-            var swatchToUpdateEnabled = swatchToUpdate[i][5];
-
-            if (swatchToUpdateEnabled) {
-                if (document.getElementById("swatch_" + entitledItemId + "_" + swatchToUpdateValue).className != "color_swatch_selected") {
-                    var swatchElement = document.getElementById("swatch_" + entitledItemId + "_" + swatchToUpdateValue);
-                    swatchElement.className = "color_swatch";
-                    if (swatchToUpdateImg1 != "" && swatchToUpdateImg2 != "") {
-                    	swatchElement.src = swatchToUpdateImg1;
-                    }
-                    else {
-                    	swatchElement.src = swatchElement.src.replace("_disabled.png","_enabled.png");
-                    }
-
-                    //change the title text of the swatch link
-                    document.getElementById("swatch_link_" + entitledItemId + "_" + swatchToUpdateValue).title = swatchElement.alt;
-                }
-                $("#swatch_link_" + entitledItemId + "_" + swatchToUpdateValue).attr("aria-disabled", "false");
-                document.getElementById("swatch_link_" + entitledItemId + "_" + swatchToUpdateValue).onclick = swatchToUpdateOnclick;
-            } else {
-                if (swatchToUpdateName != doNotDisable) {
-                    var swatchElement = document.getElementById("swatch_" + entitledItemId + "_" + swatchToUpdateValue);
-                    var swatchLinkElement = document.getElementById("swatch_link_" + entitledItemId + "_" + swatchToUpdateValue);
-                    swatchElement.className = "color_swatch_disabled";
-                    swatchLinkElement.onclick = null;
-                    if (swatchToUpdateImg1 != "" && swatchToUpdateImg2 != "") {
-                    	swatchElement.src = swatchToUpdateImg2;
-                    }
-                    else {
-                    	swatchElement.src = swatchElement.src.replace("_enabled.png","_disabled.png");
-                    }
-
-                    //change the title text of the swatch link
-                    var titleText = Utils.getLocalizationMessage("INV_ATTR_UNAVAILABLE", [swatchElement.alt]);
-
-
-                    $("#swatch_link_" + entitledItemId + "_" + swatchToUpdateValue).attr("aria-disabled", "true");
-
-                    //The previously selected attribute is now unavailable for the new selection
-                    //Need to switch the selection to an available value
-                    if (selectedAttributes[swatchToUpdateName] == swatchToUpdateValue) {
-                        disabledAttributes.push(swatchToUpdate[i]);
-                    }
-                }
-            }
-        }
-
-        //If there were any previously selected attributes that are now unavailable
-        //Find another available value for that attribute and update other attributes according to the new selection
-        for (i in disabledAttributes) {
-            var disabledAttributeName = disabledAttributes[i][0];
-            var disabledAttributeValue = disabledAttributes[i][1];
-
-            for (i in swatchToUpdate) {
-                var swatchToUpdateName = swatchToUpdate[i][0];
-                var swatchToUpdateValue = swatchToUpdate[i][1];
-                var swatchToUpdateDisplayValue = swatchToUpdate[i][6];
-                var swatchToUpdateEnabled = swatchToUpdate[i][5];
-
-                if (swatchToUpdateName == disabledAttributeName && swatchToUpdateValue != disabledAttributeValue && swatchToUpdateEnabled) {
-                    productDisplayJS.makeSwatchSelection(swatchToUpdateName, swatchToUpdateValue, entitledItemId, doNotDisable, swatchToUpdateDisplayValue, imageField);
-                    break;
-                }
-            }
-        }
-    },
     /* SwatchCode end */
 
     /** 
@@ -59102,10 +60945,10 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     displayPrice: function (catEntryId, productId) {
-        var catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        var catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
 
         var tempString;
-        var popup = productDisplayJS.isPopup;
+        var popup = shoppingActionsJS.isPopup;
 
         if (popup == true) {
             $("#productPrice").html(catEntry.offerPrice);
@@ -59120,14 +60963,19 @@ productDisplayJS = {
                 innerHTML = "<span id='listPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' class='old_price'>" + catEntry.listPrice + "</span>" +
                     "<span id='offerPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' class='price'>" + catEntry.offerPrice + "</span>";
             }
+
+            if (flowEnabled.ProductTotalWithVAT) {
+                innerHTML = innerHTML + "<span class='vat-include'><p>"+ Utils.getLocalizationMessage('VAT_INCL') +"</p></span>";  
+            } 
+            
             if (document.getElementById('price_display_' + productId)) {
                 document.getElementById('price_display_' + productId).innerHTML = innerHTML + "<input type='hidden' id='ProductInfoPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' value='" + catEntry.offerPrice.replace(/"/g, "&#034;").replace(/'/g, "&#039;") + "'/>";
             } else if (document.getElementById('price_display_' + catEntryId)) {
                 document.getElementById('price_display_' + catEntryId).innerHTML = innerHTML + "<input type='hidden' id='ProductInfoPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' value='" + catEntry.offerPrice.replace(/"/g, "&#034;").replace(/'/g, "&#039;") + "'/>";
             }
-
+            
             innerHTML = "";
-            if (productDisplayJS.displayPriceRange == true) {
+            if (shoppingActionsJS.displayPriceRange == true) {
                 for (var i in catEntry.priceRange) {
                     if (catEntry.priceRange[i].endingNumberOfUnits == catEntry.priceRange[i].startingNumberOfUnits) {
                         tempString = Utils.getLocalizationMessage('PQ_PRICE_X', {
@@ -59163,9 +61011,9 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     updateProductName: function (catEntryId, productId) {
-        var catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        var catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
 
-        if (productDisplayJS.isPopup == true) {
+        if (shoppingActionsJS.isPopup == true) {
             $("#productName").html(catEntry.description[0].name);
         } else {
             if ($(".top > div[id^='PageHeading_']") != null) {
@@ -59194,9 +61042,9 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     updateProductPartNumber: function (catEntryId, productId) {
-        var catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        var catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
 
-        if (productDisplayJS.isPopup == true) {
+        if (shoppingActionsJS.isPopup == true) {
             $("#productSKUValue").html(catEntry.catalogEntryIdentifier.externalIdentifier.partNumber);
         } else {
             var partnumWidgets = $("span[id^='product_SKU_" + productId + "']");
@@ -59217,7 +61065,7 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     updateProductShortDescription: function (catEntryId, productId) {
-        var catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        var catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
 
         var shortDescWidgets = $("p[id^='product_shortdescription_" + productId + "']");
         if (shortDescWidgets != null) {
@@ -59236,7 +61084,7 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     updateProductLongDescription: function (catEntryId, productId) {
-        var catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        var catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
 
         var longDescWidgets = $("p[id^='product_longdescription_" + productId + "']");
         if (longDescWidgets != null) {
@@ -59255,7 +61103,7 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     updateProductDiscount: function (catEntryId, productId) {
-        var catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        var catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
 
         var newHtml = '';
         if (typeof catEntry.discounts != 'undefined') {
@@ -59294,39 +61142,39 @@ productDisplayJS = {
 
         var skuFullImageFromService = null;
         var catEntry = null;
-        if (productDisplayJS.itemPriceJsonOject[catEntryId] != null) {
-            catEntry = productDisplayJS.itemPriceJsonOject[catEntryId].catalogEntry;
+        if (shoppingActionsJS.itemPriceJsonOject[catEntryId] != null) {
+            catEntry = shoppingActionsJS.itemPriceJsonOject[catEntryId].catalogEntry;
         }
         if (catEntry != null) {
             skuFullImageFromService = catEntry.description[0].fullImage;
         }
 
         var entitledItemId = "entitledItem_" + productId;
-        var imageArr = productDisplayJS.getImageForSKU(entitledItemId);
+        var imageArr = shoppingActionsJS.getImageForSKU(entitledItemId);
         if (imageArr != null) {
+            newFullImage = imageArr[0];
             newAngleThumbnail = imageArr[2];
             newAngleFullImage = imageArr[3];
             newAngleThumbnailShortDesc = imageArr[4];
         }
 
         if (catEntryId != null) {
-            newFullImage = imageArr[0];
             if (skuFullImageFromService != null && skuFullImageFromService !== "") {
                 newFullImage = skuFullImageFromService;
             }
-        } else if (productId != null && productDisplayJS.singleSKUProductWithoutDefiningAttribute) {
-            newFullImage = productDisplayJS.entitledItems[0].ItemImage467;
+        } else if (productId != null && this.singleSKUProductWithoutDefiningAttribute) {
+            newFullImage = shoppingActionsJS.entitledItems[0].ItemImage467;
             if (skuFullImageFromService != null && skuFullImageFromService !== "") {
                 newFullImage = skuFullImageFromService;
             }
-            newAngleThumbnail = productDisplayJS.entitledItems[0].ItemAngleThumbnail;
-            newAngleFullImage = productDisplayJS.entitledItems[0].ItemAngleFullImage;
-            newAngleThumbnailShortDesc = productDisplayJS.entitledItems[0].ItemAngleThumbnailShortDesc;
+            newAngleThumbnail = shoppingActionsJS.entitledItems[0].ItemAngleThumbnail;
+            newAngleFullImage = shoppingActionsJS.entitledItems[0].ItemAngleFullImage;
+            newAngleThumbnailShortDesc = shoppingActionsJS.entitledItems[0].ItemAngleThumbnailShortDesc;
         } else {
             var imageFound = false;
-            var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
-            for (x in productDisplayJS.entitledItems) {
-                var Attributes = productDisplayJS.entitledItems[x].Attributes;
+            var selectedAttributes = shoppingActionsJS.selectedAttributesList[entitledItemId];
+            for (x in shoppingActionsJS.entitledItems) {
+                var Attributes = shoppingActionsJS.entitledItems[x].Attributes;
 
                 for (attribute in selectedAttributes) {
                     var matchingAttributeFound = false;
@@ -59353,16 +61201,16 @@ productDisplayJS = {
 
                 // imageFound will only be true if all attributes have been matched (so the first correct SKU)
                 if (imageFound) {
-                    newFullImage = productDisplayJS.entitledItems[x].ItemImage467;
-                    newAngleThumbnail = productDisplayJS.entitledItems[x].ItemAngleThumbnail;
-                    newAngleFullImage = productDisplayJS.entitledItems[x].ItemAngleFullImage;
-                    newAngleThumbnailShortDesc = productDisplayJS.entitledItems[x].ItemAngleThumbnailShortDesc;
+                    newFullImage = shoppingActionsJS.entitledItems[x].ItemImage467;
+                    newAngleThumbnail = shoppingActionsJS.entitledItems[x].ItemAngleThumbnail;
+                    newAngleFullImage = shoppingActionsJS.entitledItems[x].ItemAngleFullImage;
+                    newAngleThumbnailShortDesc = shoppingActionsJS.entitledItems[x].ItemAngleThumbnailShortDesc;
                     break;
                 }
             }
         }
 
-        var imgWidgets = $("img[id^='" + productDisplayJS.skuImageId + "']");
+        var imgWidgets = $("img[id^='" + shoppingActionsJS.skuImageId + "']");
         for (var i = 0; i < imgWidgets.length; i++) {
             if (imgWidgets[i] != null && newFullImage != null) {
                 imgWidgets[i].src = newFullImage;
@@ -59387,10 +61235,10 @@ productDisplayJS = {
                     }
                 }
             }
-            productDisplayJS.changeViewImages(newAngleThumbnail, newAngleFullImage, newAngleThumbnailShortDesc);
+            shoppingActionsJS.changeViewImages(newAngleThumbnail, newAngleFullImage, newAngleThumbnailShortDesc);
         } else {
             var prodDisplayClass = 'block';
-            var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
+            var selectedAttributes = shoppingActionsJS.selectedAttributesList[entitledItemId];
             for (attribute in selectedAttributes) {
                 if (null != selectedAttributes[attribute] && '' != selectedAttributes[attribute]) {
                     prodDisplayClass = 'none';
@@ -59421,27 +61269,27 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      * @param {string} entitledItemId The identifier of the entitled item.
      * @param {boolean} isPopup If the value is true, then this implies that the function was called from a quick info pop-up.
-     * @param {boolean} displayPriceRange A boolean used to to determine whether or not to display the price range when the catEntry is selected. 	
+     * @param {boolean} displayPriceRange A boolean used to to determine whether or not to display the price range when the catEntry is selected.
      */
     notifyAttributeChange: function (productId, entitledItemId, isPopup, displayPriceRange) {
-        productDisplayJS.baseCatalogEntryId = productId;
-        var selectedAttributes = productDisplayJS.selectedAttributesList[entitledItemId];
+        shoppingActionsJS.baseCatalogEntryId = productId;
+        var selectedAttributes = shoppingActionsJS.selectedAttributesList[entitledItemId];
 
-        productDisplayJS.displayPriceRange = displayPriceRange;
-        productDisplayJS.isPopup = isPopup;
+        shoppingActionsJS.displayPriceRange = displayPriceRange;
+        shoppingActionsJS.isPopup = isPopup;
 
         var catalogEntryId = null;
-        if (productDisplayJS.selectedProducts[productId]) {
-            catalogEntryId = productDisplayJS.getCatalogEntryIdforProduct(productDisplayJS.selectedProducts[productId]);
+        if (shoppingActionsJS.selectedProducts[productId]) {
+            catalogEntryId = shoppingActionsJS.getCatalogEntryIdforProduct(shoppingActionsJS.selectedProducts[productId]);
         } else {
-            catalogEntryId = productDisplayJS.getCatalogEntryId(entitledItemId);
+            catalogEntryId = shoppingActionsJS.getCatalogEntryId(entitledItemId);
         }
 
         if (catalogEntryId != null) {
             wcTopic.publish('DefiningAttributes_Resolved_' + productId, catalogEntryId, productId);
 
             //check if the json object is already present for the catEntry.
-            var catEntry = productDisplayJS.itemPriceJsonOject[catalogEntryId];
+            var catEntry = shoppingActionsJS.itemPriceJsonOject[catalogEntryId];
 
             if (catEntry != null && catEntry != undefined) {
                 productDisplayJS.publishAttributeResolvedEvent(catalogEntryId, productId);
@@ -59449,9 +61297,9 @@ productDisplayJS = {
             //if json object is not present, call the service to get the details.
             else {
                 var parameters = {
-                    storeId: productDisplayJS.storeId,
-                    langId: productDisplayJS.langId,
-                    catalogId: productDisplayJS.catalogId,
+                    storeId: shoppingActionsJS.storeId,
+                    langId: shoppingActionsJS.langId,
+                    catalogId: shoppingActionsJS.catalogId,
                     catalogEntryId: catalogEntryId,
                     productId: productId
                 };
@@ -59492,9 +61340,9 @@ productDisplayJS = {
     publishAttributeResolvedEventServiceResponse: function (serviceResponse, ioArgs) {
         var productId = ioArgs.productId;
         //stores the json object, so that the service is not called when same catEntry is selected.
-        productDisplayJS.itemPriceJsonOject[serviceResponse.catalogEntry.catalogEntryIdentifier.uniqueID] = serviceResponse;
+        shoppingActionsJS.itemPriceJsonOject[serviceResponse.catalogEntry.catalogEntryIdentifier.uniqueID] = serviceResponse;
 
-        productDisplayJS.publishAttributeResolvedEvent(serviceResponse.catalogEntry.catalogEntryIdentifier.uniqueID, productId);
+        this.publishAttributeResolvedEvent(serviceResponse.catalogEntry.catalogEntryIdentifier.uniqueID, productId);
     },
 
     /** 
@@ -59504,7 +61352,7 @@ productDisplayJS = {
      * @param {string} productId The identifier of the product.
      */
     publishAttributeResolvedEvent: function (catEntryId, productId) {
-        if (!productDisplayJS.isPopup) {
+        if (!shoppingActionsJS.isPopup) {
             if (this.entitledItems) {
                 for (x in this.entitledItems) {
                     var sku = this.entitledItems[x];
@@ -59575,7 +61423,7 @@ productDisplayJS = {
      * Calculate scrolling height.
      */
     calculateScrollingHeight: function (node) {
-        var selectedNode = productDisplayJS.findDropdownById(node);
+        var selectedNode = shoppingActionsJS.findDropdownById(node);
         var nodePosition = null;
         if (selectedNode) {
             nodePosition = Utils.position(selectedNode);
@@ -59598,31 +61446,6 @@ productDisplayJS = {
             if (dropdownHeight > newHeight) {
                 $("#" + node + "_dropdown").css("height", newHeight + "px");
             }
-        } else {
-            //			$("#" + node + "_dropdown").css("height", windowHeight + "px");
-        }
-    },
-
-    findDropdownById: function (node) {
-        var newNode = productDisplayJS.removeQuotes(node);
-        var nodes = $('[id^=attrValue_]');
-        var foundNode = null;
-
-        $(nodes).each(function (key, domNode) {
-            var id = productDisplayJS.removeQuotes(domNode.id);
-            if (newNode === id) {
-                foundNode = domNode;
-            }
-        });
-
-        return foundNode;
-    },
-
-    removeQuotes: function (str) {
-        if (str) {
-            return str.replace(/&#039;/g, '').replace(/\\'/g, '').replace(/'/g, '');
-        } else {
-            return str;
         }
     }
 }
@@ -59636,15 +61459,12 @@ $(document).ready(function () {
     }
 });
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -59673,16 +61493,14 @@ var declareAjaxRecommendationRefresh_controller = function(emsName) {
             wcTopic.publish("CMPageRefreshEvent");
         }
     });
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 //
@@ -60850,16 +62668,14 @@ function abortSession(e) {
 //
 // Global WC reusable task methods - END
 //
+null
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 OnBehalfUtilities = function(){
@@ -61102,6 +62918,8 @@ var declareOrderLockStatusRefreshArea = function(){
 	// div: orderLockStatusRefreshArea refresh area
 	// Declares a new refresh controller for the fetching order Lock status.
 	var myWidgetObj = $("#orderLockStatusRefreshArea");
+	// initialize widget
+	myWidgetObj.refreshWidget({postRefreshHandler: postRefreshHandler});
 	myWidgetObj.refreshWidget("updateUrl", getAbsoluteURL() + "OrderLockStatusView?" + getCommonParametersQueryString());
 	var myRCProperties = wcRenderContext.getRenderContextProperties("orderLockStatusContext");
 
@@ -61116,8 +62934,7 @@ var declareOrderLockStatusRefreshArea = function(){
 		cursor_clear();
 	};
 
-	// initialize widget
-	myWidgetObj.refreshWidget({postRefreshHandler: postRefreshHandler});
+	
 };
 
 wcService.declare({
@@ -61262,15 +63079,12 @@ wcService.declare({
 
 });
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -61393,15 +63207,12 @@ widgetCommonJS = {
 };
 	
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -61787,15 +63598,12 @@ if (typeof (AutoSKUSuggestJS) == "undefined" || AutoSKUSuggestJS == null || !Aut
     }
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 /* global document, window, jQuery, KeyCodes, Utils, handleMouseDown, showMenu, hideMenu, 
 toggleMenu, toggleExpand, eventActionsInitialization, toggleExpandedContent, toggleMobileView */
@@ -62035,15 +63843,12 @@ toggleMenu, toggleExpand, eventActionsInitialization, toggleExpandedContent, tog
     }, 100);
 })(jQuery);
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -62147,16 +63952,14 @@ toggleMenu, toggleExpand, eventActionsInitialization, toggleExpandedContent, tog
 			wcRenderContext.updateRenderContext('OrderDetailItemTable_Context', {"beginIndex": beginIndex});
 			MessageHelper.hideAndClearMessage();
 		},
-	}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -62199,16 +64002,14 @@ var declareOrderDetailItemTableController = function() {
             $("#orderSummaryContainer_minusImage_link").focus();
         }
     });
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -62220,16 +64021,14 @@ var declareOrderDetailItemTableController = function() {
 /**
  * Declares a new render context for requisition list item table
  */
-wcRenderContext.declare("RequisitionListItemTable_Context",["RequisitionListItemTable_Widget"],{"beginIndex":"0","requisitionListId":""},"");//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+wcRenderContext.declare("RequisitionListItemTable_Context",["RequisitionListItemTable_Widget"],{"beginIndex":"0","requisitionListId":""},"");
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -62281,15 +64080,12 @@ if (typeof (RequistionListControllerDeclarationJS) == "undefined" || RequistionL
     }
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -62635,16 +64431,14 @@ wcService.declare({
 			cursor_clear();
 		}
 
-	})//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+	})
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -62738,16 +64532,14 @@ var declareSavedOrderInfoController = function() {
              cursor_clear();
         }
     });
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -63030,15 +64822,12 @@ wcService.declare({
 
 });
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63091,16 +64880,14 @@ var GeolocationJS = {
         }
     }
 
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -63416,15 +65203,12 @@ PhysicalStoreCookieJS = {
 //<%--
 //********************************************************************
 //*-------------------------------------------------------------------
-//* Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //*
-//* WebSphere Commerce
+//* HCL Commerce
 //*
-//* (c) Copyright IBM Corp.  2016
-//* All Rights Reserved
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //*
-//* US Government Users Restricted Rights - Use, duplication or
-//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 //*
 //*-------------------------------------------------------------------
 //*
@@ -63868,15 +65652,12 @@ storeLocatorJS = {
 //<%--
 //********************************************************************
 //*-------------------------------------------------------------------
-//* Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //*
-//* WebSphere Commerce
+//* HCL Commerce
 //*
-//* (c) Copyright IBM Corp.  2016
-//* All Rights Reserved
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //*
-//* US Government Users Restricted Rights - Use, duplication or
-//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 //*
 //*-------------------------------------------------------------------
 //*
@@ -63953,15 +65734,12 @@ wcRenderContext.declare("provinceSelectionsAreaContext", ["provinceSelectionsAre
 //<%--
 //********************************************************************
 //*-------------------------------------------------------------------
-//* Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //*
-//* WebSphere Commerce
+//* HCL Commerce
 //*
-//* (c) Copyright IBM Corp.  2016
-//* All Rights Reserved
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //*
-//* US Government Users Restricted Rights - Use, duplication or
-//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 //*
 //*-------------------------------------------------------------------
 //*
@@ -64125,15 +65903,12 @@ var selectedStoreListRefreshController = function () {
     })
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -64730,16 +66505,2555 @@ if(typeof(analyticsJS) === "undefined" || !analyticsJS || !analyticsJS.topicName
         }
     }
 }
+/**
+*==================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*==================================================
+**/
+
+/**
+* @fileOverview This JavaScript file contains functions used by the payment section of the checkout pages for braintree mobile paymnets.
+*/
+
+//declare the namespace if it does not already exist
+if (BrainTreeMobilePayments == null || typeof(BrainTreeMobilePayments) != "object") {
+	var BrainTreeMobilePayments = new Object();
+}
+BrainTreeMobilePayments = {
+	
+		/** used to hold error messages for any error encountered */
+		errorMessages: {},
+		
+		/**
+		* This function is used to initialize the error messages object with all the required error messages.
+		* @param {String} key The key used to access this error message.
+		* @param {String} msg The error message in the correct language.
+		*/
+		setErrorMessage:function(key, msg) {
+			this.errorMessages[key] = msg;
+		},
+		/**
+		 * To display credit card hosted fields, in mobile pages
+		 */
+		creditCardPayment:function(clientToken){
+			// if already iframe exists,we are clearing it
+				document.getElementById("card-number").innerHTML = "";
+				document.getElementById("cvv").innerHTML = "";
+				document.getElementById("expiration-date").innerHTML = "";
+			braintree.client.create({
+				 authorization: clientToken
+				 }).then( function(clientInstance) {
+							
+							//device data
+								if(advancedFraudTools == "true"){
+										
+										braintree.dataCollector.create({
+											client: clientInstance,
+											kount: true
+										  }).then(function( dataCollectorInstance) {
+											  
+											var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+											document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+											document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+										  }).catch(function (err){
+												console.error("device data error for creditcard  is",err);
+												MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+												  return;
+												
+											});
+								}
+
+							//hosted fields
+							braintree.hostedFields.create({
+							client: clientInstance,
+							styles: {
+								'input': {
+								   'font-size': '14px'
+																			
+								},
+								'input.invalid': {
+								   'color': 'red'
+								},
+								'input.valid': {
+								   'color': 'green'
+								}
+							},
+							fields: {
+								number: {
+									selector: '#card-number',
+									border: '1px solid #333'
+								},
+								cvv: {
+									selector: '#cvv'
+								},
+								expirationDate: {
+									selector: '#expiration-date'
+								}
+							}
+													          
+						}).then(function (hostedFieldsInstance) {
+								
+								$("#payment_method_BrainTree_CreditCard").css("display", "block");
+								var keyforInst="inst_creditCard";
+								instances_BT[keyforInst]=hostedFieldsInstance;
+								console.log("hostedFieldsInstance",hostedFieldsInstance);
+								
+							}).catch( function (hostedFieldsErr){
+							console.error("hostedFieldsErr:",hostedFieldsErr);
+							var hostedFieldsErrMsg="";
+							if(hostedFieldsErr){
+								$("#hostedFieldsErrorMessage").css("display", "block"); 
+								switch (hostedFieldsErr.code) {
+									case 'HOSTED_FIELDS_TIMEOUT':
+										hostedFieldsErrMsg= "Please try placing order after sometime"; //unknown error .
+										//Occurs when Hosted Fields does not finish setting up within 60 seconds.
+										 break;
+									case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
+										 hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
+										 break;
+									case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
+										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
+										break;
+									case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
+										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
+										break;
+									case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
+										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
+										break;  
+									default:
+										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error 
+								}
+								hostedFieldsErrMsg= BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_ERROR"];
+							}
+							document.getElementById("hostedFieldsErrorMessage").innerHTML=hostedFieldsErrMsg;
+							return;
+					
+					});
+			}).catch( function(clientErr) {
+				console.error("clientErr:",clientErr);
+				if(clientErr){
+					$("#hostedFieldsWrapper").css("display", "none"); //if error occurs don't display wrapper							          	
+					MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);		
+					cursor_clear();
+				}
+				return;
+			 });
+		},
+		/**
+		 * To display google pay button in mobile page
+		 */
+		googlePayPayment:function(clientToken , paymentEnv){
+			var paymentsClient = new google.payments.api.PaymentsClient({
+			  environment: paymentEnv // Or 'PRODUCTION'
+			});
+
+			braintree.client.create({
+			  authorization: clientToken
+			}).then( function (clientInstance) {
+			 
+
+						if(advancedFraudTools == "true"){
+						// device data
+									braintree.dataCollector.create({
+										client: clientInstance,
+										kount: true
+									  }).then(function( dataCollectorInstance) {
+										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+										
+									  }).catch(function (err){
+											
+											console.error("device data error for GooglePay is",err);
+											MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+											  return;
+											
+										});
+						}
+			
+
+			braintree.googlePayment.create({
+				client: clientInstance
+			  }).then(function (googlePaymentInstance) {
+			   paymentsClient.isReadyToPay({
+				  allowedPaymentMethods: ["CARD", "TOKENIZED_CARD"] //googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods
+				}).then(function(response) {
+				 if (response.result) {
+					//assigning the  googlePaymentInstance to a var.
+					$("#payment_method_BrainTree_GooglePay").css("display", "block"); //TODO payment should be opened only when instance is created
+					var keyForInst="googlePay";
+					gPayPaymentsClient_BT[keyForInst]=paymentsClient;
+					instances_BT[keyForInst]=googlePaymentInstance;
+					
+				  }
+				}).catch(function (err) {
+				  
+				 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_RESPONSE_FAILED_ERROR"]);	
+				  console.error("err when response failed:",err);
+				});
+			  }).catch(function(googlePaymentErr){
+				console.error("googlePaymentError:",googlePaymentErr);
+				 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_PAYMENT_ERROR"]);	
+			  });
+			
+			}).catch(function(clienterr){
+				console.error("clienterror:",clienterr);
+				
+				MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+				return;
+			});
+		},
+		
+		/**
+		 * to display paypal button  in mobile page
+		 */
+		payPalPayment:function(payPalDivId,paypalCreditbutton,clientToken,isPickUpAt,amountval,userType,isPaypalCreditEnableFlag,isMultiCapEnable,shippingAddressSelected,flow,intent, environment)
+				{
+					//if already iframe exists,we are clearing it
+					document.getElementById(payPalDivId).innerHTML = "";
+
+					if(isPaypalCreditEnableFlag == 'true')
+						document.getElementById(paypalCreditbutton).innerHTML = "";
+
+					$(".paypalCheckoutdiv").css("display", "block");
+
+					var client_token=clientToken;
+					
+					var enableShippingAddressFlag = true;
+					var shippingAddressEditableFlag = true;
+					var createPayPalPayment = {};
+					var shippingAddressOverrideValues = {};
+					
+					var isPickUpInStoreFlag = isPickUpAt;
+					
+					if(isPickUpInStoreFlag || isMultipleShipping){
+						enableShippingAddressFlag = false;
+						shippingAddressEditableFlag = false;
+					}else{
+						
+							var lastName=shippingAddressSelected[0].lastName;
+							var	recipientNameCmrce=shippingAddressSelected[0].firstName+" "+shippingAddressSelected[0].lastName;
+							var	line1Cmrce= shippingAddressSelected[0].addressLine[0];
+							var line2Cmrce = shippingAddressSelected[0].addressLine[1];
+							var	cityCmrce= shippingAddressSelected[0].city;
+							var	stateCmrce= shippingAddressSelected[0].state;  
+							var	countryCodeCmrce= shippingAddressSelected[0].country;                                                                                                
+							var	postalCodeCmrce=shippingAddressSelected[0].zipCode;
+							var	phoneNumber = shippingAddressSelected[0].phone1;
+						
+
+						shippingAddressOverrideValues["recipientName"]= recipientNameCmrce;
+						shippingAddressOverrideValues["line1"]= line1Cmrce;
+						shippingAddressOverrideValues["city"]= cityCmrce;
+						shippingAddressOverrideValues["state"]= stateCmrce;
+						shippingAddressOverrideValues["countryCode"]= countryCodeCmrce;
+						shippingAddressOverrideValues["postalCode"]= postalCodeCmrce;
+						if(line2Cmrce != null && line2Cmrce != "" )
+							shippingAddressOverrideValues["line2"]= line2Cmrce;
+						if(phoneNumber != null && phoneNumber != "" )
+							shippingAddressOverrideValues["phone"]= phoneNumber;
+
+						createPayPalPayment["shippingAddressOverride"] = shippingAddressOverrideValues ;
+					}
+					
+					createPayPalPayment["flow"]= "checkout";
+					if(isMultiCapEnable == 'true')
+						createPayPalPayment["flow"] = "vault";
+					createPayPalPayment["amount"]= amountval;
+					createPayPalPayment["currency"]= WCParamJS.commandContextCurrency ;
+					createPayPalPayment["enableShippingAddress"]= enableShippingAddressFlag;
+					createPayPalPayment["shippingAddressEditable"]= shippingAddressEditableFlag;
+					
+					// Create a client.
+					braintree.client.create({
+					  authorization : client_token 
+					}).then( function (clientInstance) {
+
+
+						if(advancedFraudTools == "true"){
+						// device data
+									braintree.dataCollector.create({
+										client: clientInstance,
+										kount: true
+									  }).then(function( dataCollectorInstance) {
+										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+										
+
+									  }).catch(function (err){
+											
+											console.error("device data error for paypal is",err);
+											MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+											  return;
+											
+										});
+						}
+					
+						// Create a PayPal Checkout component.
+						  braintree.paypalCheckout.create({
+							client: clientInstance
+						  }).then(function ( paypalCheckoutInstance ) {
+							  
+							  // Set up PayPal with the checkout.js library
+							 $("#payment_method_BrainTree_PayPal").css("display", "block");
+							paypal.Button.render({
+								env: environment, // Or 'sandbox'
+								commit: true, // This will add the transaction amount to the PayPal button
+								payment: function () {
+									return paypalCheckoutInstance.createPayment(createPayPalPayment);
+								  },
+
+								  onAuthorize: function (data, actions) {
+									return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+									 
+									 BrainTreeMobilePayments.processPayPalResponseFromOrdBilling(isPickUpInStoreFlag , isMultipleShipping,payload,false );
+									});
+								  },
+								  onCancel: function (data) {
+									console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
+									//MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONCANCEL"]);	
+									return;
+								  },
+								  onError: function (err) {
+									
+									console.error('checkout.js error', err); 
+									MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONERROR"]);	
+									return;
+								  }
+									}, '#'+payPalDivId).then(function () {
+									  // The PayPal button will be rendered in an html element with the id
+									  // `paypal-button`. This function will be called when the PayPal button
+									  // is set up and ready to be used.
+									});
+
+								//paypal credit 
+							if(isPaypalCreditEnableFlag == 'true'){
+								paypal.Button.render({
+								env: environment, // Or 'sandbox'
+								commit: true, // This will add the transaction amount to the PayPal button
+								style: {
+										label: 'credit'
+									  },
+								payment: function () {
+									return paypalCheckoutInstance.createPayment(createPayPalPayment);
+								  },
+
+								  onAuthorize: function (data, actions) {
+									return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+									  // Submit `payload.nonce` to your server
+									 BrainTreeMobilePayments.processPayPalResponseFromOrdBilling(isPickUpInStoreFlag , isMultipleShipping,payload,true );
+									
+									});
+								  },
+								  onCancel: function (data) {
+									console.log('checkout.js payment cancelled for paypalcredit', JSON.stringify(data, 0, 2)); 
+									//MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONCANCEL"]);	
+									return;
+								  },
+								  onError: function (err) {
+									
+									console.error('checkout.js error for paypalcredit', err); 
+									MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONERROR"]);	
+									return;
+								  }
+									}, '#'+paypalCreditbutton).then(function () {
+									  // The PayPal button will be rendered in an html element with the id
+									  // `paypal-button`. This function will be called when the PayPal button
+									  // is set up and ready to be used.
+									});
+								}
+						  }).catch(function(paypalCheckoutErr){
+								
+								console.error("PsyPal checkout error",paypalCheckoutErr);	
+								MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_CHECKOUTERROR"]);	
+								return;
+						  });
+						  
+					}).catch(function(clientErr){
+						console.error("clientError:",clientErr); 
+						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+						cursor_clear();
+						return;
+						
+					});
+				
+			},
+	/**
+	 * to process the paypal response in mobile page
+	 */
+processPayPalResponseFromOrdBilling: function(isPickUpInStoreFlag , isMultipleShipping,payload,isPaypalCredit ){
+
+		if( !isPickUpInStoreFlag && !isMultipleShipping ){
+			BrainTreePayments.updateShippingAddressFromPaypal(payload ,"S" );
+		  }
+		
+		document.getElementById("pay_nonce").value=payload.nonce;
+		document.getElementById("pay_type").value = payload.type;
+		if(isPaypalCredit){
+			document.getElementById("pay_type").value= "PayPalCredit";
+			document.getElementById("payMethodId_BT").value = "ZPayPalCredit";
+		}else{
+			document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; 
+		}
+		document.querySelector('#PayPalEmailId').value = payload.details.email;
+		
+		
+
+		document.getElementById("fromSavedPaymentFlag").value = "false";
+		
+		if(document.getElementById("savePaymentCheckBox")!=null){//for guest user,doesn't have option to save payment
+			if(document.getElementById("savePaymentCheckBox").checked==true){
+				document.getElementById("save_card").value =  "true";
+				}
+				}
+		document.getElementById("payment_method_form_BrainTree_NewPayments").submit();	
+},
+/**
+ * To handle Venmo payment in mobile page
+ */
+venmoPayment:function(clientToken,venmoButton){
+						// Create a client.
+									braintree.client.create({
+									  authorization: clientToken  
+									}).then(function (clientInstance) {
+									  // You may need to polyfill Promise
+									  // if used on older browsers that
+									  // do not natively support it.
+
+										// devicedata
+										if(advancedFraudTools == "true"){
+											// device data
+											braintree.dataCollector.create({
+												client: clientInstance,
+												kount: true
+											  }).then(function( dataCollectorInstance) {
+												var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+												document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+												document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+											  }).catch(function (err){
+													console.error("device data error for paypal is",err);
+													MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+													  return;
+													
+												});
+										}
+
+									  return Promise.all([
+										braintree.dataCollector.create({
+										  client: clientInstance,
+										  paypal: true
+										}),
+										braintree.venmo.create({
+										  client: clientInstance,
+										  // Add allowNewBrowserTab: false if your checkout page does not support
+										  // relaunching in a new tab when returning from the Venmo app. This can
+										  // be omitted otherwise.
+										  allowNewBrowserTab: false
+										})
+									  ]);
+									}).then(function (results) {
+									  var dataCollectorInstance = results[0];
+									  var venmoInstance = results[1];
+
+									  console.log('Got device data:', dataCollectorInstance.deviceData);
+									  
+									  // Verify browser support before proceeding.
+									 if (!venmoInstance.isBrowserSupported()) {
+										console.log('Browser does not support Venmo');
+										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_BROWSER_NOT_SUPPORTED"]);
+										return;
+									  }
+									 
+									  displayVenmoButton(venmoInstance);
+									
+									  // Check if tokenization results already exist. This occurs when your
+									  // checkout page is relaunched in a new tab. This step can be omitted
+									  // if allowNewBrowserTab is false.
+									  if (venmoInstance.hasTokenizationResult()) {
+										venmoInstance.tokenize().then(handleVenmoSuccess).catch(handleVenmoError);
+									  }
+									});
+
+									function displayVenmoButton(venmoInstance) {
+									  $("#payment_method_BrainTree_Venmo").css("display", "block");
+
+									 // Assumes that venmoButton is initially display: none.
+									  venmoButton.style.display = 'block';
+						
+									  venmoButton.addEventListener('click', function () {
+										venmoButton.disabled = true;
+
+										venmoInstance.tokenize().then(handleVenmoSuccess).catch(handleVenmoError);
+									  });
+									}
+
+									function handleVenmoError(err) {
+									  if (err.code === 'VENMO_CANCELED') {
+										console.log('App is not available or user aborted payment flow');
+										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_ERROR_VENMO_CANCELLED"]);
+										
+										
+									  } else if (err.code === 'VENMO_APP_CANCELED') {
+										console.log('User canceled payment flow');
+										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_ERROR_VENMO_APP_CANCELLED"]);
+									  } else {
+										console.error('An error occurred:', err.message);
+										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_ERROR_GENERIC"]);	
+									  }
+									  console.error("venmo error:",err);
+									  return;
+									}
+
+									function handleVenmoSuccess(payload) {
+									  // Send the payment method nonce to your server
+									
+									  console.log('Got a payment method nonce:', payload.nonce);
+									  // Display the Venmo username in your checkout UI.
+									  console.log('Venmo user:', payload.details.username);
+										
+										document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; //"ZVenmo";
+										 document.getElementById("pay_nonce").value = payload.nonce;//"fake-venmo-account-nonce";
+										  document.getElementById("pay_type").value =payload.type; // document.getElementById("payment_method").value;
+										  document.getElementById("fromSavedPaymentFlag").value = "false";
+										  document.getElementById("save_card").value =  "false";
+										document.getElementById("payment_method_form_BrainTree_NewPayments").submit();
+										
+										
+									}
+			},
+			/**
+			 *  Genrating payload object and consuming it  on submit of credit card for mobile page
+			 */
+	creditCardOnSubmit:function(inst){
+		var fromSavedPaymentFlag=document.getElementById("fromSavedPaymentFlag").value ;
+		inst.tokenize(function (tokenizeErr, payload) {
+							
+							console.error("tokenizeErr:",tokenizeErr)
+			 				 if (tokenizeErr) {
+			   					 var tokenizeErrMsg="";
+								 switch (tokenizeErr.code) {
+			      					case 'HOSTED_FIELDS_FIELDS_EMPTY':
+			       						 console.error('All fields are empty! Please fill out the form.');
+										 tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_EMPTY"];
+			        					 break;
+			    				  	case 'HOSTED_FIELDS_FIELDS_INVALID':
+			       						 console.error('Some fields are invalid:', tokenizeErr.details.invalidFieldKeys);
+										 tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_INVALID"];
+			        					 break;
+			      					case 'HOSTED_FIELDS_TOKENIZATION_FAIL_ON_DUPLICATE':
+			        					 console.error('This payment method already exists in your vault.');
+										 tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_FAIL_ON_DUPLICATE"];
+			        					break;
+						      		case 'HOSTED_FIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED':
+						        		console.error('CVV did not pass verification');
+										tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED"];
+										break;
+								      case 'HOSTED_FIELDS_FAILED_TOKENIZATION':
+								       console.error('Tokenization failed server side. Is the card valid?');
+									  tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_FAILED_TOKENIZATION"];
+								        break;
+								      case 'HOSTED_FIELDS_TOKENIZATION_NETWORK_ERROR':
+								        console.error('Network error occurred when tokenizing.');
+										tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_NETWORK_ERROR"];
+								        break;	
+								      default:
+								        console.error('Something bad happened!', tokenizeErr);
+										tokenizeErrMsg= BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_DEFAULT_ERROR"];
+								   }
+										var errorMessageField = "hostedFieldsErrorMessage";
+
+										if(fromSavedPaymentFlag == "true"){
+											errorMessageField = "CVVhostedFieldsErrorMessage";
+											
+											if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_EMPTY'){
+											tokenizeErrMsg = BrainTreeMobilePayments.errorMessages["BT_CVV_FIELD_EMPTY"];
+											}
+											else if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_INVALID'){
+												tokenizeErrMsg = BrainTreeMobilePayments.errorMessages["BT_CVV_FIELD_INVALID"];
+											}
+										}
+										
+										$("#"+errorMessageField).css("display", "block");
+										document.getElementById(errorMessageField).innerHTML=tokenizeErrMsg;
+										
+
+								} else {
+										
+										// for saved payments
+										if(fromSavedPaymentFlag == "true"){
+											document.querySelector('#cvv_nonce').value = payload.nonce;
+											
+											//do card verification and do 3dsecure check if property is enabled in properties file
+											var params = [];
+											params["storeId"] = WCParamJS.storeId;
+											params["catalogId"] = WCParamJS.catalogId;
+											params["langId"] = WCParamJS.langId;
+											params["pay_token"]=document.querySelector('#pay_token').value;
+											params["cvv_nonce"]=document.querySelector('#cvv_nonce').value;
+											params["payment_method_id"]=document.querySelector('#payMethodId_BT').value;
+											params["device_session_id"]=document.querySelector('#deviceSessionId').value; 
+											params["fraud_merchant_id"]=document.querySelector('#fraudMerchantId').value;
+											wcService.invoke('AjaxRESTVaultedCreditCardVerificationForMobilePayments', params);
+											
+											
+										}else{ //for new payments
+											
+											document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; //"ZVenmo";
+											 document.getElementById("pay_nonce").value =  payload.nonce;
+										 	 document.getElementById("pay_type").value = payload.details.cardType;
+										 	 document.getElementById("account").value ="**************"+payload.details.lastTwo;
+										  	document.getElementById("fromSavedPaymentFlag").value = "false";
+											
+											if(document.getElementById("saveCardCheckBox")!=null){
+												if(document.getElementById("saveCardCheckBox").checked == true){
+													document.getElementById("save_card").value = "true";
+												}
+											}
+											var paynonce=payload.nonce;
+											if(threeDSecureEnable == 'true')
+												BrainTreeMobilePayments.threeDSecureCheck(paynonce);
+											else
+												document.getElementById("payment_method_form_BrainTree_NewPayments").submit();
+										}
+										
+									}
+			  			 });
+	},
+	/**
+	 * on click of google pay button in mobile page
+	 */
+	googlePayOnClick:function(amount){
+		var googlePayInstance=instances_BT["googlePay"];
+		var paymentsClient=gPayPaymentsClient_BT["googlePay"];
+		var paymentDataRequest = googlePayInstance.createPaymentDataRequest({
+						//merchantId: googlePayPaymentMerchantId, //not needed for sandbox testing
+						transactionInfo: {
+						  currencyCode: WCParamJS.commandContextCurrency,
+						  totalPriceStatus: 'FINAL',
+						  totalPrice: amount
+						},
+						cardRequirements: {
+						  // We recommend collecting billing address information, at minimum
+						  // billing postal code, and passing that billing postal code with all
+						  // Google Pay transactions as a best practice
+						  billingAddressRequired: true
+						}
+					  });
+					  paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData) {
+						  
+						googlePayInstance.parseResponse(paymentData, function (err, result) {
+						  if (err) {
+							console.error("err parsing::",err);
+							MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_PARSING_ERROR"]);	
+							
+							return ;
+						  }
+						  // Send result.nonce to your server
+							
+							document.querySelector('#pay_nonce').value = result.nonce;
+							document.querySelector('#pay_type').value = result.type;
+							document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; 
+							document.getElementById("fromSavedPaymentFlag").value = "false";
+							document.getElementById("save_card").value =  "false";
+							document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
+										
+								
+						});
+					  }).catch(function (err) {
+						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_ERROR_AT_LOADPAYMENTDATA"]);	
+						console.error("error when loadPaymentData is failed:",err);
+						return;
+					  });
+					  
+	},
+	/**
+	 * to display the selected saved payment in mobile page
+	 */
+	displaySelectedPayment:function(clientToken,listInfo){
+		
+		//close  new payments that are open
+		 var paymentMethod = document.getElementById("payment_method");
+		  document.getElementById("payment_method").value="";
+		$("#payment_method_BrainTree_Venmo").css("display", "none");
+		$("#payment_method_BrainTree_CreditCard").css("display", "none");
+		$("#payment_method_BrainTree_GooglePay").css("display", "none");
+		$("#payment_method_BrainTree_PayPal").css("display", "none");
+		$("#payment_method_BrainTree_ApplePay").css("display", "none");
+		
+		var continueCheckoutBtnId = document.getElementById("continueCheckoutBtn");
+		continueCheckoutBtnId.classList.remove("btn-disabled-BT");
+		
+		
+		
+		var savedCardsList = document.getElementById("savedCardsList");
+			var selectedCardpayToken = savedCardsList.options[savedCardsList.selectedIndex].value;
+
+			//appending values in div and dispaying the div
+			var parsedListInfo=JSON.parse(listInfo);
+			
+			if(selectedCardpayToken!=""){
+				for(i=0;i<parsedListInfo.length;i++)
+				{
+					var cardToken=parsedListInfo[i].payTokenId;
+					
+					if(cardToken==selectedCardpayToken){
+						var cardInfo=parsedListInfo[i];
+ 
+							// if selected payment is paypal
+							if(cardInfo.cardType=="PayPalAccount" || cardInfo.cardType=="PayPalCredit"){
+								
+								
+								document.getElementById("paymentAccountMail").innerHTML=cardInfo.maskedCreditCardNumber;
+								document.querySelector('#pay_token').value = cardToken;
+								document.querySelector('#pay_type').value = cardInfo.cardType;
+								document.querySelector('#payMethodId_BT').value = "ZPayPal"; //get this from table
+								if(cardInfo.cardType=="PayPalCredit"){
+									document.querySelector('#payMethodId_BT').value = "ZPayPalCredit"; //get this from table
+								}
+								$("#showSavedCard").css("display", "block");
+								$("#deleteCard").css("display", "block");
+								$("#savedPaymentInfo").css("display", "block");
+								$("#savedCreditCardInfo").css("display", "none");
+									
+								
+							}else{ // is selected payment is card, (because  we are giving option to user to save only PayPal and Card)
+								var cardNum=cardInfo.maskedCreditCardNumber;
+								var expiryDate=cardInfo.expirationDate;
+								
+								// adding the data to the div
+								document.getElementById("maskedcardNumber").innerHTML=cardNum;
+								document.getElementById("expiryDate").innerHTML=expiryDate;
+
+								$("#showSavedCard").css("display", "block");
+								$("#deleteCard").css("display", "block");
+								$("#savedCreditCardInfo").css("display", "block");
+								$("#savedPaymentInfo").css("display", "none");
+								document.getElementById("onlyCvv").innerHTML = "";
+								this.displayCVV(clientToken);
+								//assigning values to hidden params, which are passed to PIAdd execution
+								document.querySelector('#pay_token').value = cardToken;
+								document.querySelector('#account').value = cardInfo.maskedCreditCardNumber;
+								document.querySelector('#pay_type').value = cardInfo.cardType;
+								document.querySelector('#payMethodId_BT').value = "ZCreditCard"; //get this from table
+							}
+
+								document.querySelector('#fromSavedPaymentFlag').value = "true"; 
+					}
+				}
+			}
+			else
+			{
+				$("#showSavedCard").css("display", "none");	
+			}
+		
+	},
+	/**
+	 *to display CVV field when selected saved card is displayed 
+	 */
+	displayCVV:function(clientToken){
+		braintree.client.create({
+								 authorization: clientToken
+								 }).then( function(clientInstance) {
+											
+										// device data	
+										if(advancedFraudTools == "true"){
+											
+											braintree.dataCollector.create({
+													client: clientInstance,
+													kount: true
+												  }).then(function(dataCollectorInstance) {
+													var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+													document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+													document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+													
+												  }).catch(function (err){
+														console.error(" device data error for displaying CVV field  :",err);
+														MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);		
+														  return;
+														
+												});
+										}
+											
+											
+											//hosted fields
+											braintree.hostedFields.create({
+											client: clientInstance,
+											styles: {
+												'input': {
+												   'font-size': '14px'
+																							
+												},
+												'input.invalid': {
+												   'color': 'red'
+												},
+												'input.valid': {
+												   'color': 'green'
+												}
+											},
+											fields: {
+												
+												cvv: {
+													selector: '#onlyCvv'
+												}
+												
+											}
+																			  
+											}).then(function (hostedFieldsInstance) {
+																				 
+												var keyforInst="cvvInst";
+												instances_BT[keyforInst]=hostedFieldsInstance;
+												console.log("hostedFieldsInstance"+hostedFieldsInstance);
+												console.log(hostedFieldsInstance);
+											}).catch( function (hostedFieldsErr){
+												
+												console.error("hostedFieldsErr:",hostedFieldsErr);
+												var hostedFieldsErrMsg="";
+												if(hostedFieldsErr){
+													$("#hostedFieldsErrorMessage").css("display", "block"); 
+													switch (hostedFieldsErr.code) {
+														case 'HOSTED_FIELDS_TIMEOUT':
+															hostedFieldsErrMsg= "Please try placing order after sometime"; //unknown error .
+															//Occurs when Hosted Fields does not finish setting up within 60 seconds.
+															 break;
+														case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
+															 hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
+															 break;
+														case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
+															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
+															break;
+														case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
+															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
+															break;
+														case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
+															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
+															break;  
+														default:
+															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
+													}
+												}
+																				  
+													hostedFieldsErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"];							  
+													document.getElementById("hostedFieldsErrorMessage").innerHTML=hostedFieldsErrMsg;
+													
+													return;
+												
+									});
+																			
+																	   
+							}).catch( function(clientErr) {
+																			
+								 
+								console.error("clientErr:",clientErr);
+								var createErrMsg="";
+								$("#hostedFieldsWrapper").css("display", "none"); //if error occurs don't displaywrapper
+								MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+								cursor_clear();
+									return;
+							 });
+	},
+
+/**
+ * to display apple pay button in mobile page
+ */
+applePayPayment:function(applePaybuttonId,clientToken){
+
+
+var button = applePaybuttonId;
+				
+			// apple pay
+					if (!window.ApplePaySession) {
+					  MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_SUPPORTED"]);	
+					  return;
+					}
+
+					if (!ApplePaySession.canMakePayments()) {
+					  console.error('This device is not capable of making Apple Pay payments');
+					  MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_CAPABLE"]);	
+					  return;
+					}
+					else
+				braintree.client.create({
+				  authorization: clientToken
+				}).then( function (clientInstance) {
+				  
+				
+					//device data
+				if(advancedFraudTools == "true"){
+						braintree.dataCollector.create({
+							client: clientInstance,
+							kount: true
+						  }).then(function( dataCollectorInstance) {
+							// At this point, you should access the
+							// dataCollectorInstance.deviceData value and
+							// provide it
+							// to your server, e.g. by injecting it into your
+							// form as a hidden input.
+							var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+							document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+							document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+
+						  }).catch(function (err){
+								
+								console.error("device data error apple pay",err);
+								MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);		
+								 return;
+								
+							});
+				}
+							
+				// apple pay
+							braintree.applePay.create({
+							client: clientInstance
+						  }, function (applePayErr, applePayInstance) {
+							if (applePayErr) {
+							  console.error('Error creating applePayInstance:', applePayErr);
+							 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_APPLEPAY_ERR"]);	
+							  return;
+							}
+
+							var promise = ApplePaySession.canMakePaymentsWithActiveCard(applePayInstance.merchantIdentifier);
+							promise.then(function (canMakePaymentsWithActiveCard) {
+							  if (canMakePaymentsWithActiveCard) {
+									// Set up Apple Pay buttons
+									//displaying apple pay button only if the instance is created
+									$("#applePay").css("display","block");
+									$("#"+applePaybuttonId).css("display", "block");
+									var keyForInst="applePay";
+									instances_BT[keyForInst]=applePayInstance;
+							  }
+							});
+						  });
+
+				}).catch(function(clienterr){
+					console.log("clienterr",clienterr);
+					MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+				});
+		},
+		/**
+		 * on click of apple pay button in mobile page
+		 */
+		applePayOnClick:function(amount){
+					var applePayInstance=instances_BT["applePay"];
+					var paymentRequest = applePayInstance.createPaymentRequest({
+				  total: {
+					label: 'My Store',
+					amount: amount
+				  },
+
+				  // We recommend collecting billing address information, at
+					// minimum
+				  // billing postal code, and passing that billing postal code
+					// with
+				  // all Apple Pay transactions as a best practice.
+				  requiredBillingContactFields: ["postalAddress"]
+				});
+				console.log(paymentRequest.countryCode);
+				console.log(paymentRequest.currencyCode);
+				console.log(paymentRequest.merchantCapabilities);
+				console.log(paymentRequest.supportedNetworks);
+				
+				var session = new ApplePaySession(2, paymentRequest);
+					session.onvalidatemerchant = function (event) {
+				  applePayInstance.performValidation({
+					validationURL: event.validationURL,
+					displayName: 'My Store'
+				  }, function (err, merchantSession) {
+					if (err) {
+						console.log("apple pay failed to load",err);
+						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_PERFORM_VALIDATION_ERR"]);	
+					  return;
+					}
+					session.completeMerchantValidation(merchantSession);
+					
+				  });
+				};
+						
+						session.onpaymentauthorized = function (event) {
+					  applePayInstance.tokenize({
+						token: event.payment.token
+					  }, function (tokenizeErr, payload) {
+						if (tokenizeErr) {
+						  console.error('Error tokenizing Apple Pay:', tokenizeErr);
+						 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_TOKENIZEERR"]);	
+						  session.completePayment(ApplePaySession.STATUS_FAILURE);
+						  return;
+						}
+						
+						session.completePayment(ApplePaySession.STATUS_SUCCESS);
+
+						// Send payload.nonce to your server.
+						console.log('nonce:', payload.nonce);
+						alert("payload.type: "+payload.type);
+						document.querySelector('#pay_nonce').value = payload.nonce;
+						document.querySelector('#pay_type').value = payload.type;
+							document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; 
+							document.getElementById("fromSavedPaymentFlag").value = "false";
+							document.getElementById("save_card").value =  "false";
+							document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
+						// If requested, address information is accessible in
+						// event.payment
+						// and may also be sent to your server.
+						console.log('billingPostalCode:', event.payment.billingContact.postalCode);
+					  });
+					};
+					session.begin();
+					
+	},
+	/***
+	 * 3D secure check in mobile page
+	 */
+	threeDSecureCheck : function(paynonce){
+			
+			var bankFrame = document.querySelector('.bt-modal-body');
+			braintree.client.create({
+			  // Use the generated client token to instantiate the Braintree client.
+			  authorization: btClientToken
+			}, function (clientErr, clientInstance) {
+			  if (clientErr) {
+				console.log("clientErr",clientErr);
+				MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+				return;
+			  }
+
+			  braintree.threeDSecure.create({
+				client: clientInstance
+			  }, function (threeDSecureErr, threeDSecureInstance) {
+				if (threeDSecureErr) {
+				  // Handle error in 3D Secure component creation
+				  console.error("threeDSecureErr:",threeDSecureErr);
+				  MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_THREE_D_SECURE_ERROR"]);	
+				  return;
+				}
+				console.log("threeDSecureInstance",threeDSecureInstance);
+				
+				threeDSecureInstance.verifyCard({
+				  amount: grandTotalAmount,
+				  nonce:  paynonce ,// NONCE_FROM_INTEGRATION,
+				  addFrame: function (err, iframe) {
+					// Set up your UI and add the iframe.
+					 bankFrame.appendChild(iframe);
+					$(".threeDsecureWindow").css("display", "flex"); 
+				  },
+				  removeFrame: function () {
+					// Remove UI that you added in addFrame.
+					
+					var iframe = bankFrame.querySelector('iframe');
+					$(".threeDsecureWindow").css("display", "none");
+					iframe.parentNode.removeChild(iframe);
+				  }
+				}, function (err, response) {
+				  // Send response.nonce to use in your transaction
+					if (err) {
+						console.error("error when response failed to generate:",err);
+						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_THREE_D_SECURE_RESPONSE_FAILED_ERROR"]);	
+						return;
+					  }
+					var threeDNonce = response.nonce;
+					document.getElementById('3Dsecure_nonce').value = threeDNonce;
+					document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
+					
+				});
+					//when clicked on close button of frame
+					 var closeFrame = document.getElementById('text-close');
+					 closeFrame.addEventListener('click', function () {
+						threeDSecureInstance.cancelVerifyCard(removeFrame());
+						});
+					 function removeFrame() {
+					// Remove UI that you added in addFrame.
+						var iframe = bankFrame.querySelector('iframe');
+						$(".threeDsecureWindow").css("display", "none");
+						iframe.parentNode.removeChild(iframe);
+					 }
+			  });
+			});
+		}
+}
+/**
+*==================================================
+Copyright [2021] [HCL Technologies]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*==================================================
+**/
+
+/**
+ * @fileOverview This JavaScript file contains functions used by the payment
+ *               section of the checkout pages.
+ */
+
+if (BrainTreePayments == null || typeof(BrainTreePayments) != "object") {
+	var BrainTreePayments = new Object();
+}
+
+BrainTreePayments = {
+	
+	paypalBillingAddsId: {},
+	
+		/**
+		 * Sets common parameters used by this JavaScript object
+		 * 
+		 * @param {String}
+		 *            langId language ID to use
+		 * @param {String}
+		 *            storeId store ID to use
+		 * @param {String}
+		 *            catalog Catalog ID to use
+		 */
+		setCommonParameters:function(langId,storeId,catalogId){
+			this.langId = langId;
+			this.storeId = storeId;
+			this.catalogId = catalogId;
+		},
+
+	checkPaypalStoreSelectionForm:function(){
+		document.getElementById("paypalCheckoutButton").style.display="block";
+	},
+
+	
+	
+	/**
+	 * to delete the saved payment from vault that is choosen to be deleted
+	 */
+		deleteSelectedCardFromVault:function(payToken){
+			var savedCardsList = document.getElementById("savedCardsList");
+			if(payToken != null){
+				var selectedCardpayToken = payToken;
+			}
+			else{
+				var selectedCardpayToken = savedCardsList.options[savedCardsList.selectedIndex].value;
+			}
+			var params = [];
+			params["storeId"] = WCParamJS.storeId;
+			params["catalogId"] = WCParamJS.catalogId;
+			params["langId"] = this.langId;
+			params["pay_token"]=selectedCardpayToken;
+			wcService.invoke('AjaxRESTDeleteCardFromBraintreeVault', params); // AjaxDeleteCardFromBraintreeVault
+		},
+
+		/**
+		 *  to display the selected payment from the saved payments section
+		 */
+		displaySelectedCard:function(clientToken,statusCount,listInfo)
+		{
+
+			var savedCardsList = document.getElementById("savedCardsList");
+			var selectedCardpayToken = savedCardsList.options[savedCardsList.selectedIndex].value;
+
+			// appending values in div and dispaying the div
+			var parsedListInfo=JSON.parse(listInfo);
+				
+			if(selectedCardpayToken!=""){
+				for(i=0;i<parsedListInfo.length;i++)
+				{
+					var cardToken=parsedListInfo[i].payTokenId;
+					if(cardToken==selectedCardpayToken){
+						var cardInfo=parsedListInfo[i];
+						// if PayPal is the selected saved  payment
+						if(cardInfo.cardType=="PayPalAccount" || cardInfo.cardType=="PayPalCredit"){
+							document.getElementById("paymentAccountMail").innerHTML=cardInfo.maskedCreditCardNumber;
+							document.querySelector('#pay_token').value = cardToken;
+							document.querySelector('#pay_type').value = cardInfo.cardType;
+							document.querySelector('#PaymentMethodId').value  = cardInfo.paymentMethodId;
+							$("#savedPaymentInfo").css("display", "block"); // showing PayPal div
+							$("#savedCreditCardInfo").css("display", "none"); 
+							
+						}else{ //if card is the selected saved  payment (because presently we are giving options to the user to save only  PayPal and cards)
+								var cardNum=cardInfo.maskedCreditCardNumber;
+								var expiryDate=cardInfo.expirationDate;
+								// adding the data to the div
+								document.getElementById("maskedcardNumber").innerHTML=cardNum;
+								document.getElementById("expiryDate").innerHTML=expiryDate;
+								document.getElementById("onlyCvv_"+statusCount).innerHTML = "";
+								this.displayCVV(clientToken,statusCount);
+								// assigning values to hidden params, which are passed to PIAdd execution
+								document.querySelector('#pay_token').value = cardToken;
+								document.querySelector('#account').value = cardInfo.maskedCreditCardNumber;
+								document.querySelector('#pay_type').value = cardInfo.cardType;
+								document.querySelector('#PaymentMethodId').value  = cardInfo.paymentMethodId;
+								$("#savedPaymentInfo").css("display", "none");
+								$("#savedCreditCardInfo").css("display", "block"); //showing creditcard div
+							}
+						// saved payment information div and delete payment option
+						$("#showSavedCard").css("display", "block");
+						$("#deleteCard").css("display", "block");
+					}
+				}
+			}
+			else
+				{
+					// if paytoken is empty, not showing the saved payment information div
+					$("#showSavedCard").css("display", "none");	
+				}
+		},
+			/**
+			 *  to display CVV field,while displaying saved card information
+			 */ 
+			displayCVV:function(clientToken,statusCount) {
+							braintree.client.create({
+									 authorization: clientToken
+									 }).then( function(clientInstance) {
+												// hosted fields
+												braintree.hostedFields.create({
+												client: clientInstance,
+												styles: {
+													'input': {
+													   'font-size': '14px'
+													},
+													'input.invalid': {
+													   'color': 'red'
+													},
+													'input.valid': {
+													   'color': 'green'
+													}
+												},
+												fields: {
+													
+													cvv: {
+														selector: '#onlyCvv_'+statusCount
+													}
+													
+												}
+																				  
+											}).then(function (hostedFieldsInstance) {
+												var keyforInst="cvvInst"+statusCount;
+												var i=[];
+												instances_BT[keyforInst]=hostedFieldsInstance;
+												console.log("hostedFieldsInstance",hostedFieldsInstance);
+												
+											}).catch( function (hostedFieldsErr){
+												if (hostedFieldsErr) {
+													console.error("hostedFieldsError:",hostedFieldsErr);
+													var paymentMethodNumberSelected=statusCount;
+													var hostedFieldsErrMsg="";
+													$("#hostedFieldsErrorMessage_"+statusCount).css("display", "block"); 
+													switch (hostedFieldsErr.code) {
+														case 'HOSTED_FIELDS_TIMEOUT':
+															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; 
+															 break;
+														case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
+															 hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
+																															// error
+															 break;
+														case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
+															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
+																															// error
+															break;
+														case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
+															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
+																															// error
+															break;
+														case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
+															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
+																															// error
+															break;  
+														default:
+															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
+													} //TODO assign value to hostedFieldsErrMsg from property file
+												document.getElementById("hostedFieldsErrorMessage_"+paymentMethodNumberSelected).innerHTML=hostedFieldsErrMsg;
+												return;
+												}	
+											});
+									 }).catch( function(clientErr) {
+										 console.error("clientError:",clientErr);
+										 var paymentMethodNumberSelected=statusCount;
+										 var createErrMsg="";
+										 if(clientErr){
+											 $("#hostedFieldsWrapper_"+statusCount).css("display", "none"); 
+											 MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+											 cursor_clear();
+										 }									  
+										return;
+									 });
+			},
+
+
+		/**
+		 * TO consume the braintree instances created after clicking on Next button of orderShippingBillingDetailsPage and  generate payload object from these instances.
+		 */
+		brainTreeInstances:function(inst,piFormName,paymentMethodNumberSelected,fromSavedPaymentFlag)
+		{
+			// instance of either saved creditcards or new credit cards	
+			inst.tokenize(function (tokenizeErr, payload) {
+				 				 if (tokenizeErr) { //error occured
+				   					 console.error("tokenizeErr:",tokenizeErr);
+									 var tokenizeErrMsg="";
+									 switch (tokenizeErr.code) {
+				      					case 'HOSTED_FIELDS_FIELDS_EMPTY':
+											 tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_EMPTY"];
+				        					 break;
+				    				  	case 'HOSTED_FIELDS_FIELDS_INVALID':
+				       						 console.error('Some fields are invalid:', tokenizeErr.details.invalidFieldKeys);
+											 tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_INVALID"];// " Required  Fields are invalid. ";
+				        					 break;
+				      					case 'HOSTED_FIELDS_TOKENIZATION_FAIL_ON_DUPLICATE':
+				        					 console.error('This payment method already exists in your vault.');
+											 tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_FAIL_ON_DUPLICATE"];
+				        					break;
+							      		case 'HOSTED_FIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED':
+							        		console.error('CVV did not pass verification');
+											tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED"];
+											break;
+									      case 'HOSTED_FIELDS_FAILED_TOKENIZATION':
+									       console.error('Tokenization failed server side. Is the card valid?');
+										   tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_FAILED_TOKENIZATION"];
+									        break;
+									      case 'HOSTED_FIELDS_TOKENIZATION_NETWORK_ERROR':
+									        console.error('Network error occurred when tokenizing.');
+											tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_NETWORK_ERROR"];
+									        break;	
+									      default:
+									       // alert('Something bad happened!', tokenizeErr);
+											tokenizeErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_DEFAULT_ERROR"];
+									 }
+									 var errorMessageField = "hostedFieldsErrorMessage_"+paymentMethodNumberSelected;
+									 if(fromSavedPaymentFlag == 'true'){
+										 errorMessageField = "CVVhostedFieldsErrorMessage_"+paymentMethodNumberSelected;
+										if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_EMPTY'){
+											tokenizeErrMsg = CheckoutPayments.errorMessages["BT_CVV_FIELD_EMPTY"];
+										}
+										else if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_INVALID'){
+											tokenizeErrMsg = CheckoutPayments.errorMessages["BT_CVV_FIELD_INVALID"];
+										}
+									 }
+									$("#"+errorMessageField).css("display", "block");
+									document.getElementById(errorMessageField).innerHTML=tokenizeErrMsg;
+									
+									return;
+				 				 } 
+				 				 else{ //payload object generated
+										
+				 					 // instance is of saved card,so payload object is of saved card
+				 					 if(fromSavedPaymentFlag == 'true'){
+				 						 document.querySelector('#cvv_nonce').value = payload.nonce;
+										 var params = [];
+										params["storeId"] = WCParamJS.storeId;
+										params["catalogId"] = WCParamJS.catalogId;
+										params["langId"] = WCParamJS.langId;
+										params["pay_token"]=document.querySelector('#pay_token').value;
+										params["cvv_nonce"]=document.querySelector('#cvv_nonce').value;
+										params["billing_address_id"]=document.querySelector('#billing_address_id_1').value;
+										params["payment_method_id"]=document.querySelector('#PaymentMethodId').value;
+										params["device_session_id"]=document.querySelector('#deviceSessionId').value;
+										params["fraud_merchant_id"]=document.querySelector('#fraudMerchantId').value;
+										wcService.invoke('AjaxRESTVaultedCreditCardVerification', params);
+				 					 }
+									 else{ //instance is of new card,so payload object is of new card
+										 var paynonce = payload.nonce;
+										 document.querySelector('#pay_nonce').value = paynonce;
+										 document.querySelector('#account').value = "**************"+payload.details.lastTwo;
+										 document.querySelector('#pay_type').value = payload.details.cardType;
+
+										 //3D secure check is to be done
+										 if(threeDSecureEnable == 'true')
+											BrainTreePayments.threeDSecureCheck(paynonce);
+										 else
+											CheckoutPayments.processCheckout(piFormName);
+									}
+				 				}
+				});		
+		},
+		
+		/**
+		 * 3D secure check 
+		 */
+		threeDSecureCheck : function(paynonce){
+			var bankFrame = document.querySelector('.bt-modal-body');
+			var piAmountVal = document.getElementById('piAmount_1').value;
+			braintree.client.create({
+			  // Use the generated client token to instantiate the Braintree client.
+			  authorization: btClientToken
+			}, function (clientErr, clientInstance) {
+			  if (clientErr) {
+				console.log("clientError:",clientErr);
+				MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+				return;
+			  }
+
+			  braintree.threeDSecure.create({
+				client: clientInstance
+			  }, function (threeDSecureErr, threeDSecureInstance) {
+				if (threeDSecureErr) {
+				  console.log("threeDSecureError:",threeDSecureErr);
+				  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_THREE_D_SECURE_ERROR"]);	
+				  return;
+				}
+				console.log("threeDSecureInstance:",threeDSecureInstance);
+				
+				threeDSecureInstance.verifyCard({
+				  amount: piAmountVal,
+				  nonce:  paynonce ,// NONCE_FROM_INTEGRATION,
+				  addFrame: function (err, iframe) {
+					// Set up your UI and add the iframe.
+					 bankFrame.appendChild(iframe);
+					$(".threeDsecureWindow").css("display", "flex"); 
+				  },
+				  removeFrame: function () {
+					// Remove UI that you added in addFrame.
+					var iframe = bankFrame.querySelector('iframe');
+					$(".threeDsecureWindow").css("display", "none");
+					iframe.parentNode.removeChild(iframe);
+				  }
+				}, function (err, response) {
+				  
+					if (err) {
+						console.error("error when threeDsecure response failed:",err);
+						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_THREE_D_SECURE_RESPONSE_FAILED_ERROR"]);	
+						return;
+					  }
+					  
+					//Send response.nonce to use in your transaction
+					var threeDNonce = response.nonce;
+					document.getElementById('3Dsecure_nonce').value = threeDNonce;
+					CheckoutPayments.processCheckout('PaymentForm');
+				});
+					//when clicked on close button of frame
+					 var closeFrame = document.getElementById('text-close');
+					 closeFrame.addEventListener('click', function () {
+						threeDSecureInstance.cancelVerifyCard(removeFrame());
+						});
+					 function removeFrame() {
+					// Remove UI that you added in addFrame.
+						var iframe = bankFrame.querySelector('iframe');
+						$(".threeDsecureWindow").css("display", "none");
+						iframe.parentNode.removeChild(iframe);
+					 }
+			  });
+			});
+		},
+		
+		/**
+		 * on click of Next button in orderShippingBillingDetails page this method is called to get the payNonce and the other required params of particular payment. Set these values to a map and then call processCheckout
+		 */
+		brainTreeCheckOut : function(piFormName,skipOrderPrepare){
+			var numberOfPaymentMethods = document.getElementById("numberOfPaymentMethods");
+			var numberOfPaymentMethodsSelected = numberOfPaymentMethods.options[numberOfPaymentMethods.selectedIndex].value;
+			var fromSavedPaymentFlag =document.querySelector('#fromSavedPaymentFlag').value ;
+			var payType = document.querySelector('#pay_type').value ;
+			var paypalEmail= document.getElementById("PayPalEmailId").value;
+			var paymentType = $("input[name='payMethodId']:checked").val();
+			var payInStore = false;
+			
+			//below conditions help to perform certain steps  for each payment 
+			if(isPickUpInStore){
+				if ($("#payInStorePaymentOption").is(':checked'))
+					payInStore = true;
+			}
+			if((paymentType == 'ZPayPal' && paypalEmail!="") || payInStore || ( (payType == 'PayPalAccount' || payType == 'PayPalCredit') && fromSavedPaymentFlag == 'true' )){
+				CheckoutPayments.processCheckout(piFormName);
+			}
+			else if (paymentType == 'ZGooglePay'){
+				document.getElementById("google-pay-button_"+numberOfPaymentMethodsSelected).click();
+				
+			}
+			else if (paymentType == 'ZApplePay'){
+				document.getElementById("apple-pay-button_"+numberOfPaymentMethodsSelected).click();
+				
+			}
+			else if (fromSavedPaymentFlag=='true' || paymentType == 'ZCreditCard'){
+				if($('#showSavedCard').css('display') == 'none' && fromSavedPaymentFlag=='true')
+					{
+						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_EMPTY_PAYMENT_ERROR"]);	
+						
+					}
+				else{
+					var keyforInst="inst";
+					if(fromSavedPaymentFlag == 'true' ){
+						var keyforInst="cvvInst";
+					}
+						for(i=1;i<=numberOfPaymentMethodsSelected;i++)
+						{
+							// from all the created instances,getting only the
+							// required instances
+							var key=keyforInst+i;
+							var testInstance = instances_BT[key];
+							BrainTreePayments.brainTreeInstances(testInstance,piFormName,i,fromSavedPaymentFlag);
+						}
+				}	
+			}
+			else{ //when none of the payment is selected and clicked on Next button,showing an error
+				MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_EMPTY_PAYMENT_ERROR"]);	
+			}
+		},
+		
+	/**
+	 * populate brain tree hosted fields when new card is selected.
+	 */
+
+		displayBraintreeFieldsForPayment:function(clientToken,statusCount){
+			
+			// displaying Next button
+				var nextButtonId = document.getElementById("shippingBillingPageNext");
+				nextButtonId.classList.remove("btn-disabled-BT");
+				
+				$(".billing_address_container").css("display", "block"); 
+				
+				
+				// if already iframe exists,we are clearing it
+				document.getElementById("card-number_"+statusCount).innerHTML = "";
+				document.getElementById("cvv_"+statusCount).innerHTML = "";
+				document.getElementById("expiration-date_"+statusCount).innerHTML = "";
+				
+				var client_token=clientToken;
+				
+				braintree.client.create({
+					 authorization: client_token
+					 }).then( function(clientInstance) {
+								
+								if(advancedFraudTools == "true"){
+								// device data
+								braintree.dataCollector.create({
+										client: clientInstance,
+										kount: true
+									  }).then(function(dataCollectorInstance) {
+										
+										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+
+									  }).catch(function (err){
+											console.error("device data error for credit card is:",err);
+											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+											  return;
+										});
+								}
+								// hosted fields
+								braintree.hostedFields.create({
+								client: clientInstance,
+								styles: {
+									'input': {
+									   'font-size': '14px'
+																				
+									},
+									'input.invalid': {
+									   'color': 'red'
+									},
+									'input.valid': {
+									   'color': 'green'
+									}
+								},
+								fields: {
+									number: {
+										selector: '#card-number_'+statusCount,
+										border: '1px solid #333'
+									},
+									cvv: {
+										selector: '#cvv_'+statusCount
+									},
+									expirationDate: {
+										selector: '#expiration-date_'+statusCount
+									}
+								}
+														          
+							}).then(function (hostedFieldsInstance) {
+										
+										
+									
+									var keyforInst="inst"+statusCount;
+									var i=[];
+									instances_BT[keyforInst]=hostedFieldsInstance;
+									console.log("hostedFieldsInstance:",hostedFieldsInstance);
+									
+									//START Advanced Hosted Field events
+									 var cvvLabel = document.querySelector('label[for="bt_cvv"]');
+									hostedFieldsInstance.on('cardTypeChange', function (event) {
+										// This event is fired whenever a change in card type is detected.
+										// It will only ever be fired from the number field.
+										var cvvText;
+
+										if (event.cards.length === 1) {
+										 cvvText = event.cards[0].code.name;
+										} else {
+										 cvvText = 'CVV';
+										}
+										cvvLabel.innerHTML = cvvText;
+									 });
+									//END
+								}).catch( function (hostedFieldsErr){
+														            
+								
+									console.error("hostedFieldsErr:",hostedFieldsErr);
+									var hostedFieldsErrMsg="";
+								
+									$("#hostedFieldsErrorMessage_"+statusCount).css("display", "block"); 
+									switch (hostedFieldsErr.code) {
+										case 'HOSTED_FIELDS_TIMEOUT':
+											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; // unknown error 
+											//Occurs when Hosted Fields does not finish setting up within 60seconds
+											 break;
+										case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
+											 hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; // merchant error
+											 break;
+										case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
+											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; // merchant error
+											break;
+										case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
+											hostedFieldsErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; //merchant error
+											break;
+										case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
+											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"];//merchant error
+											break;  
+										default:
+											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"];// merchant error
+									}
+								
+								document.getElementById("hostedFieldsErrorMessage_"+statusCount).innerHTML=hostedFieldsErrMsg;
+								return;
+						});
+				}).catch( function(clientErr) {
+					console.error("clientErr:",clientErr);
+					
+						$("#hostedFieldsWrapper_"+statusCount).css("display", "none"); // if error occurs don't display wrapper
+						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);
+						cursor_clear();
+					return;
+				 });
+			},
+		
+		/**
+		 * PayPal payment script
+		 * 
+		 */
+		
+		payPalVaultPayment:function(payPalDivId,paypalCreditbutton,clientToken,statusCount,amountval,userType,isPaypalCreditEnableFlag,isMultiCapEnable)
+			{
+				
+				//disabling the Next button when paypal is selected
+					var nextButtonId = document.getElementById("shippingBillingPageNext");
+					nextButtonId.classList.add("btn-disabled-BT");
+					
+				// if already iframe exists,we are clearing it
+				document.getElementById(payPalDivId).innerHTML = "";
+				
+				if(isPaypalCreditEnableFlag == 'true')
+					document.getElementById(paypalCreditbutton).innerHTML = "";
+				
+				var client_token=clientToken;
+				var enableShippingAddressFlag = true;
+				var shippingAddressEditableFlag = true;
+				var createPayPalPayment = {};
+				var shippingAddressOverrideValues = {};
+				
+				if(isPickUpInStore)
+					$(".billing_address_container").css("display", "none"); 
+				
+				if(isPickUpInStore || isMultipleShipping){
+					enableShippingAddressFlag = false;
+					shippingAddressEditableFlag = false;
+				}else{
+					var	recipientNameCmrce=selectedShippingContact.firstName+" "+selectedShippingContact.lastName;
+					var	line1Cmrce= selectedShippingContact.addressLine[0];
+					var line2Cmrce = selectedShippingContact.addressLine[1];
+					var	cityCmrce= selectedShippingContact.city;
+					var	stateCmrce= selectedShippingContact.state;  
+					var	countryCodeCmrce= selectedShippingContact.country;                                                                                                
+					var	postalCodeCmrce=selectedShippingContact.zipCode;
+					var	phoneNumber = selectedShippingContact.phone1;
+					
+					shippingAddressOverrideValues["recipientName"]= recipientNameCmrce;
+					shippingAddressOverrideValues["line1"]= line1Cmrce;
+					shippingAddressOverrideValues["city"]= cityCmrce;
+					shippingAddressOverrideValues["state"]= stateCmrce;
+					shippingAddressOverrideValues["countryCode"]= countryCodeCmrce;
+					shippingAddressOverrideValues["postalCode"]= postalCodeCmrce;
+					if(line2Cmrce != null && line2Cmrce != "" )
+						shippingAddressOverrideValues["line2"]= line2Cmrce;
+					if(phoneNumber != null && phoneNumber != "" )
+						shippingAddressOverrideValues["phone"]= phoneNumber;
+
+					createPayPalPayment["shippingAddressOverride"] = shippingAddressOverrideValues ;
+				}
+				
+				if(paypalFlow == 'checkout'){
+					createPayPalPayment["flow"]= paypalFlow;
+					createPayPalPayment["intent"]= paypalIntent;
+				}else{
+					createPayPalPayment["flow"]= paypalFlow;
+					createPayPalPayment["billingAgreementDescription"]=billingAgreementDescription;
+				}
+				
+				createPayPalPayment["locale"] =localeVal;
+				createPayPalPayment["currency"]= WCParamJS.commandContextCurrency ;
+				createPayPalPayment["enableShippingAddress"]= enableShippingAddressFlag;
+				createPayPalPayment["shippingAddressEditable"]= shippingAddressEditableFlag;
+				createPayPalPayment["displayName"] = paypalMerchantName;
+				
+				// Create a client.
+				braintree.client.create({
+				  authorization : client_token 
+				}).then( function (clientInstance) {
+						if(advancedFraudTools == "true"){
+						// device data
+									braintree.dataCollector.create({
+										client: clientInstance,
+										kount: true
+									  }).then(function( dataCollectorInstance) {
+										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+										
+									  }).catch(function (err){
+											console.error("device data error for paypal is",err);
+											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+											  return;
+										});
+						}
+				// Create a PayPal Checkout component.
+					  braintree.paypalCheckout.create({
+						client: clientInstance
+					  }).then(function ( paypalCheckoutInstance ) {
+						
+						// Set up PayPal with the checkout.js library
+						paypal.Button.render({
+							env: paymentEnvironment, // this value can be either 'production' or  'sandbox'
+							commit: true, // This will add the transaction amount to the PayPal button
+							style: {
+									label: 'paypal',
+									size:'small'
+									
+								  },
+							  payment: function () {
+								 var piAmountVal = document.getElementById('piAmount_'+statusCount).value;
+								 createPayPalPayment["amount"]= piAmountVal;
+								 return paypalCheckoutInstance.createPayment(createPayPalPayment);
+							  },
+							  onAuthorize: function (data, actions) {
+								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+								  // Submit `payload.nonce` to your server
+								  
+								 BrainTreePayments.processPayPalResponseFromOrdBilling(isPickUpInStore , isMultipleShipping,payload,false );
+								});
+							  },
+							  onCancel: function (data) {
+								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
+								//MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONCANCEL"]); //no need to display to user
+								return; 
+							  },
+							  onError: function (err) {
+								console.error('checkout.js error', err); // TODO handle this when site is down give a msg to user
+								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);											
+								return;										
+							  }
+								}, '#'+payPalDivId).then(function () {
+								  // The PayPal button will be rendered in an
+									// html element with the id
+								  // `paypal-button`. This function will be
+									// called when the PayPal button
+								  // is set up and ready to be used.
+								});
+
+							// paypal credit
+						if(isPaypalCreditEnableFlag == 'true'){
+							paypal.Button.render({
+							env: paymentEnvironment, // Or 'sandbox'
+							commit: true, // This will add the transaction amount to the PayPal button
+							style: {
+									label: 'credit',
+									size:'small'
+								  },
+        
+							payment: function () {
+								var piAmountVal = document.getElementById('piAmount_'+statusCount).value;
+								createPayPalPayment["amount"]= piAmountVal;
+								createPayPalPayment["offerCredit"] = true;
+								return paypalCheckoutInstance.createPayment(createPayPalPayment);
+							  },
+
+							  onAuthorize: function (data, actions) {
+								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+								  // Submit `payload.nonce` to your server
+								 BrainTreePayments.processPayPalResponseFromOrdBilling(isPickUpInStore , isMultipleShipping,payload,true );
+								});
+							  },
+							  onCancel: function (data) {
+								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
+								return;		
+							  },
+							  onError: function (err) {
+								//alert("PayPal payment options are invalid.");
+								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);
+								console.error('checkout.js error:', err); 
+								return;
+																			
+							  }
+								}, '#'+paypalCreditbutton).then(function () {
+								  // The PayPal button will be rendered in an
+									// html element with the id
+								  // `paypal-button`. This function will be
+									// called when the PayPal button
+								  // is set up and ready to be used.
+								});
+							}
+					  }).catch(function(paypalCheckoutErr){
+							console.error(" paypalCheckoutErr: ",paypalCheckoutErr);
+							MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_CHECKOUTERROR"]);																				
+							return;
+					  });
+					  
+				}).catch(function(clientErr){
+					console.error("clientErr:",clientErr); // TODO check if any  other errors exists
+					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);																				
+					cursor_clear();
+					return;
+					
+				});
+		},
+		
+		/**
+		 *  to process payload object of PayPal payment
+		 */
+	processPayPalResponseFromOrdBilling: function(isPickUpInStoreFlag , isMultipleShipping,payload,isPayplaCredit ){
+		
+		if(!isPickUpInStoreFlag && !isMultipleShipping ){
+			BrainTreePayments.updateShippingAddressFromPaypal(payload ,"S" );
+		  }
+		document.querySelector('#pay_nonce').value = payload.nonce;
+		document.querySelector('#pay_type').value = payload.type;
+		document.querySelector('#PayPalEmailId').value = payload.details.email;
+		if(isPayplaCredit)
+			document.querySelector('#pay_type').value = "PayPalCredit";
+		
+		if(paypalBillingAddressEnable == 'true'){
+			BrainTreePayments.updateBillingAddressFromPaypal(payload);
+		  }
+		  
+		CheckoutPayments.processCheckout('PaymentForm');
+	},
+		
+	/**
+	 *  PayPal payment script for express checkout
+	 */
+		payPalVaultPaymentFromExpressCheckout:function(payPalDivId,paypalCreditButton,clientToken,orderItemId,redirectURL,grandTotal,userType,isPickUpStore,isPaypalCreditEnableFlag,isMultiCapEnable)
+			{
+				
+				var client_token=clientToken;
+				var addressType = "S";
+				var deviceSessionId ;		
+				var fraudMerchantId	;
+				var enableShippingAddressFlag =  true ;
+				var shippingAddressEditableFlag =  true;
+				if(isPickUpStore){
+					enableShippingAddressFlag = false ;
+					shippingAddressEditableFlag = false ;
+				}
+				
+				var createPayPalPayment={};
+				
+				if(paypalFlow == 'checkout'){
+					createPayPalPayment["flow"]= paypalFlow;
+					createPayPalPayment["intent"]= paypalIntent;
+				}else{
+					createPayPalPayment["flow"]= paypalFlow;
+					createPayPalPayment["billingAgreementDescription"]=billingAgreementDescription;
+				}
+				
+				createPayPalPayment["locale"] =localeVal;
+				createPayPalPayment["amount"]= grandTotal;
+				createPayPalPayment["currency"]= WCParamJS.commandContextCurrency ;
+				createPayPalPayment["enableShippingAddress"]= enableShippingAddressFlag;
+				createPayPalPayment["shippingAddressEditable"]= shippingAddressEditableFlag;
+				createPayPalPayment["displayName"] = paypalMerchantName;
+				
+				// Create a client.
+				braintree.client.create({
+				  authorization : client_token 
+				}).then( function (clientInstance) {
+						if(advancedFraudTools == "true"){
+						// device data
+									braintree.dataCollector.create({
+										client: clientInstance,
+										kount: true
+									  }).then(function( dataCollectorInstance) {
+										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+										deviceSessionId = deviceData.device_session_id;
+										fraudMerchantId = deviceData.fraud_merchant_id;
+
+									  }).catch(function (err){
+											
+											console.error("device data error for paypal express checkout is",err);
+											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);																				
+											  return;
+										});
+						}
+				// Create a PayPal Checkout component.
+					  braintree.paypalCheckout.create({
+						client: clientInstance
+					  }).then(function ( paypalCheckoutInstance) {
+
+						// Set up PayPal with the checkout.js library
+						paypal.Button.render({
+							env: paymentEnvironment, // Or 'sandbox'
+							commit: true, // This will add the transaction amount to the PayPal button
+							style: {
+									label: 'paypal',
+									size:'small'
+								  },
+							payment: function () {
+										return paypalCheckoutInstance.createPayment(createPayPalPayment)
+									},
+
+							  onAuthorize: function (data, actions) {
+								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+									// Submit `payload.nonce` to your server
+									BrainTreePayments.processPayPalResponseFromShopcart(isPickUpStore , userType , payload , addressType , orderItemId, redirectURL, false , deviceSessionId , fraudMerchantId);
+								  });
+							  },
+
+							  onCancel: function (data) {
+								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
+								//MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONCANCEL"]);	//no need to display to user																			
+								return; 
+							  },
+
+							  onError: function (err) {
+								  	MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);																				
+								console.error('checkout.js error', err); // TODO handle this. Whn site is down fgive a msg to user
+								return;
+							  }
+								}, '#'+payPalDivId).then(function () {
+								  // The PayPal button will be rendered in an
+									// html element with the id
+								  // `paypal-button`. This function will be
+									// called when the PayPal button
+								  // is set up and ready to be used.
+								});
+
+					if(isPaypalCreditEnableFlag == 'true'){
+							// paypal credit
+							createPayPalPayment["offerCredit"] = true;
+						paypal.Button.render({
+							env: paymentEnvironment, // Or 'sandbox'
+							commit: true, // This will add the transaction amount to the PayPal button
+							style: {
+									label: 'credit',
+									size:'small'
+								  },
+								  
+							payment: function () {
+									return paypalCheckoutInstance.createPayment(createPayPalPayment);
+							  },
+
+							  onAuthorize: function (data, actions) {
+								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+									// Submit `payload.nonce` to your server
+									BrainTreePayments.processPayPalResponseFromShopcart(isPickUpStore , userType , payload , addressType , orderItemId, redirectURL , true, deviceSessionId , fraudMerchantId);
+									});
+							  },
+
+							  onCancel: function (data) {
+								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2));
+								//MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONCANCEL"]); //no need to display to user
+								return; 
+							  },
+
+							  onError: function (err) {
+								console.error('checkout.js error', err); 
+								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);
+								return; 
+																			
+							  }
+								}, '#'+paypalCreditButton).then(function () {
+								  // The PayPal button will be rendered in an
+									// html element with the id
+								  // `paypal-button`. This function will be
+									// called when the PayPal button
+								  // is set up and ready to be used.
+								});
+							}
+
+					  }).catch(function(paypalCheckoutErr){
+							console.log("paypalCheckoutErr:",paypalCheckoutErr);	
+							MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_CHECKOUTERROR"]);					
+							return;
+					  });
+					  
+
+				}).catch(function(clientErr){
+					console.error("clientErr",clientErr); // TODO check if any other errors exists
+					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
+					cursor_clear();
+					return;
+					
+				});
+			},
+		
+			/**
+			 * process Payload object of PayPal of shop cart page
+			 */
+		processPayPalResponseFromShopcart: function(isPickUpStore , userType , payload , addressType , orderItemId, redirectURL, 
+									isPaypaCredit , deviceSessionId , fraudMerchantId)
+		{
+			var postRefreshHandlerParameters = [];
+			var initialURL = "AjaxRESTOrderItemUpdate";
+			var responseParams = {};
+		
+			if(isPickUpStore){
+				if(userType == 'G' && paypalBillingAddressEnable == 'false')
+					addressType ="B";
+			ShipmodeSelectionExtJS.submitStoreSelectionForm(document.orderItemStoreSelectionForm);
+			responseParams["payInStore"] = false;
+			responseParams["isPickUpStore"] = true;
+			}else{
+				if(userType == 'G' && paypalBillingAddressEnable == 'false')
+					addressType ="SB";
+				responseParams["isPickUpStore"] = false;
+			}
+			
+			if((isPickUpStore && userType == 'G' && paypalBillingAddressEnable == 'false' ) || !isPickUpStore){
+				BrainTreePayments.updateShippingAddressFromPaypal(payload , addressType);
+			}
+			
+			if(paypalBillingAddressEnable == 'true'){
+				BrainTreePayments.updateBillingAddressFromPaypal(payload);
+			}
+			
+			responseParams["pay_nonce"] = payload.nonce;
+			responseParams["deviceSessionId"] = deviceSessionId;
+			responseParams["fraudMerchantId"] = fraudMerchantId
+			
+			if(isPaypaCredit){
+				responseParams["pay_type"] = "PayPalCredit";
+				responseParams["paypalCredit"] = true;	
+			}else{
+				responseParams["pay_type"] = payload.type;
+				responseParams["paypalCredit"] = false;	
+			}
+			responseParams["PayPalEmailId"] = payload.details.email;
+			
+			var urlRequestParams = [];
+			urlRequestParams["remerge"] = "***";
+			urlRequestParams["check"] = "*n";
+			urlRequestParams["allocate"] = "***";
+			urlRequestParams["backorder"] = "***";
+			urlRequestParams["calculationUsage"] = "-1,-2,-3,-4,-5,-6,-7";
+			urlRequestParams["calculateOrder"] = "1";
+			urlRequestParams["orderItemId"] = orderItemId;
+			urlRequestParams["orderId"] = ".";
+					urlRequestParams["storeId"] = WCParamJS.storeId;
+					postRefreshHandlerParameters.push({"URL":redirectURL,"requestType":"GET", "requestParams":responseParams}); 
+					var service = getCustomServiceForURLChaining(initialURL,postRefreshHandlerParameters,null);
+									service.invoke(urlRequestParams);
+		},
+		/**
+		 * update shipping address with the shipping address obtained from paypal
+		 */
+		updateShippingAddressFromPaypal: function(payload , addressTypeVal){
+			
+			var postUdatingPaypalAddressData = {};
+			if(addressTypeVal == "B"){
+				postUdatingPaypalAddressData = { storeId: WCParamJS.storeId,
+					catalogId: WCParamJS.catalogId , 
+					lagId: WCParamJS.langId ,
+					addressType:addressTypeVal,
+					addressTypeFromPayPal:'StoreAddress',
+					pickupStoreId: PhysicalStoreCookieJSStore.getPickUpStoreIdFromCookie()
+				};
+			}else{
+				var ShippingAddressAddressLine2 ='' ;
+				if(payload.details.shippingAddress.line2 != null)
+					ShippingAddressAddressLine2 = payload.details.shippingAddress.line2;
+					postUdatingPaypalAddressData = { storeId: WCParamJS.storeId,
+					catalogId: WCParamJS.catalogId , 
+					lagId: WCParamJS.langId ,
+					addressTypeFromPayPal: 'PayPalShippingAddress' ,
+					addressType:addressTypeVal,
+					recipientName: payload.details.shippingAddress.recipientName,
+					address1:payload.details.shippingAddress.line1,
+					address2:ShippingAddressAddressLine2,
+					city: payload.details.shippingAddress.city,
+					state:payload.details.shippingAddress.state,
+					countryCode:payload.details.shippingAddress.countryCode,
+					postalCode:payload.details.shippingAddress.postalCode };
+			}
+					$.ajax({
+						async: false,
+						type: 'POST', 
+						url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
+						data : postUdatingPaypalAddressData,
+						success: function(responseData){
+							var resultData = responseData;
+							resultData = resultData.replace('/*','');
+							resultData = resultData.replace('*/','');
+							var finaldata = JSON.parse(resultData);
+							var updatedAddressId = finaldata.result.updatedAddressId;
+							
+							if(updatedAddressId != ""){
+							var paramsInfo=[];
+							paramsInfo["addressId"]= updatedAddressId;
+							paramsInfo["storeId"]= WCParamJS.storeId;
+							paramsInfo["catalogId"] = WCParamJS.catalogId;
+							paramsInfo["langId"] = WCParamJS.langId;;
+							paramsInfo["orderId"] = ".";
+							paramsInfo["calculationUsage"] = "-1,-2,-3,-4,-5,-6,-7";
+							paramsInfo["allocate"] = "***";
+							paramsInfo["backorder"] = "***";
+							paramsInfo["remerge"] = "***";
+							paramsInfo["check"] = "*n";
+							paramsInfo["calculateOrder"] = "1";
+							paramsInfo["requesttype"] ="ajax";
+						   
+							wcService.invoke("OrderItemAddressShipMethodUpdate", paramsInfo);
+							}
+						}
+					});
+		},
+		
+		/**
+		 * to update billing address with the billing address obtained from paypal
+		 */
+		updateBillingAddressFromPaypal: function(payload){
+			var BillingAddressRecipientName='';
+			var BillingAddressAddressLine2 ='' ;
+			
+			if(payload.details.shippingAddress != null)
+				BillingAddressRecipientName = payload.details.shippingAddress.recipientName;
+			else
+				BillingAddressRecipientName = "PayPalFirstName PayPalLastName";
+
+			if(payload.details.billingAddress.line2 != null)
+					BillingAddressAddressLine2 = payload.details.billingAddress.line2;
+
+				var postData = { storeId: WCParamJS.storeId,
+					catalogId: WCParamJS.catalogId , 
+					lagId: WCParamJS.langId ,
+					addressTypeFromPayPal: 'PayPalBillingAddress' ,
+					addressType:'B',
+					recipientName: BillingAddressRecipientName,
+					address1:payload.details.billingAddress.line1,
+					address2:BillingAddressAddressLine2,
+					city: payload.details.billingAddress.city,
+					state:payload.details.billingAddress.state,
+					countryCode:payload.details.billingAddress.countryCode,
+					postalCode:payload.details.billingAddress.postalCode };
+					$.ajax({
+						async: false,
+						type: 'POST', 
+						url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
+						data : postData,
+						success: function(responseData){
+							var resultData = responseData;
+							resultData = resultData.replace('/*','');
+							resultData = resultData.replace('*/','');
+							var finaldata = JSON.parse(resultData);
+							var addressId = finaldata.result.updatedAddressId;
+							
+							var billingAddressList = document.getElementById('billing_address_id_1');
+							if(billingAddressList != null)
+								billingAddressList.options[billingAddressList.selectedIndex].value = addressId;
+						}
+					});
+		},
+		/**
+		 * To display google pay button
+		 */
+		googlePayPayment:function(googlePaybuttonId,clientToken,statusCount){
+
+			//displaying the Next button if hidden
+				
+				var nextButtonId = document.getElementById("shippingBillingPageNext");
+				nextButtonId.classList.remove("btn-disabled-BT");
+				
+				$(".billing_address_container").css("display", "block"); 
+				var button = googlePaybuttonId
+				var paymentsClient = new google.payments.api.PaymentsClient({
+				  environment: googlepayPaymentEnvironment //'TEST'  Or 'PRODUCTION'
+				});
+
+				braintree.client.create({
+				  authorization: clientToken
+				}).then( function (clientInstance) {
+				  
+								if(advancedFraudTools == "true"){
+									// device data
+									braintree.dataCollector.create({
+										client: clientInstance,
+										kount: true
+									  }).then(function( dataCollectorInstance) {
+										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+
+									  }).catch(function (err){
+											console.error("device data error for google pay is:",err);
+											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);	
+											  return;
+										});
+								}
+					
+
+				braintree.googlePayment.create({
+					client: clientInstance
+				  }).then(function (googlePaymentInstance) {
+				   paymentsClient.isReadyToPay({
+					  allowedPaymentMethods: ["CARD", "TOKENIZED_CARD"] // googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods
+					}).then(function(response) {
+					 if (response.result) {
+						// assigning the googlePaymentInstance to a var.
+						$("#googlePay_"+statusCount).css("display","block");
+						
+						var keyForInst="googlePay"+statusCount;
+						gPayPaymentsClient_BT[keyForInst]=paymentsClient;
+						instances_BT[keyForInst]=googlePaymentInstance;
+					}
+					}).catch(function (err) {
+					  // Handle errors
+					  console.error("error when response failed:",err);
+					  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_RESPONSE_FAILED_ERROR"]);
+					  return;
+					});
+				  }).catch(function(googlePaymentErr){
+					console.error("googlePaymentError:",googlePaymentErr);
+					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_PAYMENT_ERROR"]);
+					return;
+				  });
+
+				  
+				}).catch(function(clienterr){
+					console.error("clienterr:",clienterr);
+					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);
+					return;
+				});
+		},
+		/**
+		 * generating payload object ,on click of google pay payment
+		 */
+		googlePayOnClick : function(piFormName,statusCount){
+			
+			var googlePayInstance=instances_BT["googlePay"+statusCount];
+			var paymentsClient=gPayPaymentsClient_BT["googlePay"+statusCount];
+			var piAmountVal = document.getElementById('piAmount_'+statusCount).value;
+
+			var paymentDataRequest = googlePayInstance.createPaymentDataRequest({
+							// merchantId: googlePayPaymentMerchantId, //not needed for sandbox testing
+							transactionInfo: {
+							  currencyCode: WCParamJS.commandContextCurrency,
+							  totalPriceStatus: 'FINAL',
+							  totalPrice: piAmountVal // Your amount
+							},
+							cardRequirements: {
+							  billingAddressRequired: true
+							}
+						  });
+
+						  paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData) {
+							googlePayInstance.parseResponse(paymentData, function (err, result) {
+							  if (err) {
+								// Handle parsing error
+								console.error(" parsing error ::"+err);
+								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_PARSING_ERROR"]);
+								return;
+							  }
+							  // Send result.nonce to your server
+								document.querySelector('#pay_nonce').value = result.nonce;
+								document.querySelector('#pay_type').value = result.type;
+								setCurrentId('shippingBillingPageNext'); 
+								CheckoutPayments.processCheckout(piFormName);	
+							});
+						  }).catch(function (err) {
+							console.error("error when loadingPaymentData :",err);
+							MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_ERROR_AT_LOADPAYMENTDATA"]);
+							return;
+						  });
+		},
+		/**
+		 * To display apple pay button
+		 */
+		applePayPayment:function(applePaybuttonId,clientToken,statusCount){
+				
+				// display in next button if hidden
+				var nextButtonId = document.getElementById("shippingBillingPageNext");
+				nextButtonId.classList.remove("btn-disabled-BT");
+				
+				var button = applePaybuttonId
+				
+			// apple pay
+					if (!window.ApplePaySession) {
+					  console.error('This device does not support Apple Pay');
+					  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_SUPPORTED"]);
+					  return; //TODO cross check this with the bT script
+					}
+
+					if (!ApplePaySession.canMakePayments()) {
+					  console.error('This device is not capable of making Apple Pay payments');
+					  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_CAPABLE"]);
+					  return; //TODO ,see if it is correct to return
+					}
+
+				braintree.client.create({
+				  authorization: clientToken
+				}).then( function (clientInstance) {
+					   
+				// device data
+						braintree.dataCollector.create({
+							client: clientInstance,
+							kount: true
+						  }).then(function( dataCollectorInstance) {
+							
+							var deviceData = JSON.parse(dataCollectorInstance.deviceData);
+							document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
+							document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
+
+						  }).catch(function (err){
+								
+								console.error("device data error for apple pay is:"+err);
+								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
+								  return;
+							});
+
+							
+				// apple pay
+							braintree.applePay.create({
+							client: clientInstance
+						  }, function (applePayErr, applePayInstance) {
+							if (applePayErr) {
+							  console.error('Error creating applePayInstance:', applePayErr);
+							  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_APPLEPAY_ERR"]);
+							  
+							  return;
+							}
+							
+							var promise = ApplePaySession.canMakePaymentsWithActiveCard(applePayInstance.merchantIdentifier);
+							promise.then(function (canMakePaymentsWithActiveCard) {
+							 
+							  if (canMakePaymentsWithActiveCard) {
+									// Set up Apple Pay buttons
+									var keyForInst="applePay"+statusCount;
+									instances[keyForInst]=applePayInstance;
+									$("#applePay_"+statusCount).css("display", "block");
+									
+							  }
+							});
+						  });
+
+				}).catch(function(clienterr){
+					console.error("clienterror:",clienterr);
+					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);
+					return;
+				});
+		},
+		/**
+		 * to generate payload obejct of apple pay after the onclick of apple pay button
+		 */
+		applePayOnClick:function(piFormName,statusCount,amount){
+					
+					var applePayInstance=instances_BT["applePay"+statusCount];
+					var paymentRequest = applePayInstance.createPaymentRequest({
+				  total: {
+					label: 'My Store',
+					amount: amount
+				  },
+				  requiredBillingContactFields: ["postalAddress"]
+				});
+				console.log(paymentRequest.countryCode);
+				console.log(paymentRequest.currencyCode);
+				console.log(paymentRequest.merchantCapabilities);
+				console.log(paymentRequest.supportedNetworks);
+				var session = new ApplePaySession(2, paymentRequest);
+					session.onvalidatemerchant = function (event) {
+				  applePayInstance.performValidation({
+					validationURL: event.validationURL,
+					displayName: 'My Store'
+				  }, function (err, merchantSession) {
+					if (err) {
+						console.error("apple pay failed to load");
+						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_PERFORM_VALIDATION_ERR"]);
+					  return;
+					}
+					session.completeMerchantValidation(merchantSession);
+				  });
+				};
+						
+						session.onpaymentauthorized = function (event) {
+					  console.log('Your shipping address is:', event.payment.shippingContact);
+						
+					  applePayInstance.tokenize({
+						token: event.payment.token
+					  }, function (tokenizeErr, payload) {
+						if (tokenizeErr) {
+						  console.error('Error tokenizing Apple Pay:', tokenizeErr);
+						  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_TOKENIZEERR"]);
+						  session.completePayment(ApplePaySession.STATUS_FAILURE);
+						  return;
+						}
+						session.completePayment(ApplePaySession.STATUS_SUCCESS);
+
+						// Send payload.nonce to your server.
+						console.log('nonce:', payload.nonce);
+						
+						document.querySelector('#pay_nonce').value = payload.nonce;
+						document.querySelector('#pay_type').value = payload.type; //ApplePayCard
+						setCurrentId('shippingBillingPageNext'); 
+						CheckoutPayments.processCheckout(piFormName);
+						// If requested, address information is accessible in
+						// event.payment
+						// and may also be sent to your server.
+						console.log('billingPostalCode:', event.payment.billingContact.postalCode);
+					  });
+					};
+					
+					session.begin();
+	},
+		
+		/**
+		 * to deal with the Saved Payments and New Paymenst fieldsets
+		 */
+		toggleExpandNavBT:function(id,displayCardsFlag){
+		
+			var icon = byId("icon_" + id);
+			var section_list = byId("section_list_" + id);
+			if(icon.className == "arrow") {
+				icon.className = "arrow arrow_collapsed";
+				$(section_list).attr("aria-expanded", "false");
+				$(section_list).css("display", "none");
+			} else {
+				icon.className = "arrow";
+				$(section_list).attr("aria-expanded", "true");
+				$(section_list).css("display", "block");
+				
+				if(displayCardsFlag=="true"){
+					if(id=="newPayments"){
+						
+						$("#section_list_savedPayments").attr("aria-expanded", "false");
+						$("#section_list_savedPayments").css("display", "none");
+						
+						// hide otherfield set
+						//var iconOther = byId("icon_savedPayments");
+						$("#icon_savedPayments").attr('class', 'arrow arrow_collapsed');
+						//iconOther.className="arrow arrow_collapsed";
+						document.querySelector('#fromSavedPaymentFlag').value = false;
+
+						$(".paypalCheckoutdiv").css("display", "block"); 
+						$("#newCardDetailsFillingDiv").css("display", "block"); // when
+																				// saved
+																				// card
+																				// selected
+																				// ,new
+																				// card
+																				// div
+																				// should
+																				// not
+																				// be
+																				// appeared
+						$("#googlePay_1").css("display", "block");
+						
+						
+					}
+					else if(id=="savedPayments"){
+						
+						$(section_list_newPayments).attr("aria-expanded", "false");
+						$(section_list_newPayments).css("display", "none");
+
+						$(".paypalCheckoutdiv").css("display", "none"); 
+						$("#newCardDetailsFillingDiv").css("display", "none"); // when
+																				// saved
+																				// card
+																				// selected
+																				// ,new
+																				// card
+																				// div
+																				// should
+																				// not
+																				// be
+																				// appeared
+						$("#googlePay_1").css("display", "none");
+						//hide other fieldset
+						var iconOther = byId("icon_newPayments");
+						iconOther.className="arrow arrow_collapsed";
+						document.querySelector('#fromSavedPaymentFlag').value = true;
+						
+						//enabling Next Button
+						var nextButtonId = document.getElementById("shippingBillingPageNext");
+						nextButtonId.classList.remove("btn-disabled-BT");
+						
+					}
+				}
+				
+				
+			}
+		},
+		
+		/**
+		 * To display only one payment at a time. Hiding other payments if any are open
+		 */
+		displayCardDetailsDiv:function(paymentCard,statusCount){
+			
+			if(paymentCard=="newCard")
+			{
+				console.log("inside new card payment");
+				$("#newCardDetailsFillingDiv").css("display", "block");
+				$("#existingCardsList").css("display", "none"); 
+				$(".paypalCheckoutdiv").css("display", "none"); 
+				$("#googlePay_"+statusCount).css("display", "none"); 
+				$(".billing_address_container").css("display", "block"); 
+				
+				// when new card selected ,savedcards div should not be appeared
+			}
+			else if (paymentCard=="existingCard")
+			{
+				$(".billing_address_container").css("display", "block"); 
+				$("#existingCardsList").css({"width":"300px","margin-left":"210px","display": "block","word-wrap": "break-word"});
+				$("#newCardDetailsFillingDiv").css("display", "none");
+				// when saved card selected ,new card div should not be appeared
+				$("#applePay_"+statusCount).css("display", "none");	 
+			}
+			else if (paymentCard=="payPal")
+			{
+				if(isPickUpInStore)
+					$(".billing_address_container").css("display", "none"); 
+				console.log("inside paypal  payment");
+				$(".paypalCheckoutdiv").css("display", "block"); 
+				$("#newCardDetailsFillingDiv").css("display", "none"); 
+				$("#googlePay_"+statusCount).css("display", "none"); 
+				$("#applePay_"+statusCount).css("display", "none");	
+			}
+			else if(paymentCard=="googlePay")
+			{
+				$(".billing_address_container").css("display", "block"); 
+				$(".paypalCheckoutdiv").css("display", "none"); 
+				$("#newCardDetailsFillingDiv").css("display", "none");
+				$("#googlePay_"+statusCount).css("display", "block"); 
+				$("#applePay_"+statusCount).css("display", "none");	
+			}
+			else if(paymentCard=="applePay")
+					{
+						$(".billing_address_container").css("display", "block"); 
+						$(".paypalCheckoutdiv").css("display", "none"); 
+						$("#newCardDetailsFillingDiv").css("display", "none");
+						$("#googlePay_"+statusCount).css("display", "none"); 
+						$("#applePay_"+statusCount).css("display", "block");
+					}
+			
+		}
+	}
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 //
@@ -64866,6 +69180,19 @@ categoryDisplayJS={
 	* allSwatchesArray[i][4] - onclick action of the swatch when enabled
 	**/
 	allSwatchesArray : [],
+	
+	/**
+	 * Add customized parameter for add to order
+	 * "reverse":"$reverse",
+	 * "contractId":"$contractId",
+	 * "physicalStoreId":"$physicalStoreId",
+	 * "catEntryId":"$catEntryId",
+	 **/
+	customParams :{},
+	
+	setCustomParams:function(customParams){
+		this.customParams = customParams;
+	},
 	
 	/**
 	* setCommonParameters This function initializes storeId, catalogId, and langId.
@@ -65946,12 +70273,12 @@ getDefaultItem : function(productId){
 	* @param {Object} customParams - Any additional parameters that needs to be passed to the configurator page.
 	*
 	**/
-	ConfigureDynamicKit : function(catEntryIdentifier, quantity, customParams)
+	ConfigureDynamicKit : function(catEntryId, quantity, customParams)
 	{
 		var params = {storeId: this.storeId,
 catalogId: this.catalogId,
 langId: this.langId,
-catEntryId: catEntryIdentifier,
+catEntryId: catEntryId,
 quantity: quantity};
 		
 		if(!isPositiveInteger(quantity)){
@@ -65990,6 +70317,80 @@ quantity: quantity};
 		document.location.href = getAbsoluteURL() + appendWcCommonRequestParameters(configureURL);
 	},
 	
+	/**
+	* addDynamicKitToCart This function is used to add dynamic kit to cart.
+	*
+	* @param {String} catalogId The catalog entry of the item to replace to the cart.
+	* @param {int} quantity The quantity of the item to add.
+	* @param {String} langId 
+	*
+	**/
+	
+	updateDynamicKitInCart : function (langId, storeId, catalogId,orderItemId){
+		generateBOM( function (bomXML) {
+				ServicesDeclarationJS.setCommonParameters(langId, storeId, catalogId);
+				service = wcService.getServiceById('AjaxOrderUpdateConfigurationInCart');
+	        
+				var params = {
+	         		configXML:bomXML,
+	         		orderItemId:orderItemId,
+				};
+				//Pass any other customParams set by other add on features
+				if(this.customParams != null && this.customParams != 'undefined'){
+					for(i in this.customParams){
+						params[i] = this.customParams[i];
+					}
+				}
+				
+	        /*For Handling multiple clicks. */
+	        if(!submitRequest()){
+	            return;
+	        }
+	        cursor_wait();
+	        wcService.invoke('AjaxOrderUpdateConfigurationInCart',params);
+			}
+		);
+		
+		},
+	
+		/**
+		* addDynamicKitToCart This function is used to add dynamic kit to cart.
+		*
+		* @param {String} catalogId The catalog entry of the item to replace to the cart.
+		* @param {int} quantity The quantity of the item to add.
+		* @param {String} langId 
+		*
+		**/
+		
+		addDynamicKitToCart : function (langId, storeId, catalogId,catEntryId, quantity){
+			generateBOM( function (bomXML) {
+					ServicesDeclarationJS.setCommonParameters(langId, storeId, catalogId);
+					service = wcService.getServiceById('AjaxRESTOrderAddConfigurationToCart');
+		        
+					var params = {
+		         		configXML:bomXML,
+						catEntryId:catEntryId,
+						quantity:quantity
+					};
+					//Pass any other customParams set by other add on features
+					if(this.customParams != null && this.customParams != 'undefined'){
+						for(i in this.customParams){
+							params[i] = this.customParams[i];
+						}
+					}
+					
+		        /*For Handling multiple clicks. */
+		        if(!submitRequest()){
+		            return;
+		        }
+		        cursor_wait();
+		        wcService.invoke('AjaxRESTOrderAddConfigurationToCart',params);
+				}
+			);
+			
+			},
+		
+			
 	/**
 	* ReplaceItemAjaxHelper This function is used to replace an item in the cart. This will be called from the {@link this.ReplaceItemAjax} method.
 	*
@@ -66853,15 +71254,12 @@ widgetHTML = widgetHTML
 		
 	
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 	/** 
@@ -67120,15 +71518,12 @@ widgetHTML = widgetHTML
 	}	
 	
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -69711,18 +74106,13 @@ CheckoutHelperJS = {
         this._toggleOrderItemDetails(div);
     }
 }
-
-
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2017 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -69921,12 +74311,19 @@ CheckoutPayments = {
 		var formObj = document.forms['PaymentForm'+paymentAreaNumber];
 		this.clearPaymentFormData(formObj);
 
-		var selectBoxValueArray = paymentMethodSelectBox.value.split("_");
+		/*var selectBoxValueArray = paymentMethodSelectBox.value.split("_");
 		var paymentMethodName = selectBoxValueArray[0];
 		var paymentTCId = '';
 		if(selectBoxValueArray[1] != null){
 			paymentTCId = selectBoxValueArray[1];
-		}
+		}*/
+		
+		var selectBoxValueArray = paymentMethodSelectBox.value;
+		var paymentMethodName = selectBoxValueArray;
+		var paymentTCId = '';
+		//if(selectBoxValueArray[1] != null){
+		//	paymentTCId = selectBoxValueArray[1];
+		//}
 
 		if(this.paymentSpecificAddress){
 			wcRenderContext.getRenderContextProperties("billingAddressDropDownBoxContext")["payment"+paymentAreaNumber] = paymentMethodName;
@@ -70237,7 +74634,7 @@ CheckoutPayments = {
 	* @param {Object} params Object containing payment data
 	* @retrun {Object} params Object holding payment data
 	*/
-	/*BRAINTREE START */
+	/*BRAINTREE START */ 
 	populateProtocolData:function(formName,params){
 		params = this.updateParamObject(params,"storeId",this.getValue(formName,"storeId"),true);
 		params = this.updateParamObject(params,"payment_token",this.getValue(formName,"payment_token"),true);
@@ -70264,8 +74661,6 @@ CheckoutPayments = {
 			params = this.updateParamObject(params,"authToken",this.getValue(formName,"authToken"),true);
 		}
 		
-		
-		
 		var fromSavedPayment = this.getValue(formName,"fromSavedPaymentFlag");
 		var payType = this.getValue(formName,"pay_type");
 		var PaymentMethodIdValue = this.getValue(formName,"payMethodId");
@@ -70281,7 +74676,7 @@ CheckoutPayments = {
 		params = this.updateParamObject(params,"pay_nonce",this.getValue(formName,"pay_nonce"),true);
 		params = this.updateParamObject(params,"pay_token",this.getValue(formName,"pay_token"),true);
 		params = this.updateParamObject(params,"cvv_nonce",this.getValue(formName,"cvv_nonce"),true);
-		params = this.updateParamObject(params,"fromSavedPaymentFlag",this.getValue(formName,"fromSavedPaymentFlag"),true);
+		params = this.updateParamObject(params,"fromSavedPaymentFlag",fromSavedPayment,true);
 		params = this.updateParamObject(params,"deviceSessionId",this.getValue(formName,"deviceSessionId"),true);
 		params = this.updateParamObject(params,"fraudMerchantId",this.getValue(formName,"fraudMerchantId"),true);
 		params = this.updateParamObject(params,"PayPalEmailId",this.getValue(formName,"PayPalEmailId"),true);
@@ -71396,15 +75791,12 @@ CheckoutPayments = {
    */
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -71637,16 +76029,14 @@ PromotionChoiceOfFreeGiftsJS={
 		}
 	}
 
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -71778,16 +76168,14 @@ if(typeof(PunchoutJS) === "undefined" || !PunchoutJS || !PunchoutJS.topicNamespa
 			$("#" + elementId).focus();
 		}
 	}
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -72067,6 +76455,9 @@ ShipmodeSelectionExtJS = {
 			urlRequestParams["orderItemId"] = this.orderItemId;
 			urlRequestParams["orderId"] = ".";
 			urlRequestParams["storeId"] = this.storeId;
+			//JR60345: explicit checkout scenario
+			urlRequestParams["isCheckout"] = "true";
+
 			postRefreshHandlerParameters.push({"URL":billingShippingPageURLForOnline,"requestType":"GET", "requestParams":{}}); 
 			var service = getCustomServiceForURLChaining(initialURL,postRefreshHandlerParameters,null);
 			service.invoke(urlRequestParams);
@@ -72334,20 +76725,18 @@ ShipmodeSelectionExtJS = {
 		var service = getCustomServiceForURLChaining(initialURL,postRefreshHandlerParameters,formId);
 		service.invoke(urlRequestParams);
 	}
-}	//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}	
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
- * @fileOverview This file contains declarations of refresh controllers used by WebSphere Commerce AJAX services for the shipping and billing pages.
+ * @fileOverview This file contains declarations of refresh controllers used by HCL Commerce AJAX services for the shipping and billing pages.
  */
 
 /**
@@ -72886,7 +77275,6 @@ function declarePaymentAreaController(divId) {
 			TealeafWCJS.rebind(widgetId);
 			
 			var addressKey = "billingAddress" + paymentAreaNumber;
-			
 			//reset the billing address id in the billing address context to be the default selected address after payment method refresh
 			wcRenderContext.updateRenderContext('billingAddressDropDownBoxContext', {addressKey:(document.getElementsByName('billing_address_id'))[paymentAreaNumber-1].value, 'areaNumber':paymentAreaNumber});
 
@@ -73126,15 +77514,12 @@ function declareDOMEditShippingAdddressAreaController() {
 };
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 //
@@ -73230,6 +77615,188 @@ SBServicesDeclarationJS = {
 	}
 
 }
+/*BRAINTREE START*/
+
+/**
+  *  Declares an AJAX service that deletes the card in braintree vault
+  *
+  */
+  wcService.declare({
+	id: "AjaxRESTDeleteCardFromBraintreeVault",
+	actionId: "AjaxRESTDeleteCardFromBraintreeVault",
+	url: "AjaxRESTDeleteCardFromBraintreeVault",
+	formId: ""
+	
+	/**
+	 * Submits the order with the name of the payment form.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,successHandler: function(serviceResponse) {
+		cursor_clear();
+		MessageHelper.displayStatusMessage("Deleted card successfully");
+		window.location.reload(true);
+	}
+	
+	/**
+	 * Displays the error message returned with the service response and hides the progress bar.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,failureHandler: function(serviceResponse) {
+		MessageHelper.displayErrorMessage("Please try deleting card after sometime"); //TODO handle messages according to cases
+		cursor_clear();
+	}
+
+}),
+
+
+/**
+  *  Declares an AJAX service that update shipping address from paypal 
+  *
+  */
+  wcService.declare({
+	id: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
+	actionId: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
+	url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
+	formId: ""
+	
+	/**
+	 * Submits the order with the name of the payment form.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,successHandler: function(serviceResponse) {
+		cursor_clear();
+		console.log("serviceResponse::"+ serviceResponse.result.updatedAddressId);
+		
+		var updatedAddressId=serviceResponse.result.updatedAddressId;
+		if(updatedAddressId != ""){
+			var params=[];
+			params["addressId"]= updatedAddressId;
+			params["storeId"]= WCParamJS.storeId;
+			params["catalogId"] = WCParamJS.catalogId;
+			params["langId"] = WCParamJS.langId;;
+			params["orderId"] = ".";
+			params["calculationUsage"] = "-1,-2,-3,-4,-5,-6,-7";
+			params["allocate"] = "***";
+			params["backorder"] = "***";
+			params["remerge"] = "***";
+			params["check"] = "*n";
+			params["calculateOrder"] = "1";
+			params["requesttype"] ="ajax";
+		   
+		   wcService.invoke("OrderItemAddressShipMethodUpdate", params);
+		}
+	}
+	
+	/**
+	 * Displays the error message returned with the service response and hides the progress bar.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,failureHandler: function(serviceResponse) {
+		/*if (serviceResponse.errorMessage) {
+			MessageHelper.displayErrorMessage(serviceResponse.errorMessage);
+		} else {
+			if (serviceResponse.errorMessageKey) {
+				MessageHelper.displayErrorMessage(serviceResponse.errorMessageKey);
+			}
+		}*/
+		MessageHelper.displayErrorMessage("Please try deleting card after sometime"); //TODO handle messages according to cases
+		cursor_clear();
+	}
+
+}),
+
+ 
+
+/**
+  *  Declares an AJAX service that verifies  the saved card in braintree vault
+  *
+  */
+  wcService.declare({
+	id: "AjaxRESTVaultedCreditCardVerification",
+	actionId: "AjaxRESTVaultedCreditCardVerification",
+	url: "AjaxRESTVaultedCreditCardVerification",
+	formId: ""
+	
+	/**
+	 * Submits the order with the name of the payment form.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,successHandler: function(serviceResponse) {
+		cursor_clear();
+		
+		if(threeDSecureEnable == 'true'){
+			// generate nonce for the token and return
+			var nonceOfPayToken = serviceResponse.result.nonce;
+			BrainTreePayments.threeDSecureCheck(nonceOfPayToken);
+		}
+		else{
+			//go for transaction authorization
+			CheckoutPayments.processCheckout('PaymentForm');
+		}
+	}
+	
+	/**
+	 * Displays the error message returned with the service response and hides the progress bar.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,failureHandler: function(serviceResponse) {
+		MessageHelper.displayErrorMessage("Please Enter correct CVV / verify your billing address"); //TODO handle messages according to cases
+		cursor_clear();
+	}
+
+}),
+
+
+/**
+  *  Declares an AJAX service that verifies  the saved card in BrainTree vault for mobile payments
+  *
+  */
+  wcService.declare({
+	id: "AjaxRESTVaultedCreditCardVerificationForMobilePayments",
+	actionId: "AjaxRESTVaultedCreditCardVerificationForMobilePayments",
+	url: "AjaxRESTVaultedCreditCardVerification",
+	formId: ""
+	
+	/**
+	 * Submits the order with the name of the payment form.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,successHandler: function(serviceResponse) {
+		cursor_clear();
+		
+		if(threeDSecureEnable == 'true'){
+			// generate nonce for the token and return
+			
+			var nonceOfPayToken = serviceResponse.result.nonce;
+			BrainTreeMobilePayments.threeDSecureCheck(nonceOfPayToken);
+		}
+		else{
+			//go for transaction authorization
+			//CheckoutPayments.processCheckout('PaymentForm');
+			document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
+		}
+	}
+	
+	/**
+	 * Displays the error message returned with the service response and hides the progress bar.
+	 *
+	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+	 */
+	,failureHandler: function(serviceResponse) {
+		MessageHelper.displayErrorMessage("Please Enter correct CVV / verify your billing address"); //TODO handle messages according to cases
+		cursor_clear();
+	}
+
+}),
+/*BRAINTREE END*/
+
 
 /**
  * Declares an AJAX service that adds an item to the wish list and delete an item from the shopping cart.
@@ -73732,227 +78299,6 @@ wcService.declare({
 	}
 }),
 
-
-/*BRAINTREE START*/
-
-/**
-  *  Declares an AJAX service that deletes the card in braintree vault
-  *
-  */
-  wcService.declare({
-	id: "AjaxRESTDeleteCardFromBraintreeVault",
-	actionId: "AjaxRESTDeleteCardFromBraintreeVault",
-	url: "AjaxRESTDeleteCardFromBraintreeVault",
-	formId: ""
-	
-	/**
-	 * Submits the order with the name of the payment form.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,successHandler: function(serviceResponse) {
-		cursor_clear();
-		MessageHelper.displayStatusMessage("Deleted card successfully");
-		window.location.reload(true);
-	}
-	
-	/**
-	 * Displays the error message returned with the service response and hides the progress bar.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,failureHandler: function(serviceResponse) {
-		MessageHelper.displayErrorMessage("Please try deleting card after sometime"); //TODO handle messages according to cases
-		cursor_clear();
-	}
-
-}),
-
-
-/**
-  *  Declares an AJAX service that update shipping address from paypal 
-  *
-  */
-  wcService.declare({
-	id: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
-	actionId: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
-	url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
-	formId: ""
-	
-	/**
-	 * Submits the order with the name of the payment form.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,successHandler: function(serviceResponse) {
-		cursor_wait();
-		console.log("serviceResponse::"+ serviceResponse.result.updatedAddressId);
-		
-		var updatedAddressId=serviceResponse.result.updatedAddressId;
-		if(updatedAddressId != ""){
-			var params=[];
-			params["addressId"]= updatedAddressId;
-			params["storeId"]= WCParamJS.storeId;
-			params["catalogId"] = WCParamJS.catalogId;
-			params["langId"] = WCParamJS.langId;;
-			params["orderId"] = ".";
-			params["calculationUsage"] = "-1,-2,-3,-4,-5,-6,-7";
-			params["allocate"] = "***";
-			params["backorder"] = "***";
-			params["remerge"] = "***";
-			params["check"] = "*n";
-			params["calculateOrder"] = "1";
-			params["requesttype"] ="ajax";
-		   
-		   wcService.invoke("OrderItemAddressShipMethodUpdate", params);
-		   cursor_clear();
-		}
-	}
-	
-	/**
-	 * Displays the error message returned with the service response and hides the progress bar.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,failureHandler: function(serviceResponse) {
-		MessageHelper.displayErrorMessage("Please try deleting card after sometime");		//TODO handle messages according to cases
-		cursor_clear();
-	}
-
-}),
-
-
- 
-	/**
-  *  Declares an AJAX service that update shipping address from paypal 
-  *
-  */
-  wcService.declare({
-	id: "AjaxRESTUpdateBillingAddressFromPaypalCheckout",
-	actionId: "AjaxRESTUpdateBillingAddressFromPaypalCheckout",
-	url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
-	formId: ""
-	
-	/**
-	 * Submits the order with the name of the payment form.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,successHandler: function(serviceResponse) {
-		cursor_wait();
-		console.log("serviceResponse::"+ serviceResponse.result.updatedAddressId);
-		var updatedAddressId=serviceResponse.result.updatedAddressId;
-		var billingAddressList = document.getElementById('billing_address_id_1');
-		if(billingAddressList != null)
-			billingAddressList.options[billingAddressList.selectedIndex].value = updatedAddressId;
-		cursor_clear();
-	}
-	
-	/**
-	 * Displays the error message returned with the service response and hides the progress bar.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,failureHandler: function(serviceResponse) {
-		
-		console.log("failure in setting billing address for paypal payment");
-		cursor_clear();
-	}
-
-}),
- 
- 
- 
- 
- 
- 
-
-/**
-  *  Declares an AJAX service that verifies  the saved card in braintree vault
-  *
-  */
-  wcService.declare({
-	id: "AjaxRESTVaultedCreditCardVerification",
-	actionId: "AjaxRESTVaultedCreditCardVerification",
-	url: "AjaxRESTVaultedCreditCardVerification",
-	formId: ""
-	
-	/**
-	 * Submits the order with the name of the payment form.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,successHandler: function(serviceResponse) {
-		cursor_clear();
-		
-		if(threeDSecureEnable == 'true'){
-			// generate nonce for the token and return
-			var nonceOfPayToken = serviceResponse.result.nonce;
-			BrainTreePayments.threeDSecureCheck(nonceOfPayToken);
-		}
-		else{
-			//go for transaction authorization
-			CheckoutPayments.processCheckout('PaymentForm');
-		}
-	}
-	
-	/**
-	 * Displays the error message returned with the service response and hides the progress bar.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,failureHandler: function(serviceResponse) {
-		MessageHelper.displayErrorMessage("Please Enter correct CVV / verify your billing address"); //TODO handle messages according to cases
-		cursor_clear();
-	}
-
-}),
-
-
-/**
-  *  Declares an AJAX service that verifies  the saved card in BrainTree vault for mobile payments
-  *
-  */
-  wcService.declare({
-	id: "AjaxRESTVaultedCreditCardVerificationForMobilePayments",
-	actionId: "AjaxRESTVaultedCreditCardVerificationForMobilePayments",
-	url: "AjaxRESTVaultedCreditCardVerification",
-	formId: ""
-	
-	/**
-	 * Submits the order with the name of the payment form.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,successHandler: function(serviceResponse) {
-		cursor_clear();
-		
-		if(threeDSecureEnable == 'true'){
-			// generate nonce for the token and return
-			
-			var nonceOfPayToken = serviceResponse.result.nonce;
-			BrainTreeMobilePayments.threeDSecureCheck(nonceOfPayToken);
-		}
-		else{
-			//go for transaction authorization
-			//CheckoutPayments.processCheckout('PaymentForm');
-			document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
-		}
-	}
-	
-	/**
-	 * Displays the error message returned with the service response and hides the progress bar.
-	 *
-	 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
-	 */
-	,failureHandler: function(serviceResponse) {
-		MessageHelper.displayErrorMessage("Please Enter correct CVV / verify your billing address"); //TODO handle messages according to cases
-		cursor_clear();
-	}
-
-}),
-  
-/*BRAINTREE END*/
 
 /**
  * Declares an AJAX service that prepares order information before submitting the order.
@@ -74567,15 +78913,12 @@ wcService.declare({
 	}
 })
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 if (flowEnabled.SideBySideIntegration) {
@@ -74667,15 +79010,12 @@ if (flowEnabled.SideBySideIntegration) {
 }
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 shoppingActionsJS = {
@@ -74689,10 +79029,10 @@ shoppingActionsJS = {
     /** The catalog ID currently in use **/
     catalogId: "",
 
-    /** Holds the current user type such as guest or registered user. Allowed values are 'G' for guest and 'R' for registered.**/
+    /** Holds the current user type such as guest or registered user. Allowed values are 'G' for guest and 'R' for registered **/
     userType: "",
 
-    /** A boolean used in a variety of the add to cart methods to tell whether or not the base item was added to the cart. **/
+    /** A boolean used in a variety of the add to cart methods to tell whether or not the base item was added to the cart **/
     baseItemAddedToCart: false,
 
     /** An array of entitled items which is used in various methods throughout ShoppingActions.js **/
@@ -74704,26 +79044,26 @@ shoppingActionsJS = {
     /** A map of attribute name value pairs for the currently selected attribute values **/
     selectedAttributesList: {},
 
-    /** A variable used to form the url dynamically for the more info link in the Quickinfo popup */
+    /** A map of currently selected attribute values for a catalog entry **/
+    selectedAttributeValues: {},
+
+    /** A map of HTML element ids associated with an attribute name **/
+    registeredAttributeIds: {},
+
+    /** A variable used to form the url dynamically for the more info link in the Quickinfo popup **/
     moreInfoUrl: "",
 
-    /**
-     * A boolean used to to determine is it from a Qick info popup or not. 
-     **/
+    /** A boolean used to to determine is it from a Qick info popup or not **/
     isPopup: false,
 
-    /**
-     * A boolean used to to determine whether or not to diplay the price range when the catEntry is selected. 
-     **/
+    /** A boolean used to to determine whether or not to diplay the price range when the catEntry is selected **/
     displayPriceRange: true,
 
-    /**
-     * This array holds the json object retured from the service, holding the price information of the catEntry.
-     **/
+    /** This array holds the json object retured from the service, holding the price information of the catEntry **/
     itemPriceJsonOject: [],
 
-    /** 
-     * stores all name and value of all swatches 
+    /**
+     * stores all name and value of all swatches
      * this is a 2 dimension array and each record i contains the following information:
      * allSwatchesArray[i][0] - attribute name of the swatch
      * allSwatchesArray[i][1] - attribute value of the swatch
@@ -74733,58 +79073,43 @@ shoppingActionsJS = {
      **/
     allSwatchesArrayList: {},
 
-    /**
-     * Holds the ID of the image used for swatch
-     **/
+    /** stores all name and id of all dropdowns **/
+    allDropdownsList: {},
+
+    /** Holds the ID of the image used for swatch **/
     skuImageId: "",
 
-    /**
-     * The prefix of the cookie key that is used to store item Ids. 
-     */
+    /** The prefix of the cookie key that is used to store item Ids **/
     cookieKeyPrefix: "CompareItems_",
 
-    /**
-     * The delimiter used to separate item Ids in the cookie.
-     */
+    /** The delimiter used to separate item Ids in the cookie **/
     cookieDelimiter: ";",
 
-    /**
-     * The maximum number of items allowed in the compare zone. 
-     */
+    /** The maximum number of items allowed in the compare zone **/
     maxNumberProductsAllowedToCompare: 4,
 
-    /**
-     * The minimum number of items allowed in the compare zone. 
-     */
+    /** The minimum number of items allowed in the compare zone **/
     minNumberProductsAllowedToCompare: 2,
 
-    /**
-     * Id of the base catalog entry. 
-     */
+    /** Id of the base catalog entry **/
     baseCatalogEntryId: 0,
 
-    /**
-     * An map which holds the attributes of a set of products
-     */
+    /** An map which holds the attributes of a set of products **/
     selectedProducts: {},
 
-    /**
-     * An array to keep the quantity of the products in a list (bundle)
-     */
+    /** An array to keep the quantity of the products in a list (bundle) **/
     productList: {},
 
-    /**
-     * stores the currency symbol
-     */
+    /** An array to keep the details of the newly added products **/
+    productAddedList: {},
+
+    /** stores the currency symbol **/
     currencySymbol: "",
 
-    /**
-     * stores the compare return page name
-     */
+    /** stores the compare return page name **/
     compareReturnName: "",
-    /**
-     * stores the search term
-     */
+
+    /** stores the search term **/
     searchTerm: "",
 
     search01: "'",
@@ -74795,14 +79120,13 @@ shoppingActionsJS = {
 
     replaceStr02: /\\\"/g,
 
+    replaceStr001: "&#039;",
+
+    replaceStr002: "&#034;",
+
     ampersandChar: /&/g,
 
     ampersandEntityName: "&amp;",
-
-    /**
-     * An array to keep the details of the newly added products.
-     */
-    productAddedList: {},
 
     setCompareReturnName: function (compareReturnName) {
         this.compareReturnName = compareReturnName;
@@ -74829,6 +79153,10 @@ shoppingActionsJS = {
         var selectedAttributes = this.selectedAttributesList[entitledItemId];
         for (attribute in selectedAttributes) {
             attributeArray.push(attribute + "_|_" + selectedAttributes[attribute]);
+        }
+        // there are no selected attribute and no entitled item, this must be a single sku item without defining attribute
+        if (selectedAttributes == null && (this.entitledItems == null || this.entitledItems.length == 0)) {
+            return entitledItemId.substring(entitledItemId.indexOf("_") + 1);
         }
         return this.resolveSKU(attributeArray);
     },
@@ -74909,8 +79237,8 @@ shoppingActionsJS = {
 
     /**
      * setSelectedAttribute Sets the selected attribute value for a particular attribute not in reference to any catalog entry.
-     *					   One place this function is used is on CachedProductOnlyDisplay.jsp where there is a drop down box of attributes.
-     *					   When an attribute is selected from that drop down this method is called to update the selected value for that attribute.
+     *                     One place this function is used is on CachedProductOnlyDisplay.jsp where there is a drop down box of attributes.
+     *                     When an attribute is selected from that drop down this method is called to update the selected value for that attribute.
      *
      * @param {String} selectedAttributeName The name of the attribute.
      * @param {String} selectedAttributeValue The value of the selected attribute.
@@ -74919,25 +79247,72 @@ shoppingActionsJS = {
      * @param {String} imageField This is optional. The json field from which image should be picked. Pass value if a different size image need to be picked
      *
      **/
-    setSelectedAttribute: function (selectedAttributeName, selectedAttributeValue, entitledItemId, skuImageId, imageField) {
-        console.debug(selectedAttributeName + " : " + selectedAttributeValue);
+    setSelectedAttribute: function (selectedAttributeName, selectedAttributeValue, entitledItemId, skuImageId, imageField, selectedAttributeDisplayValue) {
         var selectedAttributes = this.selectedAttributesList[entitledItemId];
         if (selectedAttributes == null) {
             selectedAttributes = {};
         }
+        selectedAttributeValue = selectedAttributeValue.replace(this.replaceStr001, this.search01);
+        selectedAttributeValue = selectedAttributeValue.replace(this.replaceStr002, this.search02);
         selectedAttributeValue = selectedAttributeValue.replace(this.replaceStr01, this.search01);
         selectedAttributeValue = selectedAttributeValue.replace(this.replaceStr02, this.search02);
         selectedAttributeValue = selectedAttributeValue.replace(this.ampersandChar, this.ampersandEntityName);
         selectedAttributes[selectedAttributeName] = selectedAttributeValue;
         this.moreInfoUrl = this.moreInfoUrl + '&' + selectedAttributeName + '=' + selectedAttributeValue;
         this.selectedAttributesList[entitledItemId] = selectedAttributes;
-        this.changeProdImage(entitledItemId, selectedAttributeName, selectedAttributeValue, skuImageId, imageField);
+
+        var entitledItemJSON;
+        if ($("#" + entitledItemId).length && !this.isPopup) {
+            //the json object for entitled items are already in the HTML.
+            entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
+        } else {
+            //if $("#" + entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object.
+            //in this case, it must have been set in catalogentryThumbnailDisplay.js when the quick info
+            entitledItemJSON = this.getEntitledItemJsonObject();
+        }
+        this.setEntitledItems(entitledItemJSON);
+        var attributeIds = this.getAttributeIds(selectedAttributeName, entitledItemId);
+        if (attributeIds != null) {
+            var usedFilterValue = $("#" + attributeIds.usedFilterValueId);
+            if (usedFilterValue != null) {
+                if (selectedAttributeDisplayValue) {
+                    $(usedFilterValue).html(selectedAttributeDisplayValue);
+                } else {
+                    $(usedFilterValue).html(selectedAttributeValue);
+                }
+            }
+            if (selectedAttributeValue === "") {
+                $("#" + attributeIds.usedFilterId).removeClass("visible");
+                var hideCurrentUsedFilters = true;
+                var dropdownList = this.allDropdownsList[entitledItemId];
+                for (var i in dropdownList) {
+                    if (selectedAttributes[dropdownList[i].name] !== "") {
+                        hideCurrentUsedFilters = false;
+                        break;
+                    }
+                }
+                if (hideCurrentUsedFilters) {
+                    $("#currentUsedFilters_" + entitledItemId).addClass("hidden");
+                }
+            } else {
+                $("#" + attributeIds.usedFilterId).addClass("visible");
+                $("#currentUsedFilters_" + entitledItemId).removeClass("hidden");
+                var selectedAttributeNameId = selectedAttributeName.replace(this.search01, "\\\'").replace(this.search02, '\\\"');
+                $("[id='attr_" + entitledItemId + '_' + selectedAttributeNameId + "']").addClass("hidden");
+            }
+
+            this.makeDropdownSelection(selectedAttributeName, selectedAttributeValue, entitledItemId);
+			if (skuImageId != undefined) {
+				this.setSKUImageId(skuImageId);
+			}
+            this.changeProdImage(entitledItemId, selectedAttributeName, selectedAttributeValue, skuImageId, imageField);
+        }
     },
 
     /**
      * setSelectedAttributeOfProduct Sets the selected attribute value for an attribute of a specified product.
-     *								This function is used to set the assigned value of defining attributes to specific 
-     *								products which will be stored in the selectedProducts map.
+     *                              This function is used to set the assigned value of defining attributes to specific
+     *                              products which will be stored in the selectedProducts map.
      *
      * @param {String} productId The catalog entry ID of the catalog entry to use.
      * @param {String} selectedAttributeName The name of the attribute.
@@ -74961,7 +79336,7 @@ shoppingActionsJS = {
         }
         this.selectedProducts[productId] = selectedAttributesForProduct;
 
-        //the json object for entitled items are already in the HTML. 
+        //the json object for entitled items are already in the HTML.
         var entitledItemJSON = eval('(' + $("#entitledItem_" + productId).html() + ')');
 
         this.setEntitledItems(entitledItemJSON);
@@ -75014,10 +79389,10 @@ shoppingActionsJS = {
 
     /**
      * Add2ShopCartAjax This function is used to add a catalog entry to the shopping cart using an AJAX call. This will resolve the catentryId using entitledItemId and adds the item to the cart.
-     *				This function will resolve the SKU based on the entitledItemId passed in and call {@link this.AddItem2ShopCartAjax}.
+     *              This function will resolve the SKU based on the entitledItemId passed in and call {@link this.AddItem2ShopCartAjax}.
      * @param {String} entitledItemId A DIV containing a JSON object which holds information about a catalog entry. You can reference CachedProductOnlyDisplay.jsp to see how that div is constructed.
      * @param {int} quantity The quantity of the item to add to the cart.
-     * @param {String} isPopup If the value is true, then this implies that the function was called from a quick info pop-up. 	
+     * @param {String} isPopup If the value is true, then this implies that the function was called from a quick info pop-up.
      * @param {Object} customParams - Any additional parameters that needs to be passed during service invocation.
      *
      **/
@@ -75033,10 +79408,10 @@ shoppingActionsJS = {
         var entitledItemJSON;
 
         if ($("#" + entitledItemId).length) {
-            //the json object for entitled items are already in the HTML. 
+            //the json object for entitled items are already in the HTML.
             entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
         } else {
-            //if $("#" +entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object. 
+            //if $("#" +entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object.
             //in this case, it must have been set in catalogentryThumbnailDisplay.js when the quick info
             entitledItemJSON = this.getEntitledItemJsonObject();
         }
@@ -75062,10 +79437,12 @@ shoppingActionsJS = {
             MessageHelper.displayErrorMessage(Utils.getLocalizationMessage('ERROR_ADD2CART_BROWSE_ONLY'));
             return;
         }
-        var params = {storeId: this.storeId,
-catalogId: this.catalogId,
-langId: this.langId,
-orderId: "."};
+        var params = {
+            storeId: this.storeId,
+            catalogId: this.catalogId,
+            langId: this.langId,
+            orderId: "."
+        };
         // Remove calculations for performance
         // params.calculationUsage = "-1,-2,-5,-6,-7";
         params.inventoryValidation = "true";
@@ -75157,7 +79534,7 @@ orderId: "."};
         };
         // Remove calculations for performance
         // params.calculationUsage = "-1,-2,-5,-6,-7";
-        
+
         var idx = 1;
         this.productAddedList = {};
 
@@ -75248,11 +79625,11 @@ orderId: "."};
 
     /**
      * getImageForSKU Returns the full image of the catalog entry with the selected attributes as specified in the {@link this.selectedAttributes} value.
-     *					This method uses resolveImageForSKU to find the SKU image with the selected attributes values.
+     *                  This method uses resolveImageForSKU to find the SKU image with the selected attributes values.
      *
      * @param {String} imageField, the field name from which the image should be picked
      * @return {String} path to the SKU image.
-     * 
+     *
      *
      **/
     getImageForSKU: function (entitledItemId, imageField) {
@@ -75325,7 +79702,7 @@ orderId: "."};
 
     disableBuyButtonforUnbuyable: function (entitledItemIndex) {
         var buyableFlag = this.entitledItems[entitledItemIndex].buyable;
-        //				disable the add to cart button
+        //              disable the add to cart button
         var btn = document.getElementById("listViewAdd2Cart_" + this.entitledItems[entitledItemIndex].productId);
         if (buyableFlag != null && btn != null) {
             if (buyableFlag == 'false') {
@@ -75334,6 +79711,42 @@ orderId: "."};
                 btn.className = btn.className.replace(" add2CartButtonDisabled", "");
             }
         }
+    },
+
+    /**
+     * registerAttributeIds Register the ids of HTML attributes that are associated with the specified attribute.
+     *
+     * @param {String} attributeName The name of the attribute.
+     * @param {String} entitledItemId The element id where the json object of the sku is stored
+     * @param {Object} ids Map of named HTML element ids
+     *
+     **/
+    registerAttributeIds: function (attributeName, entitledItemId, ids) {
+        var attributeIds = this.registeredAttributeIds[entitledItemId];
+        if (attributeIds == null) {
+            attributeIds = {};
+            this.registeredAttributeIds[entitledItemId] = attributeIds;
+        }
+
+        attributeIds[this.removeQuotes(attributeName)] = ids;
+    },
+
+    /**
+     * getAttributeIds Get the map of ids of HTML attributes that are associated with the specified attribute.
+     *
+     * @param {String} attributeName The name of the attribute.
+     * @param {String} entitledItemId The element id where the json object of the sku is stored
+     *
+     * @return {Object} ids Map of named HTML element ids
+     *
+     **/
+    getAttributeIds: function (attributeName, entitledItemId) {
+        var ids = null;
+        var attributeIds = this.registeredAttributeIds[entitledItemId];
+        if (attributeIds != null) {
+            ids = attributeIds[this.removeQuotes(attributeName)];
+        }
+        return ids;
     },
 
     /**
@@ -75368,7 +79781,7 @@ orderId: "."};
      **/
     changeProdImage: function (entitledItemId, swatchAttrName, swatchAttrValue, skuImageId, imageField) {
         if ($("#" + entitledItemId).length) {
-            //the json object for entitled items are already in the HTML. 
+            //the json object for entitled items are already in the HTML.
             entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
         }
 
@@ -75504,7 +79917,7 @@ orderId: "."};
      * @param {String} swatchAttrName The name of the selected swatch attribute.
      * @param {String} swatchAttrValue The value of the selected swatch attribute.
      * @param {String} entitledItemId The ID of the SKU.
-     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.	
+     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.
      * @param {String} skuImageId This is optional. The element id of the product image - image element id is different in product page and category list view. Product page need not pass it because it is set separately
      * @param {String} imageField This is optional. The json field from which image should be picked. Pass value if a different size image need to be picked
      **/
@@ -75527,12 +79940,126 @@ orderId: "."};
     },
 
     /**
+     * Make dropdown selection.
+     * @param {String} selectedAttrName The name of the selected dropdown attribute.
+     * @param {String} selectedAttrValue The value of the selected dropdown attribute.
+     * @param {String} entitledItemId The ID of the SKU.
+     **/
+    makeDropdownSelection: function (selectedAttrName, selectedAttrValue, entitledItemId) {
+        //Add indexOf function to arrays for IE8
+        if (!Array.prototype.indexOf) {
+            Array.prototype.indexOf = function (obj, start) {
+                for (var i = (start || 0), j = this.length; i < j; i++) {
+                    if (this[i] === obj) {
+                        return i;
+                    }
+                }
+                return -1;
+            };
+        }
+
+        var dropdownsToUpdate = [];
+        var selectedAttributes = this.selectedAttributesList[entitledItemId];
+        var selectedAttrValues = selectedAttributes[selectedAttrName];
+        var dropdownList = this.allDropdownsList[entitledItemId];
+
+        // finds out which dropdowns needs to be updated, add to dropdownsToUpdate array
+        for (var i = 0; i < dropdownList.length; i++) {
+            if (this.removeQuotes(dropdownList[i].name) != this.removeQuotes(selectedAttrName)) {
+                dropdownsToUpdate.push(dropdownList[i]);
+            }
+        }
+
+        //Finds out which attributes are entitled and add them to list of enabled
+        var attributesToEnable = {};
+        for (var x in this.entitledItems) {
+            var Attributes = this.entitledItems[x].Attributes;
+
+            // Turn Attributes into object
+            var attrList = {};
+            for (var y in Attributes) {
+                var index = y.indexOf("_|_");
+                var entitledDropdownName = y.substring(0, index);
+                var entitledDropdownValue = y.substring(index + 3);
+
+                attrList[entitledDropdownName] = entitledDropdownValue;
+            }
+
+            for (var attrName in attrList) {
+                //the current entitled item has the selected attribute value
+                if (this.removeQuotes(attrName) == this.removeQuotes(selectedAttrName) && (attrList[attrName] == selectedAttrValue || selectedAttrValue === '')) {
+                    //go through the other attributes that are available to the selected attribute
+                    for (var attrName2 in attrList) {
+                        var attrName2NQ = this.removeQuotes(attrName2);
+                        //only check the non-selected attribute
+                        if (this.removeQuotes(attrName) != attrName2NQ) {
+                            // Find all entitled items that match the current list of selected attributes other than attrName2
+                            var matchSelectedAttributes = true;
+                            for (var selected in selectedAttributes) {
+                                if (this.removeQuotes(selected) != attrName2NQ) {
+                                    if (selectedAttributes[selected] && selectedAttributes[selected] !== attrList[selected]) {
+                                        matchSelectedAttributes = false;
+                                    }
+                                }
+                            }
+
+                            // Find all enabled values for the unselected attributes
+                            if (matchSelectedAttributes && attrList[attrName2]) {
+                                if (!attributesToEnable[attrName2NQ]) {
+                                    attributesToEnable[attrName2NQ] = [];
+                                }
+                                if (attributesToEnable[attrName2NQ].indexOf(attrList[attrName2].replace(/^\s+|\s+$/g, '')) == -1) {
+                                    attributesToEnable[attrName2NQ].push(attrList[attrName2].replace(/^\s+|\s+$/g, ''));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //Flag all attributes that should be enabled as enabled
+        for (var i in dropdownsToUpdate) {
+            var attrValues = attributesToEnable[this.removeQuotes(dropdownsToUpdate[i].name)];
+            if (attrValues) {
+                for (var j = 0; j < dropdownsToUpdate[i].options.length; j++) {
+                    var dropdownToUpdateOption = dropdownsToUpdate[i].options[j];
+                    if (attrValues.indexOf(dropdownToUpdateOption.value.replace(/^\s+|\s+$/g, '')) != -1 || dropdownToUpdateOption.value === '') {
+                        dropdownToUpdateOption.enabled = true;
+                    }
+                }
+            }
+        }
+
+        //Set all dropdown options that are enabled to disabled = false, others to disabled = true
+        for (var i in dropdownsToUpdate) {
+            if (dropdownsToUpdate[i].options) {
+                for (var j = 0; j < dropdownsToUpdate[i].options.length; j++) {
+                    var dropdownToUpdateOption = dropdownsToUpdate[i].options[j];
+
+                    if (dropdownToUpdateOption.enabled) {
+                        dropdownToUpdateOption.disabled = false;
+                    } else {
+                        dropdownToUpdateOption.disabled = true;
+                    }
+
+                    delete dropdownToUpdateOption.enabled;
+                }
+
+                var dropdown = $(dropdownsToUpdate[i].node);
+                dropdown.Select("refresh");
+            }
+        }
+    },
+
+    /**
      * Constructs record and add to this.allSwatchesArray.
      * @param {String} swatchName The name of the swatch attribute.
-     * @param {String} swatchValue The value of the swatch attribute.	
+     * @param {String} swatchValue The value of the swatch attribute.
      * @param {String} swatchImg1 The path to the swatch image.
+     * @param {String} swatchImg2 The path to the swatch image representing disabled state.
      **/
-    addToAllSwatchsArray: function (swatchName, swatchValue, swatchImg1, entitledItemId, swatchDisplayValue) {
+    addToAllSwatchsArray: function (swatchName, swatchValue, swatchImg1, entitledItemId, swatchDisplayValue, swatchImg2) {
         var swatchList = this.allSwatchesArrayList[entitledItemId];
         if (swatchList == null) {
             swatchList = [];;
@@ -75542,6 +80069,7 @@ orderId: "."};
             swatchRecord[0] = swatchName;
             swatchRecord[1] = swatchValue;
             swatchRecord[2] = swatchImg1;
+            swatchRecord[3] = swatchImg2;
             swatchRecord[4] = document.getElementById("swatch_link_" + entitledItemId + "_" + swatchValue).onclick;
             swatchRecord[5] = null;
             swatchRecord[6] = swatchDisplayValue;
@@ -75551,9 +80079,33 @@ orderId: "."};
     },
 
     /**
+     * Constructs record and add to this.allDropdownsArray.
+     * @param {String} attributeName The name of the dropdown attribute.
+     * @param {String} dropdownId The id of the dropdown.
+     **/
+    addToAllDropdownsArray: function (attributeName, dropdownId, entitledItemId) {
+        var dropdownList = this.allDropdownsList[entitledItemId];
+        if (dropdownList == null) {
+            dropdownList = [];
+        }
+
+        var dropdownNode = this.findDropdownById(dropdownId);
+
+        if (!this.existInAllDropdownsArray(attributeName, dropdownId, dropdownList)) {
+            dropdownList.push({
+                name: attributeName,
+                id: dropdownId,
+                node: dropdownNode,
+                options: $(dropdownNode).find("option"),
+            });
+            this.allDropdownsList[entitledItemId] = dropdownList;
+        }
+    },
+
+    /**
      * Checks if a swatch is already exist in this.allSwatchesArray.
      * @param {String} swatchName The name of the swatch attribute.
-     * @param {String} swatchValue The value of the swatch attribute.		
+     * @param {String} swatchValue The value of the swatch attribute.
      * @return boolean Value indicating whether or not the specified swatch name and value exists in the allSwatchesArray.
      */
     existInAllSwatchsArray: function (swatchName, swatchValue, swatchList) {
@@ -75568,9 +80120,24 @@ orderId: "."};
     },
 
     /**
+     * Checks if a dropdown already exists in this.allDropdownsArray.
+     * @param {String} dropdownName The name of the dropdown.
+     * @param {String} dropdownId The id of the dropdown.
+     * @return boolean Value indicating whether or not the specified dropdown name and value exists in the allDropdownsArray.
+     */
+    existInAllDropdownsArray: function (dropdownName, dropdownId, dropdownsList) {
+        for (var i = 0; i < dropdownsList.length; i++) {
+            if (dropdownsList[i].name == dropdownName && dropdownsList[i].id == dropdownId) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
      * Check the entitledItems array and pre-select the first entited SKU as the default swatch selection.
      * @param {String} entitledItemId The ID of the SKU.
-     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.		
+     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.
      **/
     makeDefaultSwatchSelection: function (entitledItemId, doNotDisable) {
         if (this.entitledItems.length == 0) {
@@ -75598,7 +80165,7 @@ orderId: "."};
      * entitlement and disable swatches that are not available
      * @param selectedAttrName The attribute that is selected
      * @param {String} entitledItemId The ID of the SKU.
-     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.	
+     * @param {String} doNotDisable The name of the swatch attribute that should never be disabled.
      **/
     updateSwatchImages: function (selectedAttrName, entitledItemId, doNotDisable, imageField) {
         var swatchToUpdate = [];
@@ -75620,6 +80187,7 @@ orderId: "."};
                 swatchRecord[0] = attrName;
                 swatchRecord[1] = attrValue;
                 swatchRecord[2] = attrImg1;
+                swatchRecord[3] = attrImg2;
                 swatchRecord[4] = attrOnclick;
                 swatchRecord[5] = false;
                 swatchRecord[6] = attrDisplayValue;
@@ -75628,7 +80196,7 @@ orderId: "."};
         }
 
         // finds out which swatch is entitled, if it is, image should be set to enabled
-        // go through entitledItems array and find out swatches that are entitled 
+        // go through entitledItems array and find out swatches that are entitled
         for (x in this.entitledItems) {
             var Attributes = this.entitledItems[x].Attributes;
 
@@ -75675,7 +80243,11 @@ orderId: "."};
                 if (document.getElementById("swatch_" + entitledItemId + "_" + swatchToUpdateValue).className != "color_swatch_selected") {
                     var swatchElement = document.getElementById("swatch_" + entitledItemId + "_" + swatchToUpdateValue);
                     swatchElement.className = "color_swatch";
-                    swatchElement.src = swatchElement.src.replace("_disabled.png", "_enabled.png");
+                    if (swatchToUpdateImg1 != "" && swatchToUpdateImg2 != "") {
+                        swatchElement.src = swatchToUpdateImg1;
+                    } else {
+                        swatchElement.src = swatchElement.src.replace("_disabled.png","_enabled.png");
+                    }
 
                     //change the title text of the swatch link
                     document.getElementById("swatch_link_" + entitledItemId + "_" + swatchToUpdateValue).title = swatchElement.alt;
@@ -75688,7 +80260,11 @@ orderId: "."};
                     var swatchLinkElement = document.getElementById("swatch_link_" + entitledItemId + "_" + swatchToUpdateValue);
                     swatchElement.className = "color_swatch_disabled";
                     swatchLinkElement.onclick = null;
-                    swatchElement.src = swatchElement.src.replace("_enabled.png", "_disabled.png");
+                    if (swatchToUpdateImg1 != "" && swatchToUpdateImg2 != "") {
+                        swatchElement.src = swatchToUpdateImg1;
+                    } else {
+                        swatchElement.src = swatchElement.src.replace("_enabled.png", "_disabled.png");
+                    }
 
                     //change the title text of the swatch link
 
@@ -75727,9 +80303,9 @@ orderId: "."};
     /* SwatchCode end */
 
     /**
-     * This function is used to change the price displayed in the Product Display Page on change of  a attribute of the product using an AJAX call. 
+     * This function is used to change the price displayed in the Product Display Page on change of  a attribute of the product using an AJAX call.
      * This function will resolve the catentryId using entitledItemId and displays the price of the catentryId.
-     *				
+     *
      * @param {Object} entitledItemId A DIV containing a JSON object which holds information about a catalog entry. You can reference CachedProductOnlyDisplay.jsp to see how that div is constructed.
      * @param {Boolean} isPopup If the value is true, then this implies that the function was called from a quick info pop-up.
      * @param {Boolean} displayPriceRange If the value is true, then display the price range. If it is false then donot display the price range.
@@ -75741,10 +80317,10 @@ orderId: "."};
         var entitledItemJSON;
 
         if ($("#" + entitledItemId).length && !this.isPopup) {
-            //the json object for entitled items are already in the HTML. 
+            //the json object for entitled items are already in the HTML.
             entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
         } else {
-            //if $("#"+ entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object. 
+            //if $("#"+ entitledItemId).length is 0, that means there's no <div> in the HTML that contains the JSON object.
             //in this case, it must have been set in catalogentryThumbnailDisplay.js when the quick info
             entitledItemJSON = this.getEntitledItemJsonObject();
         }
@@ -75799,9 +80375,9 @@ orderId: "."};
 
     },
 
-    /** 
+    /**
      * Displays price of the catEntry selected with the JSON objrct returned from the server.
-     * 
+     *
      * @param {object} serviceRepsonse The JSON response from the service.
      * @param {object} ioArgs The arguments from the service call.
      */
@@ -75813,9 +80389,9 @@ orderId: "."};
         shoppingActionsJS.displayPrice(serviceResponse.catalogEntry, productId);
     },
 
-    /** 
+    /**
      * Displays price of the attribute selected with the JSON oject.
-     * 
+     *
      * @param {object} catEntry The JSON object with catalog entry details.
      */
     displayPrice: function (catEntry, productId) {
@@ -75842,6 +80418,11 @@ orderId: "."};
                 innerHTML = "<span id='listPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' class='old_price'>" + catEntry.listPrice + "</span>" +
                     "<span id='offerPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' class='price'>" + catEntry.offerPrice + "</span>";
             }
+
+            if (flowEnabled.ProductTotalWithVAT) {
+                innerHTML = innerHTML + "<span class='vat-include'><p>"+ Utils.getLocalizationMessage('VAT_INCL') +"</p></span>";
+            }
+
             document.getElementById('price_display_' + productId).innerHTML = innerHTML + "<input type='hidden' id='ProductInfoPrice_" + catEntry.catalogEntryIdentifier.uniqueID + "' value='" + catEntry.offerPrice + "'/>";
 
             innerHTML = "";
@@ -76086,10 +80667,9 @@ orderId: "."};
         if ('' != categoryIds.categoryId) {
             url = url + "&categoryId=" + categoryIds.categoryId;
         }
-		if (manufacturer != undefined && '' != manufacturer) {
-			url = url + "&manufacturer=" + manufacturer;
-		}
-		
+        if (manufacturer != undefined && '' != manufacturer) {
+            url = url + "&manufacturer=" + manufacturer;
+        }
         var cookieKey = this.cookieKeyPrefix + this.storeId;
         var cookieValue = getCookie(cookieKey);
         if (cookieValue != null && cookieValue.trim() != "") {
@@ -76107,7 +80687,7 @@ orderId: "."};
 
     /**
      * Sets the quantity of a product in the list (bundle)
-     * 
+     *
      * @param {String} catalogEntryType, type of catalogEntry (item/product/bundle/package)
      * @param {int} catalogEntryId The catalog entry identifer to current product.
      * @param {int} quantity The quantity of current product.
@@ -76134,7 +80714,7 @@ orderId: "."};
 
     /**
      * Sets the quantity of a product in the list (bundle)
-     * 
+     *
      * @param {int} catalogEntryId The catalog entry identifer to current product.
      * @param {int} quantity The quantity of current product.
      */
@@ -76162,7 +80742,7 @@ orderId: "."};
 
     /**
      * Sets the price of a product in the list (bundle)
-     * 
+     *
      * @param {int} catalogEntryId The catalog entry identifer to current product.
      * @param {int} price The price of current product.
      */
@@ -76175,27 +80755,26 @@ orderId: "."};
 
     /**
      * Select bundle item swatch
-     * 
+     *
      * @param {int} catalogEntryId The catalog entry identifer to current product.
      * @param {String} swatchName
      * @param {String} swatchValue
      * @param {String} doNotDisable, the first swatch, that should not be disabled
      */
     selectBundleItemSwatch: function (catalogEntryId, swatchName, swatchValue, doNotDisable) {
-        if ($("#swatch_" + catalogEntryId + "_" + swatchName + "_" + swatchValue).hasClass("color_swatch_disabled")) {
+        if ($("[id='swatch_" + catalogEntryId + "_" + swatchName + "_" + swatchValue + "']").hasClass("color_swatch_disabled")) {
             return;
         }
         if ($("#entitledItem_" + catalogEntryId).length) {
             var entitledItemJSON;
             var currentSwatchkey = swatchName + "_" + swatchValue;
-            //the json object for entitled items are already in the HTML. 
+            //the json object for entitled items are already in the HTML.
             entitledItemJSON = JSON.stringify($("#entitledItem_" + catalogEntryId).html());
             var validSwatchArr = [];
             for (idx in entitledItemJSON) {
                 var validItem = false;
                 var entitledItem = entitledItemJSON[idx];
                 for (attribute in entitledItem.Attributes) {
-
                     if (currentSwatchkey == attribute) {
                         validItem = true;
                         break;
@@ -76238,12 +80817,9 @@ orderId: "."};
                             document.getElementById(swatchId).src = document.getElementById(swatchId).src.replace("_enabled.png", "_disabled.png");
 
                             //change the title text of the swatch link
-			    
-			    var altText = document.getElementById(swatchId).alt;
+                            var altText = document.getElementById(swatchId).alt;
                             var titleText = Utils.getLocalizationMessage("INV_ATTR_UNAVAILABLE", [altText]);
-                            
 
-                           
                             $("#" + swatchLinkId).attr("aria-disabled", "true");
                         }
                     }
@@ -76268,10 +80844,10 @@ orderId: "."};
             }
         }
 
-        if ($("#swatch_selection_" + catalogEntryId + "_" + swatchName).css("display") == ("none")) {
-            $("#swatch_selection_" + catalogEntryId + "_" + swatchName).css("display", "inline");
+        if ($("[id='swatch_selection_" + catalogEntryId + "_" + swatchName + "']").css("display") == ("none")) {
+            $("[id='swatch_selection_" + catalogEntryId + "_" + swatchName + "']").css("display", "inline");
         }
-        $("#swatch_selection_" + catalogEntryId + "_" + swatchName).html(swatchValue);
+        $("[id='swatch_selection_" + catalogEntryId + "_" + swatchName + "']").html(swatchValue);
 
         var swatchItem = "swatch_" + catalogEntryId + "_" + swatchName + "_";
         var swatchItemLink = "swatch_link_" + catalogEntryId + "_" + swatchName + "_";
@@ -76285,7 +80861,7 @@ orderId: "."};
             $(node).removeClass("color_swatch_selected");
         });
 
-        $("#" + swatchItem + swatchValue).attr("className", "color_swatch_selected");
+        $("[id='" + swatchItem + swatchValue + "']").attr("class", "color_swatch_selected");
         document.getElementById(swatchItemLink + swatchValue).setAttribute("aria-checked", "true");
 
         this.setSelectedAttributeOfProduct(catalogEntryId, swatchName, swatchValue, false);
@@ -76297,7 +80873,7 @@ orderId: "."};
     changeBundleItemImage: function (catalogEntryId, swatchAttrName, swatchAttrValue, skuImageId) {
         var entitledItemId = "entitledItem_" + catalogEntryId;
         if ($("#" + entitledItemId).length) {
-            //the json object for entitled items are already in the HTML. 
+            //the json object for entitled items are already in the HTML.
             entitledItemJSON = eval('(' + $("#" + entitledItemId).html() + ')');
         }
 
@@ -76374,6 +80950,30 @@ orderId: "."};
         });
     },
 
+    findDropdownById: function (node) {
+        var newNode = this.removeQuotes(node);
+        var nodes = $('[id^=attrValue_]');
+        var foundNode = null;
+
+        $(nodes).each(function (key, domNode) {
+            var id = shoppingActionsJS.removeQuotes(domNode.id);
+            if (newNode === id) {
+                foundNode = domNode;
+            }
+        });
+
+        return foundNode;
+    },
+
+    removeQuotes: function (str) {
+        return str && str.replace(/&#039;/g, '').replace(/\\'/g, '').replace(/'/g, '');
+        // if (str) {
+        //     return str.replace(/&#039;/g, '').replace(/\\'/g, '').replace(/'/g, '');
+        // } else {
+        //     return str;
+        // }
+    },
+
     /**
      * replaceItemAjaxHelper This function is used to replace an item in the cart. This will be called from the {@link this.ReplaceItemAjax} method.
      *
@@ -76407,7 +81007,7 @@ orderId: "."};
             catEntryId: catalogEntryId,
             quantity: qty,
             orderId: ".",
-	    calculateOrder: "1"
+        calculateOrder: "1"
         };
         if (CheckoutHelperJS.shoppingCartPage) {
             params2.calculationUsage = "-1,-2,-5,-6,-7";
@@ -76581,15 +81181,12 @@ $(document).ready(function () {
     }
 });
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -76774,7 +81371,7 @@ shoppingActionsServicesDeclarationJS = {
 				}
 			}
 			if(typeof(ShipmodeSelectionExtJS)!= null && typeof(ShipmodeSelectionExtJS)!='undefined'){
-				ShipmodeSelectionExtJS.setOrderItemId(serviceResponse.orderItem[0].orderItemId);
+				ShipmodeSelectionExtJS.setOrderItemId((serviceResponse.orderItem != null && serviceResponse.orderItem[0].orderItemId != null) ? serviceResponse.orderItem[0].orderItemId : serviceResponse.orderItemId);
 			}
 		}
      /**
@@ -76804,15 +81401,12 @@ shoppingActionsServicesDeclarationJS = {
 
 	})
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -77127,15 +81721,12 @@ wcRenderContext.declare("TopCategoryTallDoubleESpot_Context", [], {emsName: ""})
 
 wcRenderContext.declare("AttachmentPagination_Context", [], {beginIndex: "0"})
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -77817,16 +82408,14 @@ CommonControllersDeclarationJS = {
         // id: "TopCategoryTallDoubleESpot_Controller",
         // id: "AttachmentPagination_Controller",
 
+null
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -77956,15 +82545,12 @@ CommonControllersDeclarationJS = {
 	})
 	
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78017,16 +82603,14 @@ var GeolocationJS = {
         }
     }
 
-};//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+};
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -78114,6 +82698,7 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
         setMessage: function (key, msg) {
             this.messages[key] = msg;
         },
+
         /**
          * This function is used to initialize the element that needs to give focus to on dialog dismissal.
          * @param (string) element The element needs to give focus to.
@@ -78122,8 +82707,6 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
         setFocusElement: function (element) {
             this.focusElement = element;
         },
-
-
 
         /**
          * Use fadeIn and fadeOut to display error and informative messages in the store.
@@ -78141,8 +82724,6 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
             }
             // fade in
             $(node).fadeIn(200);
-
-
         },
 
         /**
@@ -78206,7 +82787,6 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
             }
         },
 
-
         /**
          * Sets the style for the message area on the page.
          * @param (String) styleId The style Id.
@@ -78218,7 +82798,6 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
                 $("#" + styleId).css("display", "inline");
             }
         },
-
 
         /**
          * This function is used to display the informative messages to the user.
@@ -78281,7 +82860,7 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
          * around the input field with the problem.
          *
          * The function assumes the "serviceResponse" is the
-         * JSON object from a WebSphere Commerce exception. The error
+         * JSON object from a HCL Commerce exception. The error
          * field is in the serviceResponse.errorMessageParam and the
          * error message is in the serviceResponse.errorMessage.
          *
@@ -78291,11 +82870,8 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
          * 
          */
         formErrorHandle: function (serviceResponse, formName) {
-
             this.formErrorHandleClient(serviceResponse.errorMessageParam, serviceResponse.errorMessage);
-
         },
-
 
         /**
          * This function will show the an error message tooltip
@@ -78336,7 +82912,6 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
                         node.innerHTML = errorMessage;
                     }
 
-                    
                     if (Utils.hasTouch()) {
                         var _this = this;
                         setTimeout(function () {
@@ -78390,240 +82965,234 @@ if (typeof (MessageHelper) == "undefined" || !MessageHelper || !MessageHelper.to
                         message: errorMessage
                     });
                 }
-	}
-            },
+            }
+        },
 
-            /**
-             * This function hides and destroys the current form error handler tooltip that is displayed
-             * and clears the identifier that is currently tracked.
-             */
-            hideFormErrorHandle: function () {
-                    if (this.tooltip != null) {
-                        this.tooltip.destroyRecursive();
-                        this.tooltip = null;
-                        this.clearCurrentIdentifier();
-                    }
-                },
+        /**
+         * This function hides and destroys the current form error handler tooltip that is displayed
+         * and clears the identifier that is currently tracked.
+         */
+        hideFormErrorHandle: function () {
+            if (this.tooltip != null) {
+                this.tooltip.hide();
+                this.tooltip.remove();
+                this.tooltip = null;
+                this.clearCurrentIdentifier();
+            }
+        },
 
-                /**
-                 * This function clears the internal variable that has the element id
-                 * with the error tooltip.
-                 * 
-                 */
-                clearCurrentIdentifier: function () {
+        /**
+         * This function clears the internal variable that has the element id
+         * with the error tooltip.
+         * 
+         */
+        clearCurrentIdentifier: function () {
+            this.identifier = "";
+        },
 
-                    this.identifier = "";
-                },
+        /**
+         * This function is used to override any of the default functions
+         * associated with the events. Ex: Tooltip widget tracks onMouseOver event
+         * and display the tooltip. To remove this association,
+         * tooltip widgets onMouseOver function will be overridden by this empty
+         * function.
+         * 
+         * It is an empty implementation which does nothing.
+         *
+         * @param (string) event  The event which triggers this function. 
+         */
+        emptyFunc: function (event) {
 
-                /**
-                 * This function is used to override any of the default functions
-                 * associated with the events. Ex: Tooltip widget tracks onMouseOver event
-                 * and display the tooltip. To remove this association,
-                 * tooltip widgets onMouseOver function will be overridden by this empty
-                 * function.
-                 * 
-                 * It is an empty implementation which does nothing.
-                 *
-                 * @param (string) event  The event which triggers this function. 
-                 */
-                emptyFunc: function (event) {
+        },
 
-                },
+        /**
+         * Checks whether a string contains a double byte character.
+         *
+         * @param (string) target the string to be checked
+         * @return (boolean) true if target contains a double byte char;
+         * false otherwise
+         */
+        containsDoubleByte: function (target) {
+            var str = new String(target);
+            var oneByteMax = 0x007F;
 
+            for (var i = 0; i < str.length; i++) {
+                chr = str.charCodeAt(i);
+                if (chr > oneByteMax) {
+                    return true;
+                }
+            }
+            return false;
+        },
 
+        /**
+         * This function validate email address. It does not allow double byte
+         * characters in the email address.
+         *
+         * @return (boolean) true if the email address is valid; false otherwise
+         *
+         * @param (string) strEmail the email address string to be validated
+         */
+        isValidEmail: function (strEmail) {
 
-                /**
-                 * Checks whether a string contains a double byte character.
-                 *
-                 * @param (string) target the string to be checked
-                 * @return (boolean) true if target contains a double byte char;
-                 * false otherwise
-                 */
-                containsDoubleByte: function (target) {
+            if (this.containsDoubleByte(strEmail)) {
+                return false;
+            }
 
-                    var str = new String(target);
-                    var oneByteMax = 0x007F;
-
-                    for (var i = 0; i < str.length; i++) {
-                        chr = str.charCodeAt(i);
-                        if (chr > oneByteMax) {
-                            return true;
-                        }
-                    }
+            if (strEmail.length == 0) {
+                return true;
+            } else if (strEmail.length < 5) {
+                return false;
+            } else {
+                if (strEmail.indexOf(" ") > 0) {
                     return false;
-                },
-
-                /**
-                 * This function validate email address. It does not allow double byte
-                 * characters in the email address.
-                 *
-                 * @return (boolean) true if the email address is valid; false otherwise
-                 *
-                 * @param (string) strEmail the email address string to be validated
-                 */
-                isValidEmail: function (strEmail) {
-
-                    if (this.containsDoubleByte(strEmail)) {
-                        return false;
-                    }
-
-                    if (strEmail.length == 0) {
-                        return true;
-                    } else if (strEmail.length < 5) {
+                } else {
+                    if (strEmail.indexOf("@") < 1) {
                         return false;
                     } else {
-                        if (strEmail.indexOf(" ") > 0) {
+                        if (strEmail.lastIndexOf(".") < (strEmail.indexOf("@") + 2)) {
                             return false;
                         } else {
-                            if (strEmail.indexOf("@") < 1) {
+                            if (strEmail.lastIndexOf(".") >= strEmail.length - 2) {
                                 return false;
-                            } else {
-                                if (strEmail.lastIndexOf(".") < (strEmail.indexOf("@") + 2)) {
-                                    return false;
-                                } else {
-                                    if (strEmail.lastIndexOf(".") >= strEmail.length - 2) {
-                                        return false;
-                                    }
-                                }
                             }
                         }
                     }
-                    return true;
-                },
-
-                /**
-                 * This function will check if the number of bytes of the string
-                 * is within the maxlength specified.
-                 *
-                 * @param (string) UTF16String the UTF-16 string
-                 * @param (int) maxlength the maximum number of bytes allowed in your input
-                 *
-                 * @return (boolean) false is this input string is larger than maxlength
-                 */
-                isValidUTF8length: function (UTF16String, maxlength) {
-                    if (this.utf8StringByteLength(UTF16String) > maxlength) return false;
-                    else return true;
-                },
-
-                /**
-                 * This function will count the number of bytes represented in a UTF-8
-                 * string.
-                 *
-                 * @param (string) UTF16String the UTF-16 string you want a byte count of
-                 * @return (int) the integer number of bytes represented in a UTF-8 string
-                 */
-                utf8StringByteLength: function (UTF16String) {
-
-                    if (UTF16String === null) return 0;
-
-                    var str = String(UTF16String);
-                    var oneByteMax = 0x007F;
-                    var twoByteMax = 0x07FF;
-                    var byteSize = str.length;
-
-                    for (i = 0; i < str.length; i++) {
-                        chr = str.charCodeAt(i);
-                        if (chr > oneByteMax) byteSize = byteSize + 1;
-                        if (chr > twoByteMax) byteSize = byteSize + 1;
-                    }
-                    return byteSize;
-                },
-
-                /**
-                 * this function will check whether the text is a numeric or not.
-                 * 
-                 * @param allowDot is a boolean wich specifies whether to consider
-                 * the '.' or not.
-                 *
-                 * @return (boolean) true if text is numeric
-                 */
-                IsNumeric: function (text, allowDot) {
-                    if (allowDot) var ValidChars = "0123456789.";
-                    else var ValidChars = "0123456789";
-
-                    var IsNumber = true;
-                    var Char;
-
-
-                    for (i = 0; i < text.length && IsNumber == true; i++) {
-                        Char = text.charAt(i);
-                        if (ValidChars.indexOf(Char) == -1) {
-                            IsNumber = false;
-                        }
-                    }
-                    return IsNumber;
-                },
-
-                /**
-                 *
-                 *This function will check for a valid Phone Number
-                 *
-                 *@param (string) text The string to check
-                 *
-                 *@return (boolean) true if text is a phone number, ie if each character of
-                 *input is one of 0123456789() -+ 
-                 */
-                IsValidPhone: function (text) {
-
-                    var ValidChars = "0123456789()-+ ";
-
-                    var IsValid = true;
-                    var Char;
-
-                    for (i = 0; i < text.length && IsValid == true; i++) {
-                        Char = text.charAt(i);
-                        if (ValidChars.indexOf(Char) == -1) {
-                            IsValid = false;
-                        }
-                    }
-                    return IsValid;
-                },
-
-                /**
-                 *  To use confirmation popup, the ${StoreDirectory}/Common/ConfirmationPopup.jspf must be included
-                 *  in the jsp page where the confirmation popup launches from.
-                 *	This function launch confirmation popup
-                 * 
-                 * @param (string) topicName The name of the topic that calling widget subscribing to.
-                 * @param (stirng) message The message to be displayed in the confirmation dialog.
-                 */
-                showConfirmationDialog: function (topicName, message) {
-                    $("#confirmationPopupMessage").html(message);
-                    var confirmationPopupWidget = $("#confirmationPopup").data("wc-WCDialog"),
-                        // Also add a namespace to the click event so we 
-                        // only remove our click handler instead of other click handlers
-                        eventName = "click.MessageHelper";
-                    // Do this only once. 
-                    confirmationPopupWidget.primary_button.one(eventName, function (e) {
-                        e.preventDefault();
-                        confirmationPopupWidget.secondary_button.off(eventName);
-                        wcTopic.publish(topicName, {
-                            action: "YES"
-                        });
-                    });
-
-                    confirmationPopupWidget.secondary_button.one(eventName, function (e) {
-                        e.preventDefault();
-                        confirmationPopupWidget.primary_button.off(eventName);
-                        wcTopic.publish(topicName, {
-                            action: "NO"
-                        });
-                    });
-                    confirmationPopupWidget.open();
-
                 }
+            }
+            return true;
+        },
+
+        /**
+         * This function will check if the number of bytes of the string
+         * is within the maxlength specified.
+         *
+         * @param (string) UTF16String the UTF-16 string
+         * @param (int) maxlength the maximum number of bytes allowed in your input
+         *
+         * @return (boolean) false is this input string is larger than maxlength
+         */
+        isValidUTF8length: function (UTF16String, maxlength) {
+            if (this.utf8StringByteLength(UTF16String) > maxlength) return false;
+            else return true;
+        },
+
+        /**
+         * This function will count the number of bytes represented in a UTF-8
+         * string.
+         *
+         * @param (string) UTF16String the UTF-16 string you want a byte count of
+         * @return (int) the integer number of bytes represented in a UTF-8 string
+         */
+        utf8StringByteLength: function (UTF16String) {
+
+            if (UTF16String === null) return 0;
+
+            var str = String(UTF16String);
+            var oneByteMax = 0x007F;
+            var twoByteMax = 0x07FF;
+            var byteSize = str.length;
+
+            for (i = 0; i < str.length; i++) {
+                chr = str.charCodeAt(i);
+                if (chr > oneByteMax) byteSize = byteSize + 1;
+                if (chr > twoByteMax) byteSize = byteSize + 1;
+            }
+            return byteSize;
+        },
+
+        /**
+         * this function will check whether the text is a numeric or not.
+         * 
+         * @param allowDot is a boolean wich specifies whether to consider
+         * the '.' or not.
+         *
+         * @return (boolean) true if text is numeric
+         */
+        IsNumeric: function (text, allowDot) {
+            if (allowDot) var ValidChars = "0123456789.";
+            else var ValidChars = "0123456789";
+
+            var IsNumber = true;
+            var Char;
+
+
+            for (i = 0; i < text.length && IsNumber == true; i++) {
+                Char = text.charAt(i);
+                if (ValidChars.indexOf(Char) == -1) {
+                    IsNumber = false;
+                }
+            }
+            return IsNumber;
+        },
+
+        /**
+         *
+         *This function will check for a valid Phone Number
+         *
+         *@param (string) text The string to check
+         *
+         *@return (boolean) true if text is a phone number, ie if each character of
+         *input is one of 0123456789() -+ 
+         */
+        IsValidPhone: function (text) {
+
+            var ValidChars = "0123456789()-+ ";
+
+            var IsValid = true;
+            var Char;
+
+            for (i = 0; i < text.length && IsValid == true; i++) {
+                Char = text.charAt(i);
+                if (ValidChars.indexOf(Char) == -1) {
+                    IsValid = false;
+                }
+            }
+            return IsValid;
+        },
+
+        /**
+         *  To use confirmation popup, the ${StoreDirectory}/Common/ConfirmationPopup.jspf must be included
+         *  in the jsp page where the confirmation popup launches from.
+         *  This function launch confirmation popup
+         * 
+         * @param (string) topicName The name of the topic that calling widget subscribing to.
+         * @param (stirng) message The message to be displayed in the confirmation dialog.
+         */
+        showConfirmationDialog: function (topicName, message) {
+            $("#confirmationPopupMessage").html(message);
+            var confirmationPopupWidget = $("#confirmationPopup").data("wc-WCDialog"),
+                // Also add a namespace to the click event so we 
+                // only remove our click handler instead of other click handlers
+                eventName = "click.MessageHelper";
+            // Do this only once. 
+            confirmationPopupWidget.primary_button.one(eventName, function (e) {
+                e.preventDefault();
+                confirmationPopupWidget.secondary_button.off(eventName);
+                wcTopic.publish(topicName, {
+                    action: "YES"
+                });
+            });
+
+            confirmationPopupWidget.secondary_button.one(eventName, function (e) {
+                e.preventDefault();
+                confirmationPopupWidget.primary_button.off(eventName);
+                wcTopic.publish(topicName, {
+                    action: "NO"
+                });
+            });
+            confirmationPopupWidget.open();
+
         }
     }
+}
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -78813,15 +83382,12 @@ wcService.declare({
 
 	})
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2013 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 if(typeof(ResponsiveJS) == "undefined" || ResponsiveJS == null || !ResponsiveJS){
@@ -78904,15 +83470,12 @@ if(typeof(ResponsiveJS) == "undefined" || ResponsiveJS == null || !ResponsiveJS)
  };
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -79073,6 +83636,113 @@ function nullCartTotalCookie(orderId){
 			cursor_clear();
 		}
 
+	}),
+	
+	/**
+	 * Add an item to a shopping cart in Ajax mode. A message is displayed after
+	 * the service call.
+	 * @constructor
+	 */
+	wcService.declare({
+		id: "AjaxRESTOrderAddConfigurationToCart",
+		actionId: "AjaxRESTOrderAddConfigurationToCart",
+		url: getAbsoluteURL() + "AjaxRESTOrderAddConfigurationToCart",
+		formId: ""
+
+	 /**
+	 * display a success message
+	 * @param (object) serviceResponse The service response object, which is the
+	 * JSON object returned by the service invocation
+	 */
+		,successHandler: function(serviceResponse) {
+			console.log(serviceResponse);
+			if (!CheckoutHelperJS.pendingOrderDetailsPage)
+			{
+				document.location.href = appendWcCommonRequestParameters("AjaxOrderItemDisplayView?storeId=" + ServicesDeclarationJS.storeId + "&catalogId=" + ServicesDeclarationJS.catalogId + "&langId=" + ServicesDeclarationJS.langId);
+			}
+			else
+			{
+				cursor_clear();
+			}
+		}
+
+	 /**
+	 * display an error message
+	 * @param (object) serviceResponse The service response object, which is the
+	 * JSON object returned by the service invocation
+	 */
+		,failureHandler: function(serviceResponse) {
+			console.log(serviceResponse);
+			if (serviceResponse.errorMessage) {
+				if(serviceResponse.errorMessageKey == "_ERR_NO_ELIGIBLE_TRADING"){
+					MessageHelper.displayErrorMessage(MessageHelper.messages["ERROR_CONTRACT_EXPIRED_GOTO_ORDER"]);
+				} else if (serviceResponse.errorMessageKey == "_ERR_RETRIEVE_PRICE") {
+					MessageHelper.displayErrorMessage(MessageHelper.messages["ERROR_RETRIEVE_PRICE"]);
+				} else {
+					MessageHelper.displayErrorMessage(serviceResponse.errorMessage);
+				}
+			}
+			else {
+				 if (serviceResponse.errorMessageKey) {
+					MessageHelper.displayErrorMessage(serviceResponse.errorMessageKey);
+				 }
+			}
+			cursor_clear();
+		}
+	}),
+	
+	/**
+	 * Add an item to a shopping cart in Ajax mode. A message is displayed after
+	 * the service call.
+	 * @constructor
+	 */
+	wcService.declare({
+		id: "AjaxOrderUpdateConfigurationInCart",
+		actionId: "AjaxOrderUpdateConfigurationInCart",
+		url: getAbsoluteURL() + "AjaxRESTOrderUpdateConfigurationInCart",
+		formId: ""
+
+	 /**
+	 * display a success message
+	 * @param (object) serviceResponse The service response object, which is the
+	 * JSON object returned by the service invocation
+	 */
+		,successHandler: function(serviceResponse) {
+			console.log(serviceResponse);
+			if (!CheckoutHelperJS.pendingOrderDetailsPage)
+			{
+				document.location.href = appendWcCommonRequestParameters("AjaxOrderItemDisplayView?storeId=" + ServicesDeclarationJS.storeId + "&catalogId=" + ServicesDeclarationJS.catalogId + "&langId=" + ServicesDeclarationJS.langId);
+			}
+			else
+			{
+				cursor_clear();
+			}
+		}
+
+	 /**
+	 * display an error message
+	 * @param (object) serviceResponse The service response object, which is the
+	 * JSON object returned by the service invocation
+	 */
+		,failureHandler: function(serviceResponse) {
+			console.log(getAbsoluteURL() + "AjaxRESTOrderUpdateConfigurationInCart");
+			console.log(serviceResponse);
+			if (serviceResponse.errorMessage) {
+				if(serviceResponse.errorMessageKey == "_ERR_NO_ELIGIBLE_TRADING"){
+					MessageHelper.displayErrorMessage(MessageHelper.messages["ERROR_CONTRACT_EXPIRED_GOTO_ORDER"]);
+				} else if (serviceResponse.errorMessageKey == "_ERR_RETRIEVE_PRICE") {
+					MessageHelper.displayErrorMessage(MessageHelper.messages["ERROR_RETRIEVE_PRICE"]);
+				} else {
+					MessageHelper.displayErrorMessage(serviceResponse.errorMessage);
+				}
+			}
+			else {
+				 if (serviceResponse.errorMessageKey) {
+					MessageHelper.displayErrorMessage(serviceResponse.errorMessageKey);
+				 }
+			}
+			cursor_clear();
+		}
 	}),
 
    /**
@@ -80245,7 +84915,7 @@ wcService.declare({
 	wcService.declare({
 		id: "AjaxOrderCreate",
 		actionId: "AjaxOrderCreate",
-		url: getAbsoluteURL() + "AjaxOrderCreate",
+		url: getAbsoluteURL() + "AjaxRESTOrderCreate",
 		formId: ""
 
 	 /**
@@ -80255,7 +84925,7 @@ wcService.declare({
 	 */
 		,successHandler: function(serviceResponse) {
 			MessageHelper.hideAndClearMessage();
-			MessageHelper.displayStatusMessage(MessageHelper.messages["ORDER_CREATED"]);
+			MessageHelper.displayStatusMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_CREATE_SUCCESS"]);
 
 			cursor_clear();
 
@@ -80272,7 +84942,7 @@ wcService.declare({
 
 				 if (serviceResponse.errorCode == "CMN0409E")
 				 {
-					 MessageHelper.displayErrorMessage(MessageHelper.messages["ORDER_NOT_CREATED"]);
+					 MessageHelper.displayErrorMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_CREATE_FAIL"]);
 				 }
 				 else
 				 {
@@ -80305,7 +84975,7 @@ wcService.declare({
 	 */
 		,successHandler: function(serviceResponse) {
 			MessageHelper.hideAndClearMessage();
-			MessageHelper.displayStatusMessage(MessageHelper.messages["ORDERS_CANCELLED"]);
+			MessageHelper.displayStatusMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_DELETE_SUCCESS"]);
 			cursor_clear();
 		}
 
@@ -80319,7 +84989,7 @@ wcService.declare({
 			if (serviceResponse.errorMessage) {
 				 if (serviceResponse.errorCode == "CMN0409E")
 				 {
-					 MessageHelper.displayErrorMessage(MessageHelper.messages["ORDER_NOT_CANCELLED"]);
+					 MessageHelper.displayErrorMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_DELETE_FAIL"]);
 				 }
 				 else
 				 {
@@ -80351,8 +85021,10 @@ wcService.declare({
 	 * JSON object returned by the service invocation
 	 */
 		,successHandler: function(serviceResponse) {
-			// Call again to delete any other orders in the list.
-			savedOrdersJS.cancelSavedOrder(false);
+			if (typeof(savedOrdersJS) != null && typeof(savedOrdersJS) != 'undefined') {
+				// Call again to delete any other orders in the list.
+				savedOrdersJS.cancelSavedOrder(false);
+			}
 		}
 
 	 /**
@@ -80388,7 +85060,7 @@ wcService.declare({
 	wcService.declare({
 		id: "AjaxOrderSave",
 		actionId: "AjaxOrderSave",
-		url: getAbsoluteURL() + "AjaxOrderCopy",
+		url: getAbsoluteURL() + "AjaxRESTOrderCopy",
 		formId: ""
 
 	 /**
@@ -80397,8 +85069,10 @@ wcService.declare({
 	 * JSON object returned by the service invocation
 	 */
 		,successHandler: function(serviceResponse) {
-			// Call again to delete any other orders in the list.
-			savedOrdersJS.saveOrder(false);
+			if (typeof(savedOrdersJS) != null && typeof(savedOrdersJS) != 'undefined') {
+				// Call again to delete any other orders in the list.
+				savedOrdersJS.saveOrder(false);
+			}
 		}
 
 	 /**
@@ -80447,9 +85121,11 @@ wcService.declare({
 
 			MessageHelper.hideAndClearMessage();
 
-			MessageHelper.displayStatusMessage(MessageHelper.messages["ORDER_SET_CURRENT"]);
-
-			savedOrdersJS.determinePageForward("AjaxSetPendingOrder");
+			MessageHelper.displayStatusMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_SET_AS_CURRENT_SUCCESS"]);
+			
+			if (typeof(savedOrdersJS) != null && typeof(savedOrdersJS) != 'undefined') {
+				savedOrdersJS.determinePageForward("AjaxSetPendingOrder");
+			}
 
 			cursor_clear();
 
@@ -80464,7 +85140,7 @@ wcService.declare({
 			if (serviceResponse.errorMessage) {
 				 if (serviceResponse.errorCode == "CMN0409E" || serviceResponse.errorCode == "CMN1024E")
 				 {
-					 MessageHelper.displayErrorMessage(MessageHelper.messages["ORDER_NOT_SET_CURRENT"]);
+					 MessageHelper.displayErrorMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_SET_AS_CURRENT_FAIL"]);
 				 }
 				 else
 				 {
@@ -80502,8 +85178,9 @@ wcService.declare({
 	 */
 
 		,successHandler: function(serviceResponse) {
-
-			savedOrdersJS.determinePageForward("AjaxUpdatePendingOrder");
+			if (typeof(savedOrdersJS) != null && typeof(savedOrdersJS) != 'undefined') {
+				savedOrdersJS.determinePageForward("AjaxUpdatePendingOrder");
+			}
 			cursor_clear();
 
 		}
@@ -80541,7 +85218,7 @@ wcService.declare({
 	wcService.declare({
 		id: "AjaxSingleOrderCopy",
 		actionId: "AjaxSingleOrderCopy",
-		url: getAbsoluteURL() + "AjaxOrderCopy",
+		url: getAbsoluteURL() + "AjaxRESTOrderCopy",
 		formId: ""
 
 	 /**
@@ -80554,9 +85231,9 @@ wcService.declare({
 
 		var params = [];
 
-		params.storeId		= ServicesDeclarationJS.storeId;
-		params.catalogId	= ServicesDeclarationJS.catalogId;
-		params.langId		= ServicesDeclarationJS.langId;
+		params.storeId		= this.storeId;
+		params.catalogId	= this.catalogId;
+		params.langId		= this.langId;
 		params.URL="";
 		params.updatePrices = "1";
 
@@ -80602,7 +85279,7 @@ wcService.declare({
 	wcService.declare({
 		id: "AjaxOrderCopy",
 		actionId: "AjaxOrderCopy",
-		url: getAbsoluteURL() + "AjaxOrderCopy",
+		url: getAbsoluteURL() + "AjaxRESTOrderCopy",
 		formId: ""
 
 	/**
@@ -80675,7 +85352,7 @@ wcService.declare({
 		,successHandler: function(serviceResponse) {
 
 			MessageHelper.hideAndClearMessage();
-			MessageHelper.displayStatusMessage(MessageHelper.messages["ORDER_COPIED"]);
+			MessageHelper.displayStatusMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_CALCULATE_SUCCESS"]);
 			cursor_clear();
 		}
 
@@ -80689,7 +85366,7 @@ wcService.declare({
 			if (serviceResponse.errorMessage) {
 				if (serviceResponse.errorCode == "CMN0409E")
 				 {
-					 MessageHelper.displayErrorMessage(MessageHelper.messages["ORDER_NOT_COPIED"]);
+					 MessageHelper.displayErrorMessage(MessageHelper.messages["MYACCOUNT_SAVEDORDERLIST_CALCULATE_FAIL"]);
 				 }
 				 else
 				 {
@@ -80775,8 +85452,10 @@ wcService.declare({
 		,successHandler: function(serviceResponse) {
 
 			MessageHelper.hideAndClearMessage();
-			// Call again to copy any other orders in the list.
-			savedOrdersJS.copyOrder(false);
+			if (typeof(savedOrdersJS) != null && typeof(savedOrdersJS) != 'undefined') {
+				// Call again to copy any other orders in the list.
+				savedOrdersJS.copyOrder(false);
+			}
 		}
 
 	 /**
@@ -80901,17 +85580,110 @@ wcService.declare({
 		,failureHandler: function(serviceResponse) {
 			console.debug("marketing event logging failed");
 		}
+	}),
+	
+	/**
+	 * Registers a Person update privacy and marketing consent service
+	 */
+	wcService.declare({
+		id: "AjaxPrivacyAndMarketingConsent",
+		actionId: "AjaxPrivacyAndMarketingConsent",
+		url: "AjaxRESTUpdatePrivacyAndMarketingConsent",
+		formId: ""
+
+		/**
+		 * Clear messages on the page.
+		 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation
+		 */
+		,successHandler: function(serviceResponse) {
+			console.debug("Privace and marketing consent updated");
+			if ($("#privacyPolicyPopup").WCDialog("isOpen")){
+				$("#privacyPolicyPopup").WCDialog("close");
+			}
+			else {
+				MessageHelper.displayStatusMessage(MessageHelper.messages["MARKETING_CONSENT_UPDATED"]);
+			}
+			cursor_clear();
+		}
+
+		/**
+		 * Displays an error message on the page if the request failed.
+		 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+		 */
+		,failureHandler: function(serviceResponse) {
+			console.debug("Privace and marketing consent update failed");
+			if ($("#privacyPolicyPopup").WCDialog("isOpen")){
+				$("#privacyPolicyPopup").WCDialog("close");
+			}
+			if (serviceResponse.errorMessage) {
+				MessageHelper.displayErrorMessage(serviceResponse.errorMessage);
+			}
+			else {
+				if (serviceResponse.errorMessageKey) {
+					MessageHelper.displayErrorMessage(serviceResponse.errorMessageKey);
+				}
+				else {
+					MessageHelper.displayStatusMessage(MessageHelper.messages["MARKETING_CONSENT_UPDATE_ERROR"]);
+				}
+			}
+			cursor_clear();
+		}
+	}),
+	/**
+	 * Registers a marketing consent update service
+	 */
+	wcService.declare({
+		id: "AjaxUpdateMarketingTrackingConsent",
+		actionId: "AjaxUpdateMarketingTrackingConsent",
+		url: "AjaxRESTUpdateMarketingTrackingConsent",
+		formId: ""
+
+		/**
+		 * Clear messages on the page.
+		 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation
+		 */
+		,successHandler: function(serviceResponse) {
+			console.debug("Marketing consent updated");
+			if ($("#privacyPolicyPopup").WCDialog("isOpen")){
+				$("#privacyPolicyPopup").WCDialog("close");
+			}
+			else {
+				MessageHelper.displayStatusMessage(MessageHelper.messages["MARKETING_CONSENT_UPDATED"]);
+			}
+			cursor_clear();
+		}
+
+		/**
+		 * Displays an error message on the page if the request failed.
+		 * @param (object) serviceResponse The service response object, which is the JSON object returned by the service invocation.
+		 */
+		,failureHandler: function(serviceResponse) {
+			console.debug("Marketing consent update failed");
+			if ($("#privacyPolicyPopup").WCDialog("isOpen")){
+				$("#privacyPolicyPopup").WCDialog("close");
+			}
+			if (serviceResponse.errorMessage) {
+				MessageHelper.displayErrorMessage(serviceResponse.errorMessage);
+			}
+			else {
+				if (serviceResponse.errorMessageKey) {
+					MessageHelper.displayErrorMessage(serviceResponse.errorMessageKey);
+				}
+				else {
+					MessageHelper.displayStatusMessage(MessageHelper.messages["MARKETING_CONSENT_UPDATE_ERROR"]);
+				}
+			}
+			cursor_clear();
+		}
 	})
+
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 //<%--
@@ -80974,15 +85746,12 @@ var wishlist_changed = {	'AjaxInterestItemAdd':'AjaxInterestItemAdd',
 												'AjaxLogoff':'AjaxLogoff'
 											};
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 wcTopic.subscribe("ajaxRequestInitiated", incrementNumAjaxRequest);
@@ -81076,7 +85845,7 @@ detectedLocale = Utils.getLocale();
 function initializeInactivityWarning() {
 
     // only set timer if user is not guest, in a full-auth session, and is able to retrieve inactivityTimeout from server
-    if (storeUserType != "G" && inactivityTimeout != 0 && document.cookie.indexOf("WC_USERACTIVITY_") > 0) {
+    if (storeUserType != "G" && inactivityTimeout != 0 && document.cookie.indexOf("WC_LogonUserId_") > 0) {
         // Reset the inactivity timer dialog
         if (inactivityTimeoutTracker != null) {
             clearTimeout(inactivityTimeoutTracker);
@@ -81734,7 +86503,12 @@ function isPositiveInteger(value){
  */
 function closeAllDialogs(){
     $("[data-widget-type='wc.WCDialog']").each(function (i, e) {
-        $(e).hide();
+    	var dialog = $(e).data("wc-WCDialog");
+    	if(dialog){
+    		dialog.close();
+    	}else {
+    		$(e).hide();
+    	}
     });
 }
 
@@ -82615,6 +87389,9 @@ function getCommonParametersQueryString(){
         if (!props) {
             createCookie(cookieName, cookieVal);
         } else {
+			if(!props.secure && (WCParamJS.secure === "true")){
+        		props.secure = true;  
+        	}
             var cookieProps = props;
             for (var propName in cookieProps) {
                 if (!cookieProps[propName]) {
@@ -82848,16 +87625,109 @@ function getCommonParametersQueryString(){
         }
         console.debug("Return AjaxCustomServiceForURLChaining", service);
         return service;
-    }//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+    }
+    
+    /**
+     * The function for Privacy popup to accept privacy policy
+     * @param {*} privacyContentName The privacy marketing content name in xxxV1.1 format
+     * @param {*} isSession To store cookie in session of not
+     */
+    function acceptPrivacyPolicy(privacyContentName, marketingConsentCheckboxId, privacyCheckboxId, isSession) {
+        var versionPattern = /[\w\d]+[vV]ersion(\d+\.\d+)/g;
+        var matches = versionPattern.exec(privacyContentName);
+        var pVersion = 0;
+        if (matches) {
+            pVersion = matches[1];
+        }
+        var marketingConsent = null;
+        var privacyCheckboxElement = $("#" + privacyCheckboxId)[0];
+        if (privacyCheckboxElement && !privacyCheckboxElement.checked ){
+            $("#" + privacyCheckboxId + "_Error").toggle(true);
+            return;
+        }
+        var marketingConsentElement = $("#" + marketingConsentCheckboxId)[0];
+        if (marketingConsentElement){
+            marketingConsent = marketingConsentElement.checked ? '1' : '0';
+        }
+        if (storeUserType != 'G') {
+            var requestParams = {
+                "privacyNoticeVersion": pVersion
+            };
+            if (marketingConsent != null){
+                requestParams.marketingTrackingConsent = marketingConsent;
+            }
+            cursor_wait();
+            wcService.invoke("AjaxPrivacyAndMarketingConsent", requestParams);
+            setPrivacyCookies(pVersion, marketingConsent, isSession); // set it here, since the response does return the version and consent.
+        }
+        else {
+            if (marketingConsent != null){
+                var requestParams = {
+                    "marketingTrackingConsent": marketingConsent
+                };
+                cursor_wait();
+                wcService.invoke("AjaxUpdateMarketingTrackingConsent", requestParams);
+            }
+            else {
+                $("#privacyPolicyPopup").WCDialog("close");
+            }
+            setPrivacyCookies(pVersion, marketingConsent, isSession);
+        }
+    }
+
+    /**
+     * Check whether the current version of privacy policy accepted or not
+     */
+    function isCurrentPrivacyPolicyAccepted() {
+        var currentPrivacyPolicyContentName = $('#PrivacyPolicyPopupContentName')[0].value;
+        var versionPattern = /[\w\d]+[vV]ersion(\d+\.\d+)/g;
+        var matches = versionPattern.exec(currentPrivacyPolicyContentName);
+        var pVersion = 0;
+        if (matches) {
+            pVersion = matches[1];
+        }
+        var accepted = false;
+        var privacyCookie = getCookie('WC_PrivacyNoticeVersion_' + WCParamJS.storeId);
+        if (privacyCookie = null || privacyCookie != pVersion) {
+            var privacyPolicyPopup = $("#privacyPolicyPopup").data("wc-WCDialog");
+            if (privacyPolicyPopup) {
+                closeAllDialogs();
+                privacyPolicyPopup.open();
+            } else {
+                console.debug("privacyPolicyPopup does not exist");
+            }
+        }
+    }
+
+    function setPrivacyCookies(version, consent, isSession){
+    	if (isSession == null || isSession == undefined){
+    		isSession = storePrivacyVersionCookieInSession;
+    	}
+        if (isSession){
+        	if (version != null){
+        		setCookie("WC_PrivacyNoticeVersion_" + WCParamJS.storeId,version, {path: "/", domain: cookieDomain, secure: true});
+        	}
+            if (consent != null){
+                setCookie("WC_MarketingTrackingConsent_" + WCParamJS.storeId, consent, {path: "/", domain: cookieDomain, secure: true});
+            }
+        }
+        else {
+            var expire = 30;//dafault to days
+            if (version != null){
+            	setCookie("WC_PrivacyNoticeVersion_" + WCParamJS.storeId,version, {path: "/", domain: cookieDomain, expires: expire, secure: true});
+            }
+            if (consent != null){
+                setCookie("WC_MarketingTrackingConsent_" + WCParamJS.storeId, consent, {path: "/", domain: cookieDomain, expires: expire, secure: true});
+            }
+        }
+    }
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2012, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -83173,15 +88043,12 @@ PhysicalStoreCookieJSStore = {
 //<%--
 //********************************************************************
 //*-------------------------------------------------------------------
-//* Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //*
-//* WebSphere Commerce
+//* HCL Commerce
 //*
-//* (c) Copyright IBM Corp.  2008, 2013
-//* All Rights Reserved
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //*
-//* US Government Users Restricted Rights - Use, duplication or
-//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 //*
 //*-------------------------------------------------------------------
 //*
@@ -83625,15 +88492,12 @@ storeLocatorJSStore = {
 //<%--
 //********************************************************************
 //*-------------------------------------------------------------------
-//* Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //*
-//* WebSphere Commerce
+//* HCL Commerce
 //*
-//* (c) Copyright IBM Corp.  2008, 2009
-//* All Rights Reserved
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //*
-//* US Government Users Restricted Rights - Use, duplication or
-//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 //*
 //*-------------------------------------------------------------------
 //*
@@ -83710,15 +88574,12 @@ wcRenderContext.declare("provinceSelectionsContext", ["provinceSelections"], "")
 //<%--
 //********************************************************************
 //*-------------------------------------------------------------------
-//* Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //*
-//* WebSphere Commerce
+//* HCL Commerce
 //*
-//* (c) Copyright IBM Corp.  2008, 2009
-//* All Rights Reserved
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //*
-//* US Government Users Restricted Rights - Use, duplication or
-//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 //*
 //*-------------------------------------------------------------------
 //*
@@ -83877,15 +88738,12 @@ StoreLocatorControllersDeclarationJSStore = {
 	}
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2006, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -84211,15 +89069,12 @@ AddressBookFormJS = {
 
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2006, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -84922,15 +89777,12 @@ AddressHelper = {
 	}
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -85111,6 +89963,9 @@ LogonForm ={
                 return false;
             }
         }
+        if(form.marketingTrackingConsent){
+            setPrivacyCookies(null, form.marketingTrackingConsent.value);
+        }
         return true;
     },
 
@@ -85158,15 +90013,12 @@ LogonForm ={
     }
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2010, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 MultipleWishLists = {
@@ -85481,15 +90333,12 @@ MultipleWishLists = {
     }
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2009 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -85566,15 +90415,12 @@ MyAccountControllersDeclarationJS = {
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
@@ -85729,7 +90575,7 @@ MyAccountDisplay={
         }
         wcRenderContext.updateRenderContext(contextId,{'beginIndex':currentBeginIndex,'pageSize':pageSize,'isQuote':isQuote,'lastExternalOrderIds':lastRecordInfo,'recordSetTotal':recordSetTotal});
     },
-
+    
     escapeXML: function(value) {
         //don't use jazz.util.html.escape(value). This function doesn't encode character "
         if (!value) {
@@ -86044,7 +90890,9 @@ MyAccountDisplay={
         else {
             form.receiveEmail.value = false;
         }
-
+        if(form.marketingTrackingConsent){
+            setPrivacyCookies(null, form.marketingTrackingConsent.value);
+        }
         if(form.sendMeSMSNotification && form.sendMeSMSNotification.checked){
             form.receiveSMSNotification.value = true;
         }
@@ -86395,23 +91243,44 @@ MyAccountDisplay={
         this.setOff(this.currentOrderTabId);
         this.setOn(tabId);
         this.currentOrderTabId = tabId;
+    },
+    
+    validateOauthToken:function(token, isToken, provider, url, parameters){
+    	var params = {};
+    	if(isToken == '1'){
+    		params = {
+    				accessToken: token,
+        			URL: url,
+        			authorizationProvider: provider
+        	};
+    	}else{
+    		params = {
+        			code: token,
+        			URL: url,
+        			authorizationProvider: provider
+        	};
+    	}
+
+        $.each(parameters,function(name,value) {
+            params[name]=value;
+        });
+    	
+    	cursor_wait();
+        wcService.invoke("AjaxValidateOauthToken", params);
     }
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2008, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /**
  * @fileOverview This javascript contains declarations of AJAX services used within
- * WebSphere Commerce.
+ * HCL Commerce.
  */
 
 /**
@@ -87114,17 +91983,165 @@ wcService.declare({
 		}
 		cursor_clear();
 	}
+}),
+
+wcService.declare({
+	id: "AjaxValidateOauthToken",
+	actionId: "AjaxValidateOauthToken",
+	url: "ValidateOauthToken",
+	formId: "",
+
+	/**
+	 * Displays a success message.
+	 * @param (object) serviceResponse The service response object, which is the
+	 * JSON object returned by the service invocation.
+	 */
+		successHandler: function (serviceResponse) {
+	        cursor_clear();
+	        var errorMessage = "";
+	        if (serviceResponse.ErrorCode != null) {
+	            var errorCode = Number(serviceResponse.ErrorCode);
+	            switch (errorCode) {
+	            case 2000:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2000"];
+	                break;
+	            case 2010:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2010"];
+	                break;
+	            case 2020:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2020"];
+	                break;
+	            case 2030:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2030"];
+	                break;
+	            case 2110:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2110"];
+	                break;
+	            case 2300:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2300"];
+	                break;
+	            case 2340:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2340"];
+	                break;
+	            case 2400:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2400"];
+	                break;
+	            case 2410:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2410"];
+	                break;
+	            case 2420:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2420"];
+	                break;
+	            case 2430:
+	                document.location.href = "ResetPasswordForm?storeId=" + WCParamJS.storeId + "&catalogId=" + WCParamJS.catalogId + "&langId=" + WCParamJS.langId + "&errorCode=" + errorCode;
+	                break;
+	            case 2170:
+	                document.location.href = "ChangePassword?storeId=" + WCParamJS.storeId + "&catalogId=" + WCParamJS.catalogId + "&langId=" + WCParamJS.langId + "&errorCode=" + errorCode + "&logonId=" + serviceResponse.logonId;
+	                break;
+	            case 2570:
+	                errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2570"];
+	                    break;
+	                case 2440:
+	                    errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2440"];
+	                    break;
+	                case 2450:
+	                    errorMessage = MessageHelper.messages["GLOBALLOGIN_SIGN_IN_ERROR_2450"];
+	                    break;
+	            }
+	            if (document.getElementById(serviceResponse.widgetId + "_logonErrorMessage_GL") != null) {
+	                document.getElementById(serviceResponse.widgetId + "_logonErrorMessage_GL").innerHTML = errorMessage;
+	                document.getElementById(serviceResponse.widgetId + "_WC_AccountDisplay_FormInput_logonId_In_Logon_1").setAttribute("aria-invalid", "true");
+	                document.getElementById(serviceResponse.widgetId + "_WC_AccountDisplay_FormInput_logonId_In_Logon_1").setAttribute("aria-describedby", "logonErrorMessage_GL_alt");
+	                document.getElementById(serviceResponse.widgetId + "_WC_AccountDisplay_FormInput_logonPassword_In_Logon_1").setAttribute("aria-invalid", "true");
+	                document.getElementById(serviceResponse.widgetId + "_WC_AccountDisplay_FormInput_logonPassword_In_Logon_1").setAttribute("aria-describedby", "logonErrorMessage_GL_alt");
+	            }
+	        } else {
+	        	//alert(serviceResponse.redirecturl);
+	            var url = serviceResponse.redirecturl.replace(/&amp;/g, '&'),
+	                languageId = serviceResponse.langId;
+	            if (languageId != null && document.getElementById('langSEO' + languageId) != null) { // Need to switch language.
+
+	                var browserURL = document.location.href,
+	                    currentLangSEO = '/' + $('#currentLanguageSEO').val() + '/';
+
+	                if (browserURL.indexOf(currentLangSEO) !== -1) {
+	                    // If it's SEO URL.
+	                    var preferLangSEO = '/' + $('#langSEO' + languageId).val() + '/';
+
+	                    var query = url.substring(url.indexOf('?') + 1, url.length),
+	                        parameters = Utils.queryToObject(query);
+	                    if (parameters["URL"] != null) {
+	                        var redirectURL = parameters["URL"],
+	                            query2 = redirectURL.substring(redirectURL.indexOf('?') + 1, redirectURL.length),
+	                            parameters2 = Utils.queryToObject(query2);
+	                        // No redirect URL
+	                        if (parameters2["URL"] != null) {
+	                            var finalRedirectURL = parameters2["URL"];
+	                            if (finalRedirectURL.indexOf(currentLangSEO) != -1) {
+	                                // Get the prefer language, and replace with prefer language.
+	                                finalRedirectURL = finalRedirectURL.replace(currentLangSEO, preferLangSEO);
+	                                parameters2["URL"] = finalRedirectURL;
+	                            }
+	                            query2 = $.param(parameters2);
+	                            redirectURL = redirectURL.substring(0, redirectURL.indexOf('?')) + '?' + query2;
+	                        } else {
+	                            //Current URL is the final redirect URL.
+	                            redirectURL = redirectURL.toString().replace(currentLangSEO, preferLangSEO);
+	                        }
+	                        parameters["URL"] = redirectURL;
+	                    }
+	                    query = $.param(parameters);
+	                    url = url.substring(0, url.indexOf('?')) + '?' + query;
+
+	                } else {
+	                    // Not SEO URL.
+	                    // Parse the parameter and check whether if have langId parameter.
+	                    if (url.contains('?')) {
+	                        var query = url.substring(url.indexOf('?') + 1, url.length),
+	                            parameters = Utils.queryToObject(query);
+	                        if (parameters["langId"] != null) {
+	                            parameters["langId"] = languageId;
+	                            var query2 = $.param(parameters);
+	                            url = url.substring(0, url.indexOf('?')) + '?' + query2;
+	                        } else {
+	                            url = url + "&langId=" + languageId;
+	                        }
+	                    } else {
+	                        url = url + "?langId=" + languageId;
+	                    }
+	                }
+	            }
+
+	            if (serviceResponse["MERGE_CART_FAILED_SHOPCART_THRESHOLD"] == "1") {
+	                setCookie("MERGE_CART_FAILED_SHOPCART_THRESHOLD", "1", {path: "/", domain: cookieDomain});
+	            }
+	            window.location = url;
+	        }
+	    },
+
+	/**
+	 * Displays an error message.
+	 * @param (object) serviceResponse The service response object, which is the
+	 * JSON object returned by the service invocation.
+	 */
+	    failureHandler: function (serviceResponse) {
+	        if (serviceResponse.errorMessage) {
+	            MessageHelper.displayErrorMessage(serviceResponse.errorMessage);
+	        } else {
+	            if (serviceResponse.errorMessageKey) {
+	                MessageHelper.displayErrorMessage(serviceResponse.errorMessageKey);
+	            }
+	        }
+	        cursor_clear();
+	    }
 })
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 //
 
@@ -87408,15 +92425,12 @@ QuickCheckoutProfile = {
 	}
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2007, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 //
@@ -88618,15 +93632,12 @@ wcService.declare({
 
 })
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2012, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -88809,16 +93820,14 @@ if(typeof(CompareProductJS) == "undefined" || CompareProductJS == null || !Compa
 			return null;
 		}
 	}
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -89344,16 +94353,14 @@ function resetDeleteCartCookie() {
         });
     }
 }
-wcTopic.subscribe("ProductInfo_Added", setProductAddedList);//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+wcTopic.subscribe("ProductInfo_Added", setProductAddedList);
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 if (typeof (ProductTabJS) == "undefined" || ProductTabJS == null || !ProductTabJS) {
@@ -89462,15 +94469,12 @@ if (typeof (ProductTabJS) == "undefined" || ProductTabJS == null || !ProductTabJ
     };
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 if(typeof(QuickInfoJS) == "undefined" || QuickInfoJS == null || !QuickInfoJS) {
 	
@@ -90224,16 +95228,14 @@ if(typeof(QuickInfoJS) == "undefined" || QuickInfoJS == null || !QuickInfoJS) {
 		
 	}
 
-}//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+}
+//-----------------------------------------------------------------
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 
@@ -90872,6 +95874,7 @@ if(typeof(SearchJS) == "undefined" || SearchJS == null || !SearchJS){
         doStaticAutoSuggest:function(searchTerm) {
             var resultList = ["", "", "", "", "", ""];
             var emptyCell = 0;
+			searchTerm=(searchTerm.replaceAll("\'","")).replaceAll("\"", "");
             var searchTermLower = searchTerm.toLowerCase();
             var listCount = this.CACHED_AUTOSUGGEST_OFFSET;
             var divStart = "<div class='list_section'><div";
@@ -90918,7 +95921,7 @@ if(typeof(SearchJS) == "undefined" || SearchJS == null || !SearchJS){
                 var termsArray = searchHistoryCookie.split("|");
                 var count = 0;
                 for(var i = termsArray.length - 1; i > 0; i--) {
-                    var theTerm = termsArray[i];
+                    var theTerm = termsArray[i]; 
                     var theLowerTerm = theTerm.toLowerCase();
                     if(theLowerTerm.match("^"+searchTermLower) == searchTermLower) {
                         var repeatedTerm = false;
@@ -90973,7 +95976,7 @@ if(typeof(SearchJS) == "undefined" || SearchJS == null || !SearchJS){
             var cookieValue = "|" + updatedSearchTerm;
             var searchTermHistoryCookie = getCookie(cookieKey);
             if(typeof(searchTermHistoryCookie) != 'undefined') {
-                cookieValue = setCookie(cookieKey) + cookieValue;
+                cookieValue = getCookie(cookieKey) + cookieValue;
             }
             setCookie(cookieKey, cookieValue, {path:'/', domain:cookieDomain});
         },
@@ -91031,7 +96034,7 @@ if(typeof(SearchJS) == "undefined" || SearchJS == null || !SearchJS){
 
         registerMouseDown: function() {
             if (this.mouseDownConnectHandle == null) {
-                this.mouseDownConnectHandle = $(document.documentElement).on("mousedown", $.proxy("handleMouseDown", this));
+                this.mouseDownConnectHandle = $(document.documentElement).on("mousedown", $.proxy(this.handleMouseDown, this));
             }
         },
 
@@ -91153,15 +96156,12 @@ if(typeof(SearchJS) == "undefined" || SearchJS == null || !SearchJS){
 };
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 function ShoppingListJS(storeParams, catEntryParams, shoppingListNames, jsObjectName) {
@@ -91851,7 +96851,7 @@ function ShoppingListJS(storeParams, catEntryParams, shoppingListNames, jsObject
 			this.showEditErrorMessage(Utils.getLocalizationMessage('ERR_NAME_DUPLICATE'));
 		} else if(!this.validateWishName(name)){
 			// show error message saying that
-			this.showErrorMessage(Utils.getLocalizationMessage('INVALID_NAME_SHOPPING_LIST'));
+			this.showEditErrorMessage(Utils.getLocalizationMessage('INVALID_NAME_SHOPPING_LIST'));
 		} else {
 			var params = this.setCommonParams();
 			params.name = name;
@@ -92095,15 +97095,12 @@ if(typeof(ShoppingListDialogJS) == "undefined" || ShoppingListDialogJS == null |
 
 }
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2012 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -92269,15 +97266,12 @@ ShoppingListControllersJS = {
 
 };
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2011, 2015 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 /** 
@@ -92634,15 +97628,12 @@ wcService.declare({
 
     })
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2016 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 
 var toggleCollapsible = function(collapsible) {
@@ -92741,15 +97732,12 @@ $(document).ready(function() {
 
 
 //-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
+//  Licensed Materials - Property of HCL Technologies                 
 //
-// WebSphere Commerce
+// HCL Commerce
 //
-// (C) Copyright IBM Corp. 2013, 2014 All Rights Reserved.
+//  (C) Copyright HCL Technologies Limited 1996, 2020                 
 //
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
 //-----------------------------------------------------------------
 /* global Utils, $, document, window, wc, setTimeout, cX, processAndSubmitForm, updateFormWithWcCommonRequestParameters, cursor_wait, cursor_clear */
 
@@ -92889,7 +97877,7 @@ $(document).ready(function () {
         if (ajaxRefresh == "true" && startsWith) {
             setAjaxRefresh(""); // No more refresh till shopper leaves this page
             // Update the Context, so that widget gets refreshed..
-            wcRenderContext.updateRenderContext("departmentSubMenuContext", {
+            wcRenderContext.updateRenderContext("departmentSubMenuContext_" + target.id, {
                 "targetId": target.id
             });
             if (typeof cX === 'function') {
@@ -92907,7 +97895,9 @@ $(document).ready(function () {
         }
         if (parent) {
             activate(document.getElementById(parent));
-        }
+        }else {
+			setAjaxRefresh("true");
+		}
         $(target).addClass("active");
         $("a[data-activate='" + target.id + "']").addClass("selected");
         var toggleControl = $("a[data-toggle='" + target.id + "']");
@@ -93167,2545 +98157,21 @@ function declareDeptDropdownRefreshArea(divId) {
     // Context and Controller to refresh department drop-down
 
     // common render context
-    wcRenderContext.declare("departmentSubMenuContext", [divId], { targetId: "" });
+    wcRenderContext.declare("departmentSubMenuContext_" + divId, [divId], { targetId: "" });
 
     // render content changed handler
     var renderContextChangedHandler = function() {
-        $("#"+divId).refreshWidget("refresh", wcRenderContext.getRenderContextProperties("departmentSubMenuContext"));
+        $("#"+divId).refreshWidget("refresh", wcRenderContext.getRenderContextProperties("departmentSubMenuContext_" + divId));
     };
 
     // post refresh handler
     var postRefreshHandler = function() {
         updateDepartmentsMenu(); // Browser may be re-sized. From server we return entire department list.. updateHeader to fit to the list within available size
-        activate(document.getElementById(wcRenderContext.getRenderContextProperties("departmentSubMenuContext").targetId)); // We have all the data.. Activate the menu...
+        activate(document.getElementById(wcRenderContext.getRenderContextProperties("departmentSubMenuContext_" + divId).targetId)); // We have all the data.. Activate the menu...
         cursor_clear();
     };
 
     // initialize widget
     $("#"+divId).refreshWidget({renderContextChangedHandler: renderContextChangedHandler, postRefreshHandler: postRefreshHandler});
 
-}
-
-
-//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
-//
-// WebSphere Commerce
-//
-// (C) Copyright IBM Corp. 2008, 2017 All Rights Reserved.
-//
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
-//-----------------------------------------------------------------
-
-/**
- * @fileOverview This JavaScript file contains functions used by the payment
- *               section of the checkout pages.
- */
-
-if (BrainTreePayments == null || typeof(BrainTreePayments) != "object") {
-	var BrainTreePayments = new Object();
-}
-
-BrainTreePayments = {
-	
-	paypalBillingAddsId: {},
-	
-		/**
-		 * Sets common parameters used by this JavaScript object
-		 * 
-		 * @param {String}
-		 *            langId language ID to use
-		 * @param {String}
-		 *            storeId store ID to use
-		 * @param {String}
-		 *            catalog Catalog ID to use
-		 */
-		setCommonParameters:function(langId,storeId,catalogId){
-			this.langId = langId;
-			this.storeId = storeId;
-			this.catalogId = catalogId;
-		},
-
-	checkPaypalStoreSelectionForm:function(){
-		document.getElementById("paypalCheckoutButton").style.display="block";
-	},
-
-	
-	
-	/**
-	 * to delete the saved payment from vault that is choosen to be deleted
-	 */
-		deleteSelectedCardFromVault:function(payToken){
-			var savedCardsList = document.getElementById("savedCardsList");
-			if(payToken != null){
-				var selectedCardpayToken = payToken;
-			}
-			else{
-				var selectedCardpayToken = savedCardsList.options[savedCardsList.selectedIndex].value;
-			}
-			var params = [];
-			params["storeId"] = WCParamJS.storeId;
-			params["catalogId"] = WCParamJS.catalogId;
-			params["langId"] = this.langId;
-			params["pay_token"]=selectedCardpayToken;
-			wcService.invoke('AjaxRESTDeleteCardFromBraintreeVault', params); // AjaxDeleteCardFromBraintreeVault
-		},
-
-		/**
-		 *  to display the selected payment from the saved payments section
-		 */
-		displaySelectedCard:function(clientToken,statusCount,listInfo)
-		{
-
-			var savedCardsList = document.getElementById("savedCardsList");
-			var selectedCardpayToken = savedCardsList.options[savedCardsList.selectedIndex].value;
-
-			// appending values in div and dispaying the div
-			var parsedListInfo=JSON.parse(listInfo);
-				
-			if(selectedCardpayToken!=""){
-				for(i=0;i<parsedListInfo.length;i++)
-				{
-					var cardToken=parsedListInfo[i].payTokenId;
-					if(cardToken==selectedCardpayToken){
-						var cardInfo=parsedListInfo[i];
-						// if PayPal is the selected saved  payment
-						if(cardInfo.cardType=="PayPalAccount" || cardInfo.cardType=="PayPalCredit"){
-							document.getElementById("paymentAccountMail").innerHTML=cardInfo.maskedCreditCardNumber;
-							document.querySelector('#pay_token').value = cardToken;
-							document.querySelector('#pay_type').value = cardInfo.cardType;
-							document.querySelector('#PaymentMethodId').value  = cardInfo.paymentMethodId;
-							$("#savedPaymentInfo").css("display", "block"); // showing PayPal div
-							$("#savedCreditCardInfo").css("display", "none"); 
-							
-						}else{ //if card is the selected saved  payment (because presently we are giving options to the user to save only  PayPal and cards)
-								var cardNum=cardInfo.maskedCreditCardNumber;
-								var expiryDate=cardInfo.expirationDate;
-								// adding the data to the div
-								document.getElementById("maskedcardNumber").innerHTML=cardNum;
-								document.getElementById("expiryDate").innerHTML=expiryDate;
-								document.getElementById("onlyCvv_"+statusCount).innerHTML = "";
-								this.displayCVV(clientToken,statusCount);
-								// assigning values to hidden params, which are passed to PIAdd execution
-								document.querySelector('#pay_token').value = cardToken;
-								document.querySelector('#account').value = cardInfo.maskedCreditCardNumber;
-								document.querySelector('#pay_type').value = cardInfo.cardType;
-								document.querySelector('#PaymentMethodId').value  = cardInfo.paymentMethodId;
-								$("#savedPaymentInfo").css("display", "none");
-								$("#savedCreditCardInfo").css("display", "block"); //showing creditcard div
-							}
-						// saved payment information div and delete payment option
-						$("#showSavedCard").css("display", "block");
-						$("#deleteCard").css("display", "block");
-					}
-				}
-			}
-			else
-				{
-					// if paytoken is empty, not showing the saved payment information div
-					$("#showSavedCard").css("display", "none");	
-				}
-		},
-			/**
-			 *  to display CVV field,while displaying saved card information
-			 */ 
-			displayCVV:function(clientToken,statusCount) {
-							braintree.client.create({
-									 authorization: clientToken
-									 }).then( function(clientInstance) {
-												// hosted fields
-												braintree.hostedFields.create({
-												client: clientInstance,
-												styles: {
-													'input': {
-													   'font-size': '14px'
-													},
-													'input.invalid': {
-													   'color': 'red'
-													},
-													'input.valid': {
-													   'color': 'green'
-													}
-												},
-												fields: {
-													
-													cvv: {
-														selector: '#onlyCvv_'+statusCount
-													}
-													
-												}
-																				  
-											}).then(function (hostedFieldsInstance) {
-												var keyforInst="cvvInst"+statusCount;
-												var i=[];
-												instances_BT[keyforInst]=hostedFieldsInstance;
-												console.log("hostedFieldsInstance",hostedFieldsInstance);
-												
-											}).catch( function (hostedFieldsErr){
-												if (hostedFieldsErr) {
-													console.error("hostedFieldsError:",hostedFieldsErr);
-													var paymentMethodNumberSelected=statusCount;
-													var hostedFieldsErrMsg="";
-													$("#hostedFieldsErrorMessage_"+statusCount).css("display", "block"); 
-													switch (hostedFieldsErr.code) {
-														case 'HOSTED_FIELDS_TIMEOUT':
-															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; 
-															 break;
-														case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
-															 hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
-																															// error
-															 break;
-														case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
-															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
-																															// error
-															break;
-														case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
-															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
-																															// error
-															break;
-														case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
-															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
-																															// error
-															break;  
-														default:
-															hostedFieldsErrMsg=  CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"]; // merchnat
-													} //TODO assign value to hostedFieldsErrMsg from property file
-												document.getElementById("hostedFieldsErrorMessage_"+paymentMethodNumberSelected).innerHTML=hostedFieldsErrMsg;
-												return;
-												}	
-											});
-									 }).catch( function(clientErr) {
-										 console.error("clientError:",clientErr);
-										 var paymentMethodNumberSelected=statusCount;
-										 var createErrMsg="";
-										 if(clientErr){
-											 $("#hostedFieldsWrapper_"+statusCount).css("display", "none"); 
-											 MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-											 cursor_clear();
-										 }									  
-										return;
-									 });
-			},
-
-
-		/**
-		 * TO consume the braintree instances created after clicking on Next button of orderShippingBillingDetailsPage and  generate payload object from these instances.
-		 */
-		brainTreeInstances:function(inst,piFormName,paymentMethodNumberSelected,fromSavedPaymentFlag)
-		{
-			// instance of either saved creditcards or new credit cards	
-			inst.tokenize(function (tokenizeErr, payload) {
-				 				 if (tokenizeErr) { //error occured
-				   					 console.error("tokenizeErr:",tokenizeErr);
-									 var tokenizeErrMsg="";
-									 switch (tokenizeErr.code) {
-				      					case 'HOSTED_FIELDS_FIELDS_EMPTY':
-											 tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_EMPTY"];
-				        					 break;
-				    				  	case 'HOSTED_FIELDS_FIELDS_INVALID':
-				       						 console.error('Some fields are invalid:', tokenizeErr.details.invalidFieldKeys);
-											 tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_INVALID"];// " Required  Fields are invalid. ";
-				        					 break;
-				      					case 'HOSTED_FIELDS_TOKENIZATION_FAIL_ON_DUPLICATE':
-				        					 console.error('This payment method already exists in your vault.');
-											 tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_FAIL_ON_DUPLICATE"];
-				        					break;
-							      		case 'HOSTED_FIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED':
-							        		console.error('CVV did not pass verification');
-											tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED"];
-											break;
-									      case 'HOSTED_FIELDS_FAILED_TOKENIZATION':
-									       console.error('Tokenization failed server side. Is the card valid?');
-										   tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_FAILED_TOKENIZATION"];
-									        break;
-									      case 'HOSTED_FIELDS_TOKENIZATION_NETWORK_ERROR':
-									        console.error('Network error occurred when tokenizing.');
-											tokenizeErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_NETWORK_ERROR"];
-									        break;	
-									      default:	
-											tokenizeErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_DEFAULT_ERROR"];
-									 }
-									 var errorMessageField = "hostedFieldsErrorMessage_"+paymentMethodNumberSelected;
-									 if(fromSavedPaymentFlag == 'true'){
-										 errorMessageField = "CVVhostedFieldsErrorMessage_"+paymentMethodNumberSelected;
-										if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_EMPTY'){
-											tokenizeErrMsg = CheckoutPayments.errorMessages["BT_CVV_FIELD_EMPTY"];
-										}
-										else if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_INVALID'){
-											tokenizeErrMsg = CheckoutPayments.errorMessages["BT_CVV_FIELD_INVALID"];
-										}
-									 }
-									$("#"+errorMessageField).css("display", "block");
-									document.getElementById(errorMessageField).innerHTML=tokenizeErrMsg;
-									
-									return;
-				 				 } 
-				 				 else{ //payload object generated
-										
-				 					 // instance is of saved card,so payload object is of saved card
-				 					 if(fromSavedPaymentFlag == 'true'){
-				 						 document.querySelector('#cvv_nonce').value = payload.nonce;
-										 var params = [];
-										params["storeId"] = WCParamJS.storeId;
-										params["catalogId"] = WCParamJS.catalogId;
-										params["langId"] = WCParamJS.langId;
-										params["pay_token"]=document.querySelector('#pay_token').value;
-										params["cvv_nonce"]=document.querySelector('#cvv_nonce').value;
-										params["billing_address_id"]=document.querySelector('#billing_address_id_1').value;
-										params["payment_method_id"]=document.querySelector('#PaymentMethodId').value;
-										params["device_session_id"]=document.querySelector('#deviceSessionId').value;
-										params["fraud_merchant_id"]=document.querySelector('#fraudMerchantId').value;
-										wcService.invoke('AjaxRESTVaultedCreditCardVerification', params);
-				 					 }
-									 else{ //instance is of new card,so payload object is of new card
-										 var paynonce = payload.nonce;
-										 document.querySelector('#pay_nonce').value = paynonce;
-										 document.querySelector('#account').value = "**************"+payload.details.lastTwo;
-										 document.querySelector('#pay_type').value = payload.details.cardType;
-
-										 //3D secure check is to be done
-										 if(threeDSecureEnable == 'true')
-											BrainTreePayments.threeDSecureCheck(paynonce);
-										 else
-											CheckoutPayments.processCheckout(piFormName);
-									}
-				 				}
-				});		
-		},
-		
-		/**
-		 * 3D secure check 
-		 */
-		threeDSecureCheck : function(paynonce){
-			var bankFrame = document.querySelector('.bt-modal-body');
-			
-			var piAmountVal = document.getElementById('piAmount_1').value;
-			braintree.client.create({
-			  // Use the generated client token to instantiate the Braintree client.
-			  authorization: btClientToken
-			}, function (clientErr, clientInstance) {
-			  if (clientErr) {
-				console.log("clientError:",clientErr);
-				MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-				return;
-			  }
-
-			  braintree.threeDSecure.create({
-				client: clientInstance
-			  }, function (threeDSecureErr, threeDSecureInstance) {
-				if (threeDSecureErr) {
-				  console.log("threeDSecureError:",threeDSecureErr);
-				  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_THREE_D_SECURE_ERROR"]);	
-				  return;
-				}
-				console.log("threeDSecureInstance:",threeDSecureInstance);
-				
-				threeDSecureInstance.verifyCard({
-				  amount: piAmountVal,
-				  nonce:  paynonce ,// NONCE_FROM_INTEGRATION,
-				  addFrame: function (err, iframe) {
-					// Set up your UI and add the iframe.
-					 bankFrame.appendChild(iframe);
-					$(".threeDsecureWindow").css("display", "flex"); 
-				  },
-				  removeFrame: function () {
-					// Remove UI that you added in addFrame.
-					var iframe = bankFrame.querySelector('iframe');
-					$(".threeDsecureWindow").css("display", "none");
-					iframe.parentNode.removeChild(iframe);
-				  }
-				}, function (err, response) {
-				  
-					if (err) {
-						console.error("error when threeDsecure response failed:",err);
-						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_THREE_D_SECURE_RESPONSE_FAILED_ERROR"]);	
-						return;
-					  }
-					  
-					//Send response.nonce to use in your transaction
-					var threeDNonce = response.nonce;
-					document.getElementById('3Dsecure_nonce').value = threeDNonce;
-					CheckoutPayments.processCheckout('PaymentForm');
-				});
-					//when clicked on close button of frame
-					 var closeFrame = document.getElementById('text-close');
-					 closeFrame.addEventListener('click', function () {
-						threeDSecureInstance.cancelVerifyCard(removeFrame());
-						});
-					 function removeFrame() {
-					// Remove UI that you added in addFrame.
-						var iframe = bankFrame.querySelector('iframe');
-						$(".threeDsecureWindow").css("display", "none");
-						iframe.parentNode.removeChild(iframe);
-					 }
-			  });
-			});
-		},
-		
-		/**
-		 * on click of Next button in orderShippingBillingDetails page this method is called to get the payNonce and the other required params of particular payment. Set these values to a map and then call processCheckout
-		 */
-		brainTreeCheckOut : function(piFormName,skipOrderPrepare){
-			var numberOfPaymentMethods = document.getElementById("numberOfPaymentMethods");
-			var numberOfPaymentMethodsSelected = numberOfPaymentMethods.options[numberOfPaymentMethods.selectedIndex].value;
-			var fromSavedPaymentFlag =document.querySelector('#fromSavedPaymentFlag').value ;
-			var payType = document.querySelector('#pay_type').value ;
-			var paypalEmail= document.getElementById("PayPalEmailId").value;
-			var paymentType = $("input[name='payMethodId']:checked").val();
-			var payInStore = false;
-			
-			//below conditions help to perform certain steps  for each payment
-			if(isPickUpInStore){
-				if ($("#payInStorePaymentOption").is(':checked'))
-					payInStore = true;
-			}
-			if((paymentType == 'ZPayPal' && paypalEmail!="") || payInStore || ( (payType == 'PayPalAccount' || payType == 'PayPalCredit') && fromSavedPaymentFlag == 'true' )){
-				CheckoutPayments.processCheckout(piFormName);
-			}
-			else if (paymentType == 'ZGooglePay'){
-				document.getElementById("google-pay-button_"+numberOfPaymentMethodsSelected).click();
-				
-			}
-			else if (paymentType == 'ZApplePay'){
-				document.getElementById("apple-pay-button_"+numberOfPaymentMethodsSelected).click();
-				
-			}
-			else if (fromSavedPaymentFlag=='true' || paymentType == 'ZCreditCard'){
-				if($('#showSavedCard').css('display') == 'none' && fromSavedPaymentFlag=='true')
-					{
-						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_EMPTY_PAYMENT_ERROR"]);	
-						
-					}
-				else{
-					var keyforInst="inst";
-					if(fromSavedPaymentFlag == 'true' ){
-						var keyforInst="cvvInst";
-					}
-						for(i=1;i<=numberOfPaymentMethodsSelected;i++)
-						{
-							// from all the created instances,getting only the
-							// required instances
-							var key=keyforInst+i;
-							var testInstance = instances_BT[key];
-							BrainTreePayments.brainTreeInstances(testInstance,piFormName,i,fromSavedPaymentFlag);
-						}
-				}	
-			}
-			else{ //when none of the payment is selected and clicked on Next button,showing an error
-				MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_EMPTY_PAYMENT_ERROR"]);	
-			}
-		},
-		
-	/**
-	 * populate brain tree hosted fields when new card is selected.
-	 */
-
-		displayBraintreeFieldsForPayment:function(clientToken,statusCount){
-			
-			// displaying Next button
-				var nextButtonId = document.getElementById("shippingBillingPageNext");
-				nextButtonId.classList.remove("btn-disabled-BT");
-				
-				$(".billing_address_container").css("display", "block"); 
-				
-				
-				// if already iframe exists,we are clearing it
-				document.getElementById("card-number_"+statusCount).innerHTML = "";
-				document.getElementById("cvv_"+statusCount).innerHTML = "";
-				document.getElementById("expiration-date_"+statusCount).innerHTML = "";
-				
-				var client_token=clientToken;
-				
-				braintree.client.create({
-					 authorization: client_token
-					 }).then( function(clientInstance) {
-								
-								if(advancedFraudTools == "true"){
-								// device data
-								braintree.dataCollector.create({
-										client: clientInstance,
-										kount: true
-									  }).then(function(dataCollectorInstance) {
-										
-										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-
-									  }).catch(function (err){
-											console.error("device data error for credit card is:",err);
-											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-											  return;
-										});
-								}
-								// hosted fields
-								braintree.hostedFields.create({
-								client: clientInstance,
-								styles: {
-									'input': {
-									   'font-size': '14px'
-																				
-									},
-									'input.invalid': {
-									   'color': 'red'
-									},
-									'input.valid': {
-									   'color': 'green'
-									}
-								},
-								fields: {
-									number: {
-										selector: '#card-number_'+statusCount,
-										border: '1px solid #333'
-									},
-									cvv: {
-										selector: '#cvv_'+statusCount
-									},
-									expirationDate: {
-										selector: '#expiration-date_'+statusCount
-									}
-								}
-														          
-							}).then(function (hostedFieldsInstance) {
-										
-										
-									
-									var keyforInst="inst"+statusCount;
-									var i=[];
-									instances_BT[keyforInst]=hostedFieldsInstance;
-									console.log("hostedFieldsInstance:",hostedFieldsInstance);
-									
-									//START Advanced Hosted Field events
-									 var cvvLabel = document.querySelector('label[for="bt_cvv"]');
-									hostedFieldsInstance.on('cardTypeChange', function (event) {
-										// This event is fired whenever a change in card type is detected.
-										// It will only ever be fired from the number field.
-										var cvvText;
-
-										if (event.cards.length === 1) {
-										 cvvText = event.cards[0].code.name;
-										} else {
-										 cvvText = 'CVV';
-										}
-										cvvLabel.innerHTML = cvvText;
-									 });
-									//END
-								}).catch( function (hostedFieldsErr){
-														            
-								
-									console.error("hostedFieldsErr:",hostedFieldsErr);
-									var hostedFieldsErrMsg="";
-								
-									$("#hostedFieldsErrorMessage_"+statusCount).css("display", "block"); 
-									switch (hostedFieldsErr.code) {
-										case 'HOSTED_FIELDS_TIMEOUT':
-											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; // unknown error 
-											//Occurs when Hosted Fields does not finish setting up within 60seconds
-											 break;
-										case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
-											 hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; // merchant error
-											 break;
-										case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
-											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; // merchant error
-											break;
-										case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
-											hostedFieldsErrMsg=CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"]; //merchant error
-											break;
-										case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
-											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"];//merchant error
-											break;  
-										default:
-											hostedFieldsErrMsg= CheckoutPayments.errorMessages["BT_HOSTEDFIELDS_ERROR"];// merchant error
-									}
-								
-								document.getElementById("hostedFieldsErrorMessage_"+statusCount).innerHTML=hostedFieldsErrMsg;
-								return;
-						});
-				}).catch( function(clientErr) {
-					console.error("clientErr:",clientErr);
-					
-						$("#hostedFieldsWrapper_"+statusCount).css("display", "none"); // if error occurs don't display wrapper
-						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);
-						cursor_clear();
-					return;
-				 });
-			},
-		
-		/**
-		 * PayPal payment script
-		 * 
-		 */
-		
-		payPalVaultPayment:function(payPalDivId,paypalCreditbutton,clientToken,statusCount,amountval,userType,isPaypalCreditEnableFlag,isMultiCapEnable)
-			{
-				
-				//disabling the Next button when paypal is selected
-					var nextButtonId = document.getElementById("shippingBillingPageNext");
-					nextButtonId.classList.add("btn-disabled-BT");
-					
-				// if already iframe exists,we are clearing it
-				document.getElementById(payPalDivId).innerHTML = "";
-				
-				if(isPaypalCreditEnableFlag == 'true')
-					document.getElementById(paypalCreditbutton).innerHTML = "";
-				
-				var client_token=clientToken;
-				var enableShippingAddressFlag = true;
-				var shippingAddressEditableFlag = true;
-				var createPayPalPayment = {};
-				var shippingAddressOverrideValues = {};
-				
-				if(isPickUpInStore)
-					$(".billing_address_container").css("display", "none"); 
-				
-				if(isPickUpInStore || isMultipleShipping){
-					enableShippingAddressFlag = false;
-					shippingAddressEditableFlag = false;
-				}else{
-					var	recipientNameCmrce=selectedShippingContact.firstName+" "+selectedShippingContact.lastName;
-					var	line1Cmrce= selectedShippingContact.addressLine[0];
-					var line2Cmrce = selectedShippingContact.addressLine[1];
-					var	cityCmrce= selectedShippingContact.city;
-					var	stateCmrce= selectedShippingContact.state;  
-					var	countryCodeCmrce= selectedShippingContact.country;                                                                                                
-					var	postalCodeCmrce=selectedShippingContact.zipCode;
-					var	phoneNumber = selectedShippingContact.phone1;
-					
-					shippingAddressOverrideValues["recipientName"]= recipientNameCmrce;
-					shippingAddressOverrideValues["line1"]= line1Cmrce;
-					shippingAddressOverrideValues["city"]= cityCmrce;
-					shippingAddressOverrideValues["state"]= stateCmrce;
-					shippingAddressOverrideValues["countryCode"]= countryCodeCmrce;
-					shippingAddressOverrideValues["postalCode"]= postalCodeCmrce;
-					if(line2Cmrce != null && line2Cmrce != "" )
-						shippingAddressOverrideValues["line2"]= line2Cmrce;
-					if(phoneNumber != null && phoneNumber != "" )
-						shippingAddressOverrideValues["phone"]= phoneNumber;
-
-					createPayPalPayment["shippingAddressOverride"] = shippingAddressOverrideValues ;
-				}
-				
-				if(paypalFlow == 'checkout'){
-					createPayPalPayment["flow"]= paypalFlow;
-					createPayPalPayment["intent"]= paypalIntent;
-				}else{
-					createPayPalPayment["flow"]= paypalFlow;
-					createPayPalPayment["billingAgreementDescription"]=billingAgreementDescription;
-				}
-				
-				createPayPalPayment["locale"] =localeVal;
-				createPayPalPayment["currency"]= WCParamJS.commandContextCurrency ;
-				createPayPalPayment["enableShippingAddress"]= enableShippingAddressFlag;
-				createPayPalPayment["shippingAddressEditable"]= shippingAddressEditableFlag;
-				createPayPalPayment["displayName"] = paypalMerchantName;
-				
-				// Create a client.
-				braintree.client.create({
-				  authorization : client_token 
-				}).then( function (clientInstance) {
-						if(advancedFraudTools == "true"){
-						// device data
-									braintree.dataCollector.create({
-										client: clientInstance,
-										kount: true
-									  }).then(function( dataCollectorInstance) {
-										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-										
-									  }).catch(function (err){
-											console.error("device data error for paypal is",err);
-											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-											  return;
-										});
-						}
-				// Create a PayPal Checkout component.
-					  braintree.paypalCheckout.create({
-						client: clientInstance
-					  }).then(function ( paypalCheckoutInstance ) {
-						
-						// Set up PayPal with the checkout.js library
-						paypal.Button.render({
-							env: paymentEnvironment, // this value can be either 'production' or  'sandbox'
-							commit: true, // This will add the transaction amount to the PayPal button
-							style: {
-									label: 'paypal',
-									size:'small'
-									
-								  },
-							  payment: function () {
-								  var piAmountVal = document.getElementById('piAmount_'+statusCount).value;
-								  createPayPalPayment["amount"]= piAmountVal;
-								return paypalCheckoutInstance.createPayment(createPayPalPayment);
-							  },
-							  onAuthorize: function (data, actions) {
-								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-								  // Submit `payload.nonce` to your server
-								  
-								 BrainTreePayments.processPayPalResponseFromOrdBilling(isPickUpInStore , isMultipleShipping,payload,false );
-								});
-							  },
-							  onCancel: function (data) {
-								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
-								//MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONCANCEL"]); //no need to display to user
-								return; 
-							  },
-							  onError: function (err) {
-								console.error('checkout.js error', err); // TODO handle this when site is down give a msg to user
-								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);											
-								return;										
-							  }
-								}, '#'+payPalDivId).then(function () {
-								  // The PayPal button will be rendered in an
-									// html element with the id
-								  // `paypal-button`. This function will be
-									// called when the PayPal button
-								  // is set up and ready to be used.
-								});
-
-							// paypal credit
-						if(isPaypalCreditEnableFlag == 'true'){
-							paypal.Button.render({
-							env: paymentEnvironment, // Or 'sandbox'
-							commit: true, // This will add the transaction amount to the PayPal button
-							style: {
-									label: 'credit',
-									size:'small'
-								  },
-        
-							payment: function () {
-								  var piAmountVal = document.getElementById('piAmount_1').value;
-								  createPayPalPayment["amount"]= piAmountVal;
-								return paypalCheckoutInstance.createPayment(createPayPalPayment);
-							  },
-
-							  onAuthorize: function (data, actions) {
-								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-								  // Submit `payload.nonce` to your server
-								 BrainTreePayments.processPayPalResponseFromOrdBilling(isPickUpInStore , isMultipleShipping,payload,true );
-								});
-							  },
-							  onCancel: function (data) {
-								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
-								return;		
-							  },
-							  onError: function (err) {
-								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);
-								console.error('checkout.js error:', err); 
-								return;
-																			
-							  }
-								}, '#'+paypalCreditbutton).then(function () {
-								  // The PayPal button will be rendered in an
-									// html element with the id
-								  // `paypal-button`. This function will be
-									// called when the PayPal button
-								  // is set up and ready to be used.
-								});
-							}
-					  }).catch(function(paypalCheckoutErr){
-							console.error(" paypalCheckoutErr: ",paypalCheckoutErr);
-							MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_CHECKOUTERROR"]);																				
-							return;
-					  });
-					  
-				}).catch(function(clientErr){
-					console.error("clientErr:",clientErr); // TODO check if any  other errors exists
-					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);																				
-					cursor_clear();
-					return;
-					
-				});
-		},
-		
-		/**
-		 *  to process payload object of PayPal payment
-		 */
-	processPayPalResponseFromOrdBilling: function(isPickUpInStoreFlag , isMultipleShipping,payload,isPayplaCredit ){
-		
-		if(!isPickUpInStoreFlag && !isMultipleShipping ){
-			BrainTreePayments.updateShippingAddressFromPaypal(payload ,"S" );
-		  }
-		document.querySelector('#pay_nonce').value = payload.nonce;
-		document.querySelector('#pay_type').value = payload.type;
-		document.querySelector('#PayPalEmailId').value = payload.details.email;
-		if(isPayplaCredit)
-			document.querySelector('#pay_type').value = "PayPalCredit";
-		
-		if(paypalBillingAddressEnable == 'true'){
-			BrainTreePayments.updateBillingAddressFromPaypal(payload);
-		  }
-		  
-		CheckoutPayments.processCheckout('PaymentForm');
-	},
-		
-	/**
-	 *  PayPal payment script for express checkout
-	 */
-		payPalVaultPaymentFromExpressCheckout:function(payPalDivId,paypalCreditButton,clientToken,orderItemId,redirectURL,grandTotal,userType,isPickUpStore,isPaypalCreditEnableFlag,isMultiCapEnable)
-			{
-				
-				var client_token=clientToken;
-				var addressType = "S";
-				var deviceSessionId ;		
-				var fraudMerchantId	;
-				var enableShippingAddressFlag =  true ;
-				var shippingAddressEditableFlag =  true;
-				if(isPickUpStore){
-					enableShippingAddressFlag = false ;
-					shippingAddressEditableFlag = false ;
-				}
-				
-				var createPayPalPayment={};
-				
-				if(paypalFlow == 'checkout'){
-					createPayPalPayment["flow"]= paypalFlow;
-					createPayPalPayment["intent"]= paypalIntent;
-				}else{
-					createPayPalPayment["flow"]= paypalFlow;
-					createPayPalPayment["billingAgreementDescription"]=billingAgreementDescription;
-				}
-				
-				createPayPalPayment["locale"] =localeVal;
-				createPayPalPayment["amount"]= grandTotal;
-				createPayPalPayment["currency"]= WCParamJS.commandContextCurrency ;
-				createPayPalPayment["enableShippingAddress"]= enableShippingAddressFlag;
-				createPayPalPayment["shippingAddressEditable"]= shippingAddressEditableFlag;
-				createPayPalPayment["displayName"] = paypalMerchantName;
-				
-				// Create a client.
-				braintree.client.create({
-				  authorization : client_token 
-				}).then( function (clientInstance) {
-						if(advancedFraudTools == "true"){
-						// device data
-									braintree.dataCollector.create({
-										client: clientInstance,
-										kount: true
-									  }).then(function( dataCollectorInstance) {
-										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-										deviceSessionId = deviceData.device_session_id;
-										fraudMerchantId = deviceData.fraud_merchant_id;
-
-									  }).catch(function (err){
-											
-											console.error("device data error for paypal express checkout is",err);
-											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);																				
-											  return;
-										});
-						}
-				// Create a PayPal Checkout component.
-					  braintree.paypalCheckout.create({
-						client: clientInstance
-					  }).then(function ( paypalCheckoutInstance) {
-
-						// Set up PayPal with the checkout.js library
-						paypal.Button.render({
-							env: paymentEnvironment, // Or 'sandbox'
-							commit: true, // This will add the transaction amount to the PayPal button
-							style: {
-									label: 'paypal',
-									size:'small'
-								  },
-							payment: function () {
-										return paypalCheckoutInstance.createPayment(createPayPalPayment)
-									},
-
-							  onAuthorize: function (data, actions) {
-								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-									// Submit `payload.nonce` to your server
-									BrainTreePayments.processPayPalResponseFromShopcart(isPickUpStore , userType , payload , addressType , orderItemId, redirectURL, false , deviceSessionId , fraudMerchantId);
-								  });
-							  },
-
-							  onCancel: function (data) {
-								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
-								//MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONCANCEL"]);	//no need to display to user																			
-								return; 
-							  },
-
-							  onError: function (err) {
-								  	MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);																				
-								console.error('checkout.js error', err); // TODO handle this. Whn site is down fgive a msg to user
-								return;
-							  }
-								}, '#'+payPalDivId).then(function () {
-								  // The PayPal button will be rendered in an
-									// html element with the id
-								  // `paypal-button`. This function will be
-									// called when the PayPal button
-								  // is set up and ready to be used.
-								});
-
-					if(isPaypalCreditEnableFlag == 'true'){
-							// paypal credit
-							createPayPalPayment["offerCredit"] = true;
-						paypal.Button.render({
-							env: paymentEnvironment, // Or 'sandbox'
-							commit: true, // This will add the transaction amount to the PayPal button
-							style: {
-									label: 'credit',
-									size:'small'
-								  },
-								  
-							payment: function () {
-									return paypalCheckoutInstance.createPayment(createPayPalPayment);
-							  },
-
-							  onAuthorize: function (data, actions) {
-								return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-									// Submit `payload.nonce` to your server
-									BrainTreePayments.processPayPalResponseFromShopcart(isPickUpStore , userType , payload , addressType , orderItemId, redirectURL , true, deviceSessionId , fraudMerchantId);
-									});
-							  },
-
-							  onCancel: function (data) {
-								console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2));
-								//MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONCANCEL"]); //no need to display to user
-								return; 
-							  },
-
-							  onError: function (err) {
-								console.error('checkout.js error', err); 
-								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_ONERROR"]);
-								return; 
-																			
-							  }
-								}, '#'+paypalCreditButton).then(function () {
-								  // The PayPal button will be rendered in an
-									// html element with the id
-								  // `paypal-button`. This function will be
-									// called when the PayPal button
-								  // is set up and ready to be used.
-								});
-							}
-
-					  }).catch(function(paypalCheckoutErr){
-							console.log("paypalCheckoutErr:",paypalCheckoutErr);	
-							MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_PAYPAL_CHECKOUTERROR"]);					
-							return;
-					  });
-					  
-
-				}).catch(function(clientErr){
-					console.error("clientErr",clientErr); // TODO check if any other errors exists
-					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-					cursor_clear();
-					return;
-					
-				});
-			},
-		
-			/**
-			 * process Payload object of PayPal of shop cart page
-			 */
-		processPayPalResponseFromShopcart: function(isPickUpStore , userType , payload , addressType , orderItemId, redirectURL, 
-									isPaypaCredit , deviceSessionId , fraudMerchantId)
-		{
-			var postRefreshHandlerParameters = [];
-			var initialURL = "AjaxRESTOrderItemUpdate";
-			var responseParams = {};
-		
-			if(isPickUpStore){
-				if(userType == 'G' && paypalBillingAddressEnable == 'false')
-					addressType ="B";
-			ShipmodeSelectionExtJS.submitStoreSelectionForm(document.orderItemStoreSelectionForm);
-			responseParams["payInStore"] = false;
-			responseParams["isPickUpStore"] = true;
-			}else{
-				if(userType == 'G' && paypalBillingAddressEnable == 'false')
-					addressType ="SB";
-				responseParams["isPickUpStore"] = false;
-			}
-			
-			if((isPickUpStore && userType == 'G' && paypalBillingAddressEnable == 'false' ) || !isPickUpStore){
-				BrainTreePayments.updateShippingAddressFromPaypal(payload , addressType);
-			}
-			
-			if(paypalBillingAddressEnable == 'true'){
-				BrainTreePayments.updateBillingAddressFromPaypal(payload);
-			}
-			
-			responseParams["pay_nonce"] = payload.nonce;
-			responseParams["deviceSessionId"] = deviceSessionId;
-			responseParams["fraudMerchantId"] = fraudMerchantId
-			
-			if(isPaypaCredit){
-				responseParams["pay_type"] = "PayPalCredit";
-				responseParams["paypalCredit"] = true;	
-			}else{
-				responseParams["pay_type"] = payload.type;
-				responseParams["paypalCredit"] = false;	
-			}
-			responseParams["PayPalEmailId"] = payload.details.email;
-			
-			var urlRequestParams = [];
-			urlRequestParams["remerge"] = "***";
-			urlRequestParams["check"] = "*n";
-			urlRequestParams["allocate"] = "***";
-			urlRequestParams["backorder"] = "***";
-			urlRequestParams["calculationUsage"] = "-1,-2,-3,-4,-5,-6,-7";
-			urlRequestParams["calculateOrder"] = "1";
-			urlRequestParams["orderItemId"] = orderItemId;
-			urlRequestParams["orderId"] = ".";
-					urlRequestParams["storeId"] = WCParamJS.storeId;
-					postRefreshHandlerParameters.push({"URL":redirectURL,"requestType":"GET", "requestParams":responseParams}); 
-					var service = getCustomServiceForURLChaining(initialURL,postRefreshHandlerParameters,null);
-									service.invoke(urlRequestParams);
-		},
-		/**
-		 * update shipping address with the shipping address obtained from paypal
-		 */
-		updateShippingAddressFromPaypal: function(payload , addressTypeVal){
-			
-			var postUdatingPaypalAddressData = {};
-			if(addressTypeVal == "B"){
-				postUdatingPaypalAddressData = { storeId: WCParamJS.storeId,
-					catalogId: WCParamJS.catalogId , 
-					lagId: WCParamJS.langId ,
-					addressType:addressTypeVal,
-					addressTypeFromPayPal:'StoreAddress',
-					pickupStoreId: PhysicalStoreCookieJSStore.getPickUpStoreIdFromCookie()
-				};
-			}else{
-				var ShippingAddressAddressLine2 ='' ;
-				if(payload.details.shippingAddress.line2 != null)
-					ShippingAddressAddressLine2 = payload.details.shippingAddress.line2;
-					postUdatingPaypalAddressData = { storeId: WCParamJS.storeId,
-					catalogId: WCParamJS.catalogId , 
-					lagId: WCParamJS.langId ,
-					addressTypeFromPayPal: 'PayPalShippingAddress' ,
-					addressType:addressTypeVal,
-					recipientName: payload.details.shippingAddress.recipientName,
-					address1:payload.details.shippingAddress.line1,
-					address2:ShippingAddressAddressLine2,
-					city: payload.details.shippingAddress.city,
-					state:payload.details.shippingAddress.state,
-					countryCode:payload.details.shippingAddress.countryCode,
-					postalCode:payload.details.shippingAddress.postalCode };
-			}
-					$.ajax({
-						async: false,
-						type: 'POST', 
-						url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
-						data : postUdatingPaypalAddressData,
-						success: function(responseData){
-							var resultData = responseData;
-							resultData = resultData.replace('/*','');
-							resultData = resultData.replace('*/','');
-							var finaldata = JSON.parse(resultData);
-							var updatedAddressId = finaldata.result.updatedAddressId;
-							
-							if(updatedAddressId != ""){
-							var paramsInfo=[];
-							paramsInfo["addressId"]= updatedAddressId;
-							paramsInfo["storeId"]= WCParamJS.storeId;
-							paramsInfo["catalogId"] = WCParamJS.catalogId;
-							paramsInfo["langId"] = WCParamJS.langId;;
-							paramsInfo["orderId"] = ".";
-							paramsInfo["calculationUsage"] = "-1,-2,-3,-4,-5,-6,-7";
-							paramsInfo["allocate"] = "***";
-							paramsInfo["backorder"] = "***";
-							paramsInfo["remerge"] = "***";
-							paramsInfo["check"] = "*n";
-							paramsInfo["calculateOrder"] = "1";
-							paramsInfo["requesttype"] ="ajax";
-						   
-							wcService.invoke("OrderItemAddressShipMethodUpdate", paramsInfo);
-							}
-						}
-					});
-		},
-		
-		/**
-		 * to update billing address with the billing address obtained from paypal
-		 */
-		updateBillingAddressFromPaypal: function(payload){
-			var BillingAddressRecipientName='';
-			var BillingAddressAddressLine2 ='' ;
-			
-			if(payload.details.shippingAddress != null)
-				BillingAddressRecipientName = payload.details.shippingAddress.recipientName;
-			else
-				BillingAddressRecipientName = "PayPalFirstName PayPalLastName";
-
-			if(payload.details.billingAddress.line2 != null)
-					BillingAddressAddressLine2 = payload.details.billingAddress.line2;
-
-				var postData = { storeId: WCParamJS.storeId,
-					catalogId: WCParamJS.catalogId , 
-					lagId: WCParamJS.langId ,
-					addressTypeFromPayPal: 'PayPalBillingAddress' ,
-					addressType:'B',
-					recipientName: BillingAddressRecipientName,
-					address1:payload.details.billingAddress.line1,
-					address2:BillingAddressAddressLine2,
-					city: payload.details.billingAddress.city,
-					state:payload.details.billingAddress.state,
-					countryCode:payload.details.billingAddress.countryCode,
-					postalCode:payload.details.billingAddress.postalCode };
-					$.ajax({
-						async: false,
-						type: 'POST', 
-						url: "AjaxRESTUpdateShippingAddressFromPaypalCheckout",
-						data : postData,
-						success: function(responseData){
-							var resultData = responseData;
-							resultData = resultData.replace('/*','');
-							resultData = resultData.replace('*/','');
-							var finaldata = JSON.parse(resultData);
-							var addressId = finaldata.result.updatedAddressId;
-							
-							var billingAddressList = document.getElementById('billing_address_id_1');
-							if(billingAddressList != null)
-								billingAddressList.options[billingAddressList.selectedIndex].value = addressId;
-						}
-					});
-		},
-		/**
-		 * To display google pay button
-		 */
-		googlePayPayment:function(googlePaybuttonId,clientToken,statusCount){
-
-			//displaying the Next button if hidden
-				
-				var nextButtonId = document.getElementById("shippingBillingPageNext");
-				nextButtonId.classList.remove("btn-disabled-BT");
-				
-				$(".billing_address_container").css("display", "block"); 
-				var button = googlePaybuttonId
-				var paymentsClient = new google.payments.api.PaymentsClient({
-				  environment: googlepayPaymentEnvironment //'TEST'  Or 'PRODUCTION'
-				});
-
-				braintree.client.create({
-				  authorization: clientToken
-				}).then( function (clientInstance) {
-				  
-								if(advancedFraudTools == "true"){
-									// device data
-									braintree.dataCollector.create({
-										client: clientInstance,
-										kount: true
-									  }).then(function( dataCollectorInstance) {
-										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-
-									  }).catch(function (err){
-											console.error("device data error for google pay is:",err);
-											MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);	
-											  return;
-										});
-								}
-					
-
-				braintree.googlePayment.create({
-					client: clientInstance
-				  }).then(function (googlePaymentInstance) {
-				   paymentsClient.isReadyToPay({
-					  allowedPaymentMethods: ["CARD", "TOKENIZED_CARD"] // googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods
-					}).then(function(response) {
-					 if (response.result) {
-						// assigning the googlePaymentInstance to a var.
-						$("#googlePay_"+statusCount).css("display","block");
-						
-						var keyForInst="googlePay"+statusCount;
-						gPayPaymentsClient_BT[keyForInst]=paymentsClient;
-						instances_BT[keyForInst]=googlePaymentInstance;
-					}
-					}).catch(function (err) {
-					  // Handle errors
-					  console.error("error when response failed:",err);
-					  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_RESPONSE_FAILED_ERROR"]);
-					  return;
-					});
-				  }).catch(function(googlePaymentErr){
-					console.error("googlePaymentError:",googlePaymentErr);
-					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_PAYMENT_ERROR"]);
-					return;
-				  });
-
-				  
-				}).catch(function(clienterr){
-					console.error("clienterr:",clienterr);
-					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);
-					return;
-				});
-		},
-		/**
-		 * generating payload object ,on click of google pay payment
-		 */
-		googlePayOnClick : function(piFormName,statusCount){
-			var googlePayInstance=instances_BT["googlePay"+statusCount];
-			var paymentsClient=gPayPaymentsClient_BT["googlePay"+statusCount];
-			var piAmountVal = document.getElementById('piAmount_'+statusCount).value;
-			var paymentDataRequest = googlePayInstance.createPaymentDataRequest({
-							// remove the below comment for production
-							// merchantId: googlePayPaymentMerchantId, //not needed for sandbox testing
-							transactionInfo: {
-							  currencyCode: WCParamJS.commandContextCurrency,
-							  totalPriceStatus: 'FINAL',
-							  totalPrice: piAmountVal // Your amount
-							},
-							cardRequirements: {
-							  billingAddressRequired: true
-							}
-						  });
-
-						  paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData) {
-							googlePayInstance.parseResponse(paymentData, function (err, result) {
-							  if (err) {
-								// Handle parsing error
-								console.error(" parsing error ::"+err);
-								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_PARSING_ERROR"]);
-								return;
-							  }
-							  // Send result.nonce to your server
-								document.querySelector('#pay_nonce').value = result.nonce;
-								document.querySelector('#pay_type').value = result.type;
-								setCurrentId('shippingBillingPageNext'); 
-								CheckoutPayments.processCheckout(piFormName);	
-							});
-						  }).catch(function (err) {
-							console.error("error when loadingPaymentData :",err);
-							MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GOOGLEPAY_ERROR_AT_LOADPAYMENTDATA"]);
-							return;
-						  });
-		},
-		/**
-		 * To display apple pay button
-		 */
-		applePayPayment:function(applePaybuttonId,clientToken,statusCount){
-				
-				// display in next button if hidden
-				var nextButtonId = document.getElementById("shippingBillingPageNext");
-				nextButtonId.classList.remove("btn-disabled-BT");
-				
-				var button = applePaybuttonId
-				
-			// apple pay
-					if (!window.ApplePaySession) {
-					  console.error('This device does not support Apple Pay');
-					  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_SUPPORTED"]);
-					  return; //TODO cross check this with the bT script
-					}
-
-					if (!ApplePaySession.canMakePayments()) {
-					  console.error('This device is not capable of making Apple Pay payments');
-					  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_CAPABLE"]);
-					  return; //TODO ,see if it is correct to return
-					}
-
-				braintree.client.create({
-				  authorization: clientToken
-				}).then( function (clientInstance) {
-					   
-				// device data
-						braintree.dataCollector.create({
-							client: clientInstance,
-							kount: true
-						  }).then(function( dataCollectorInstance) {
-							
-							var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-							document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-							document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-
-						  }).catch(function (err){
-								
-								console.error("device data error for apple pay is:"+err);
-								MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-								  return;
-							});
-
-							
-				// apple pay
-							braintree.applePay.create({
-							client: clientInstance
-						  }, function (applePayErr, applePayInstance) {
-							if (applePayErr) {
-							  console.error('Error creating applePayInstance:', applePayErr);
-							  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_APPLEPAY_ERR"]);
-							  
-							  return;
-							}
-							
-							var promise = ApplePaySession.canMakePaymentsWithActiveCard(applePayInstance.merchantIdentifier);
-							promise.then(function (canMakePaymentsWithActiveCard) {
-							 
-							  if (canMakePaymentsWithActiveCard) {
-									// Set up Apple Pay buttons
-									var keyForInst="applePay"+statusCount;
-									instances[keyForInst]=applePayInstance;
-									$("#applePay_"+statusCount).css("display", "block");
-									
-							  }
-							});
-						  });
-
-				}).catch(function(clienterr){
-					console.error("clienterror:",clienterr);
-					MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);
-					return;
-				});
-		},
-		/**
-		 * to generate payload obejct of apple pay after the onclick of apple pay button
-		 */
-		applePayOnClick:function(piFormName,statusCount,amount){
-					
-					var applePayInstance=instances_BT["applePay"+statusCount];
-					var paymentRequest = applePayInstance.createPaymentRequest({
-				  total: {
-					label: 'My Store',
-					amount: amount
-				  },
-				  requiredBillingContactFields: ["postalAddress"]
-				});
-				console.log(paymentRequest.countryCode);
-				console.log(paymentRequest.currencyCode);
-				console.log(paymentRequest.merchantCapabilities);
-				console.log(paymentRequest.supportedNetworks);
-				var session = new ApplePaySession(2, paymentRequest);
-					session.onvalidatemerchant = function (event) {
-				  applePayInstance.performValidation({
-					validationURL: event.validationURL,
-					displayName: 'My Store'
-				  }, function (err, merchantSession) {
-					if (err) {
-						console.error("apple pay failed to load");
-						MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_PERFORM_VALIDATION_ERR"]);
-					  return;
-					}
-					session.completeMerchantValidation(merchantSession);
-				  });
-				};
-						
-						session.onpaymentauthorized = function (event) {
-					  console.log('Your shipping address is:', event.payment.shippingContact);
-						
-					  applePayInstance.tokenize({
-						token: event.payment.token
-					  }, function (tokenizeErr, payload) {
-						if (tokenizeErr) {
-						  console.error('Error tokenizing Apple Pay:', tokenizeErr);
-						  MessageHelper.displayErrorMessage(CheckoutPayments.errorMessages["BT_APPLEPAY_TOKENIZEERR"]);
-						  session.completePayment(ApplePaySession.STATUS_FAILURE);
-						  return;
-						}
-						session.completePayment(ApplePaySession.STATUS_SUCCESS);
-
-						// Send payload.nonce to your server.
-						console.log('nonce:', payload.nonce);
-						
-						document.querySelector('#pay_nonce').value = payload.nonce;
-						document.querySelector('#pay_type').value = payload.type; //ApplePayCard
-						setCurrentId('shippingBillingPageNext'); 
-						CheckoutPayments.processCheckout(piFormName);
-						// If requested, address information is accessible in
-						// event.payment
-						// and may also be sent to your server.
-						console.log('billingPostalCode:', event.payment.billingContact.postalCode);
-					  });
-					};
-					
-					session.begin();
-	},
-		
-		/**
-		 * to deal with the Saved Payments and New Paymenst fieldsets
-		 */
-		toggleExpandNavBT:function(id,displayCardsFlag){
-		
-			var icon = byId("icon_" + id);
-			var section_list = byId("section_list_" + id);
-			if(icon.className == "arrow") {
-				icon.className = "arrow arrow_collapsed";
-				$(section_list).attr("aria-expanded", "false");
-				$(section_list).css("display", "none");
-				if(id=="newPayments"){
-					$(".paypalCheckoutdiv").css("display", "none"); 
-					$("#newCardDetailsFillingDiv").css("display", "none");
-					$("#googlePay_1").css("display", "none");
-				}
-			} else {
-				icon.className = "arrow";
-				$(section_list).attr("aria-expanded", "true");
-				$(section_list).css("display", "block");
-				
-				if(displayCardsFlag=="true"){
-					if(id=="newPayments"){
-						
-						$("#section_list_savedPayments").attr("aria-expanded", "false");
-						$("#section_list_savedPayments").css("display", "none");
-						
-						// hide otherfield set
-						var iconOther = byId("icon_savedPayments");
-						iconOther.className="arrow arrow_collapsed";
-						document.querySelector('#fromSavedPaymentFlag').value = false;
-
-						$(".paypalCheckoutdiv").css("display", "block"); 
-						$("#newCardDetailsFillingDiv").css("display", "block"); 
-						$("#googlePay_1").css("display", "block");
-						
-						
-					}
-					else if(id=="savedPayments"){
-						
-						$("#section_list_newPayments").attr("aria-expanded", "false");
-						$("#section_list_newPayments").css("display", "none");
-
-						$(".paypalCheckoutdiv").css("display", "none"); 
-						$("#newCardDetailsFillingDiv").css("display", "none"); // when
-																				// saved
-																				// card
-																				// selected
-																				// ,new
-																				// card
-																				// div
-																				// should
-																				// not
-																				// be
-																				// appeared
-						$("#googlePay_1").css("display", "none");
-						//hide other fieldset
-						var iconOther = byId("icon_newPayments");
-						iconOther.className="arrow arrow_collapsed";
-						document.querySelector('#fromSavedPaymentFlag').value = true;
-						
-						//enabling Next Button
-						var nextButtonId = document.getElementById("shippingBillingPageNext");
-						nextButtonId.classList.remove("btn-disabled-BT");
-						
-					}
-				}
-				
-				
-			}
-		},
-		
-		/**
-		 * To display only one payment at a time. Hiding other payments if any are open
-		 */
-		displayCardDetailsDiv:function(paymentCard,statusCount){
-			
-			if(paymentCard=="newCard")
-			{
-				console.log("inside new card payment");
-				$("#newCardDetailsFillingDiv").css("display", "block");
-				$("#existingCardsList").css("display", "none"); 
-				$(".paypalCheckoutdiv").css("display", "none"); 
-				$("#googlePay_"+statusCount).css("display", "none"); 
-				$(".billing_address_container").css("display", "block"); 
-				
-				// when new card selected ,savedcards div should not be appeared
-			}
-			else if (paymentCard=="existingCard")
-			{
-				$(".billing_address_container").css("display", "block"); 
-				$("#existingCardsList").css({"width":"300px","margin-left":"210px","display": "block","word-wrap": "break-word"});
-				$("#newCardDetailsFillingDiv").css("display", "none");
-				// when saved card selected ,new card div should not be appeared
-				$("#applePay_"+statusCount).css("display", "none");	 
-			}
-			else if (paymentCard=="payPal")
-			{
-				if(isPickUpInStore)
-					$(".billing_address_container").css("display", "none"); 
-				console.log("inside paypal  payment");
-				$(".paypalCheckoutdiv").css("display", "block"); 
-				$("#newCardDetailsFillingDiv").css("display", "none"); 
-				$("#googlePay_"+statusCount).css("display", "none"); 
-				$("#applePay_"+statusCount).css("display", "none");	
-			}
-			else if(paymentCard=="googlePay")
-			{
-				$(".billing_address_container").css("display", "block"); 
-				$(".paypalCheckoutdiv").css("display", "none"); 
-				$("#newCardDetailsFillingDiv").css("display", "none");
-				$("#googlePay_"+statusCount).css("display", "block"); 
-				$("#applePay_"+statusCount).css("display", "none");	
-			}
-			else if(paymentCard=="applePay")
-					{
-						$(".billing_address_container").css("display", "block"); 
-						$(".paypalCheckoutdiv").css("display", "none"); 
-						$("#newCardDetailsFillingDiv").css("display", "none");
-						$("#googlePay_"+statusCount).css("display", "none"); 
-						$("#applePay_"+statusCount).css("display", "block");
-					}
-			
-		}
-	}
-
-
-//-----------------------------------------------------------------
-// Licensed Materials - Property of IBM
-//
-// WebSphere Commerce
-//
-// (C) Copyright IBM Corp. 2008, 2017 All Rights Reserved.
-//
-// US Government Users Restricted Rights - Use, duplication or
-// disclosure restricted by GSA ADP Schedule Contract with
-// IBM Corp.
-//-----------------------------------------------------------------
-
-/**
-* @fileOverview This JavaScript file contains functions used by the payment section of the checkout pages for braintree mobile paymnets.
-*/
-
-//declare the namespace if it does not already exist
-if (BrainTreeMobilePayments == null || typeof(BrainTreeMobilePayments) != "object") {
-	var BrainTreeMobilePayments = new Object();
-}
-BrainTreeMobilePayments = {
-	
-		/** used to hold error messages for any error encountered */
-		errorMessages: {},
-		
-		/**
-		* This function is used to initialize the error messages object with all the required error messages.
-		* @param {String} key The key used to access this error message.
-		* @param {String} msg The error message in the correct language.
-		*/
-		setErrorMessage:function(key, msg) {
-			this.errorMessages[key] = msg;
-		},
-		/**
-		 * To display credit card hosted fields, in mobile pages
-		 */
-		creditCardPayment:function(clientToken){
-			// if already iframe exists,we are clearing it
-				document.getElementById("card-number").innerHTML = "";
-				document.getElementById("cvv").innerHTML = "";
-				document.getElementById("expiration-date").innerHTML = "";
-			braintree.client.create({
-				 authorization: clientToken
-				 }).then( function(clientInstance) {
-							
-							//device data
-								if(advancedFraudTools == "true"){
-										
-										braintree.dataCollector.create({
-											client: clientInstance,
-											kount: true
-										  }).then(function( dataCollectorInstance) {
-											  
-											var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-											document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-											document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-										  }).catch(function (err){
-												console.error("device data error for creditcard  is",err);
-												MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-												  return;
-												
-											});
-								}
-
-							//hosted fields
-							braintree.hostedFields.create({
-							client: clientInstance,
-							styles: {
-								'input': {
-								   'font-size': '14px'
-																			
-								},
-								'input.invalid': {
-								   'color': 'red'
-								},
-								'input.valid': {
-								   'color': 'green'
-								}
-							},
-							fields: {
-								number: {
-									selector: '#card-number',
-									border: '1px solid #333'
-								},
-								cvv: {
-									selector: '#cvv'
-								},
-								expirationDate: {
-									selector: '#expiration-date'
-								}
-							}
-													          
-						}).then(function (hostedFieldsInstance) {
-								
-								$("#payment_method_BrainTree_CreditCard").css("display", "block");
-								var keyforInst="inst_creditCard";
-								instances_BT[keyforInst]=hostedFieldsInstance;
-								console.log("hostedFieldsInstance",hostedFieldsInstance);
-								
-							}).catch( function (hostedFieldsErr){
-							console.error("hostedFieldsErr:",hostedFieldsErr);
-							var hostedFieldsErrMsg="";
-							if(hostedFieldsErr){
-								$("#hostedFieldsErrorMessage").css("display", "block"); 
-								switch (hostedFieldsErr.code) {
-									case 'HOSTED_FIELDS_TIMEOUT':
-										hostedFieldsErrMsg= "Please try placing order after sometime"; //unknown error .
-										//Occurs when Hosted Fields does not finish setting up within 60 seconds.
-										 break;
-									case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
-										 hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
-										 break;
-									case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
-										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
-										break;
-									case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
-										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
-										break;
-									case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
-										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error
-										break;  
-									default:
-										hostedFieldsErrMsg= "Please try placing order after sometime"; //merchnat error 
-								}
-								hostedFieldsErrMsg= BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_ERROR"];
-							}
-							document.getElementById("hostedFieldsErrorMessage").innerHTML=hostedFieldsErrMsg;
-							return;
-					
-					});
-			}).catch( function(clientErr) {
-				console.error("clientErr:",clientErr);
-				if(clientErr){
-					$("#hostedFieldsWrapper").css("display", "none"); //if error occurs don't display wrapper							          	
-					MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);		
-					cursor_clear();
-				}
-				return;
-			 });
-		},
-		/**
-		 * To display google pay button in mobile page
-		 */
-		googlePayPayment:function(clientToken , paymentEnv){
-			var paymentsClient = new google.payments.api.PaymentsClient({
-			  environment: paymentEnv // Or 'PRODUCTION'
-			});
-
-			braintree.client.create({
-			  authorization: clientToken
-			}).then( function (clientInstance) {
-			 
-
-						if(advancedFraudTools == "true"){
-						// device data
-									braintree.dataCollector.create({
-										client: clientInstance,
-										kount: true
-									  }).then(function( dataCollectorInstance) {
-										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-										
-									  }).catch(function (err){
-											
-											console.error("device data error for GooglePay is",err);
-											MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-											  return;
-											
-										});
-						}
-			
-
-			braintree.googlePayment.create({
-				client: clientInstance
-			  }).then(function (googlePaymentInstance) {
-			   paymentsClient.isReadyToPay({
-				  allowedPaymentMethods: ["CARD", "TOKENIZED_CARD"] //googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods
-				}).then(function(response) {
-				 if (response.result) {
-					//assigning the  googlePaymentInstance to a var.
-					$("#payment_method_BrainTree_GooglePay").css("display", "block"); //TODO payment should be opened only when instance is created
-					var keyForInst="googlePay";
-					gPayPaymentsClient_BT[keyForInst]=paymentsClient;
-					instances_BT[keyForInst]=googlePaymentInstance;
-					
-				  }
-				}).catch(function (err) {
-				  
-				 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_RESPONSE_FAILED_ERROR"]);	
-				  console.error("err when response failed:",err);
-				});
-			  }).catch(function(googlePaymentErr){
-				console.error("googlePaymentError:",googlePaymentErr);
-				 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_PAYMENT_ERROR"]);	
-			  });
-			
-			}).catch(function(clienterr){
-				console.error("clienterror:",clienterr);
-				
-				MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-				return;
-			});
-		},
-		
-		/**
-		 * to display paypal button  in mobile page
-		 */
-		payPalPayment:function(payPalDivId,paypalCreditbutton,clientToken,isPickUpAt,amountval,userType,isPaypalCreditEnableFlag,isMultiCapEnable,shippingAddressSelected,flow,intent, environment)
-				{
-					//if already iframe exists,we are clearing it
-					document.getElementById(payPalDivId).innerHTML = "";
-
-					if(isPaypalCreditEnableFlag == 'true')
-						document.getElementById(paypalCreditbutton).innerHTML = "";
-
-					$(".paypalCheckoutdiv").css("display", "block");
-
-					var client_token=clientToken;
-					
-					var enableShippingAddressFlag = true;
-					var shippingAddressEditableFlag = true;
-					var createPayPalPayment = {};
-					var shippingAddressOverrideValues = {};
-					
-					var isPickUpInStoreFlag = isPickUpAt;
-					
-					if(isPickUpInStoreFlag || isMultipleShipping){
-						enableShippingAddressFlag = false;
-						shippingAddressEditableFlag = false;
-					}else{
-						
-							var lastName=shippingAddressSelected[0].lastName;
-							var	recipientNameCmrce=shippingAddressSelected[0].firstName+" "+shippingAddressSelected[0].lastName;
-							var	line1Cmrce= shippingAddressSelected[0].addressLine[0];
-							var line2Cmrce = shippingAddressSelected[0].addressLine[1];
-							var	cityCmrce= shippingAddressSelected[0].city;
-							var	stateCmrce= shippingAddressSelected[0].state;  
-							var	countryCodeCmrce= shippingAddressSelected[0].country;                                                                                                
-							var	postalCodeCmrce=shippingAddressSelected[0].zipCode;
-							var	phoneNumber = shippingAddressSelected[0].phone1;
-						
-
-						shippingAddressOverrideValues["recipientName"]= recipientNameCmrce;
-						shippingAddressOverrideValues["line1"]= line1Cmrce;
-						shippingAddressOverrideValues["city"]= cityCmrce;
-						shippingAddressOverrideValues["state"]= stateCmrce;
-						shippingAddressOverrideValues["countryCode"]= countryCodeCmrce;
-						shippingAddressOverrideValues["postalCode"]= postalCodeCmrce;
-						if(line2Cmrce != null && line2Cmrce != "" )
-							shippingAddressOverrideValues["line2"]= line2Cmrce;
-						if(phoneNumber != null && phoneNumber != "" )
-							shippingAddressOverrideValues["phone"]= phoneNumber;
-
-						createPayPalPayment["shippingAddressOverride"] = shippingAddressOverrideValues ;
-					}
-					
-					createPayPalPayment["flow"]= "checkout";
-					if(isMultiCapEnable == 'true')
-						createPayPalPayment["flow"] = "vault";
-					createPayPalPayment["amount"]= amountval;
-					createPayPalPayment["currency"]= WCParamJS.commandContextCurrency ;
-					createPayPalPayment["enableShippingAddress"]= enableShippingAddressFlag;
-					createPayPalPayment["shippingAddressEditable"]= shippingAddressEditableFlag;
-					
-					// Create a client.
-					braintree.client.create({
-					  authorization : client_token 
-					}).then( function (clientInstance) {
-
-
-						if(advancedFraudTools == "true"){
-						// device data
-									braintree.dataCollector.create({
-										client: clientInstance,
-										kount: true
-									  }).then(function( dataCollectorInstance) {
-										var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-										document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-										document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-										
-
-									  }).catch(function (err){
-											
-											console.error("device data error for paypal is",err);
-											MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-											  return;
-											
-										});
-						}
-					
-						// Create a PayPal Checkout component.
-						  braintree.paypalCheckout.create({
-							client: clientInstance
-						  }).then(function ( paypalCheckoutInstance ) {
-							  
-							  // Set up PayPal with the checkout.js library
-							 $("#payment_method_BrainTree_PayPal").css("display", "block");
-							paypal.Button.render({
-								env: environment, // Or 'sandbox'
-								commit: true, // This will add the transaction amount to the PayPal button
-								payment: function () {
-									return paypalCheckoutInstance.createPayment(createPayPalPayment);
-								  },
-
-								  onAuthorize: function (data, actions) {
-									return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-									 
-									 BrainTreeMobilePayments.processPayPalResponseFromOrdBilling(isPickUpInStoreFlag , isMultipleShipping,payload,false );
-									});
-								  },
-								  onCancel: function (data) {
-									console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2)); 
-									//MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONCANCEL"]);	
-									return;
-								  },
-								  onError: function (err) {
-									
-									console.error('checkout.js error', err); 
-									MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONERROR"]);	
-									return;
-								  }
-									}, '#'+payPalDivId).then(function () {
-									  // The PayPal button will be rendered in an html element with the id
-									  // `paypal-button`. This function will be called when the PayPal button
-									  // is set up and ready to be used.
-									});
-
-								//paypal credit 
-							if(isPaypalCreditEnableFlag == 'true'){
-								paypal.Button.render({
-								env: environment, // Or 'sandbox'
-								commit: true, // This will add the transaction amount to the PayPal button
-								style: {
-										label: 'credit'
-									  },
-								payment: function () {
-									return paypalCheckoutInstance.createPayment(createPayPalPayment);
-								  },
-
-								  onAuthorize: function (data, actions) {
-									return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-									  // Submit `payload.nonce` to your server
-									 BrainTreeMobilePayments.processPayPalResponseFromOrdBilling(isPickUpInStoreFlag , isMultipleShipping,payload,true );
-									
-									});
-								  },
-								  onCancel: function (data) {
-									console.log('checkout.js payment cancelled for paypalcredit', JSON.stringify(data, 0, 2)); 
-									//MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONCANCEL"]);	
-									return;
-								  },
-								  onError: function (err) {
-									
-									console.error('checkout.js error for paypalcredit', err); 
-									MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_ONERROR"]);	
-									return;
-								  }
-									}, '#'+paypalCreditbutton).then(function () {
-									  // The PayPal button will be rendered in an html element with the id
-									  // `paypal-button`. This function will be called when the PayPal button
-									  // is set up and ready to be used.
-									});
-								}
-						  }).catch(function(paypalCheckoutErr){
-								
-								console.error("PsyPal checkout error",paypalCheckoutErr);	
-								MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_PAYPAL_CHECKOUTERROR"]);	
-								return;
-						  });
-						  
-					}).catch(function(clientErr){
-						console.error("clientError:",clientErr); 
-						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-						cursor_clear();
-						return;
-						
-					});
-				
-			},
-	/**
-	 * to process the paypal response in mobile page
-	 */
-processPayPalResponseFromOrdBilling: function(isPickUpInStoreFlag , isMultipleShipping,payload,isPaypalCredit ){
-
-		if( !isPickUpInStoreFlag && !isMultipleShipping ){
-			BrainTreePayments.updateShippingAddressFromPaypal(payload ,"S" );
-		  }
-		
-		document.getElementById("pay_nonce").value=payload.nonce;
-		document.getElementById("pay_type").value = payload.type;
-		if(isPaypalCredit){
-			document.getElementById("pay_type").value= "PayPalCredit";
-			document.getElementById("payMethodId_BT").value = "ZPayPalCredit";
-		}else{
-			document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; 
-		}
-		document.querySelector('#PayPalEmailId').value = payload.details.email;
-		
-		
-
-		document.getElementById("fromSavedPaymentFlag").value = "false";
-		
-		if(document.getElementById("savePaymentCheckBox")!=null){//for guest user,doesn't have option to save payment
-			if(document.getElementById("savePaymentCheckBox").checked==true){
-				document.getElementById("save_card").value =  "true";
-				}
-				}
-		document.getElementById("payment_method_form_BrainTree_NewPayments").submit();	
-},
-/**
- * To handle Venmo payment in mobile page
- */
-venmoPayment:function(clientToken,venmoButton){
-						// Create a client.
-									braintree.client.create({
-									  authorization: clientToken  
-									}).then(function (clientInstance) {
-									  // You may need to polyfill Promise
-									  // if used on older browsers that
-									  // do not natively support it.
-
-										// devicedata
-										if(advancedFraudTools == "true"){
-											// device data
-											braintree.dataCollector.create({
-												client: clientInstance,
-												kount: true
-											  }).then(function( dataCollectorInstance) {
-												var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-												document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-												document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-											  }).catch(function (err){
-													console.error("device data error for paypal is",err);
-													MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);
-													  return;
-													
-												});
-										}
-
-									  return Promise.all([
-										braintree.dataCollector.create({
-										  client: clientInstance,
-										  paypal: true
-										}),
-										braintree.venmo.create({
-										  client: clientInstance,
-										  // Add allowNewBrowserTab: false if your checkout page does not support
-										  // relaunching in a new tab when returning from the Venmo app. This can
-										  // be omitted otherwise.
-										  allowNewBrowserTab: false
-										})
-									  ]);
-									}).then(function (results) {
-									  var dataCollectorInstance = results[0];
-									  var venmoInstance = results[1];
-
-									  console.log('Got device data:', dataCollectorInstance.deviceData);
-									  
-									  // Verify browser support before proceeding.
-									 if (!venmoInstance.isBrowserSupported()) {
-										console.log('Browser does not support Venmo');
-										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_BROWSER_NOT_SUPPORTED"]);
-										return;
-									  }
-									 
-									  displayVenmoButton(venmoInstance);
-									
-									  // Check if tokenization results already exist. This occurs when your
-									  // checkout page is relaunched in a new tab. This step can be omitted
-									  // if allowNewBrowserTab is false.
-									  if (venmoInstance.hasTokenizationResult()) {
-										venmoInstance.tokenize().then(handleVenmoSuccess).catch(handleVenmoError);
-									  }
-									});
-
-									function displayVenmoButton(venmoInstance) {
-									  $("#payment_method_BrainTree_Venmo").css("display", "block");
-
-									 // Assumes that venmoButton is initially display: none.
-									  venmoButton.style.display = 'block';
-						
-									  venmoButton.addEventListener('click', function () {
-										venmoButton.disabled = true;
-
-										venmoInstance.tokenize().then(handleVenmoSuccess).catch(handleVenmoError);
-									  });
-									}
-
-									function handleVenmoError(err) {
-									  if (err.code === 'VENMO_CANCELED') {
-										console.log('App is not available or user aborted payment flow');
-										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_ERROR_VENMO_CANCELLED"]);
-										
-										
-									  } else if (err.code === 'VENMO_APP_CANCELED') {
-										console.log('User canceled payment flow');
-										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_ERROR_VENMO_APP_CANCELLED"]);
-									  } else {
-										console.error('An error occurred:', err.message);
-										MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_VENMO_ERROR_GENERIC"]);	
-									  }
-									  console.error("venmo error:",err);
-									  return;
-									}
-
-									function handleVenmoSuccess(payload) {
-									  // Send the payment method nonce to your server
-									
-									  console.log('Got a payment method nonce:', payload.nonce);
-									  // Display the Venmo username in your checkout UI.
-									  console.log('Venmo user:', payload.details.username);
-										
-										document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; //"ZVenmo";
-										 document.getElementById("pay_nonce").value = payload.nonce;//"fake-venmo-account-nonce";
-										  document.getElementById("pay_type").value =payload.type; // document.getElementById("payment_method").value;
-										  document.getElementById("fromSavedPaymentFlag").value = "false";
-										  document.getElementById("save_card").value =  "false";
-										document.getElementById("payment_method_form_BrainTree_NewPayments").submit();
-										
-										
-									}
-			},
-			/**
-			 *  Genrating payload object and consuming it  on submit of credit card for mobile page
-			 */
-	creditCardOnSubmit:function(inst){
-		var fromSavedPaymentFlag=document.getElementById("fromSavedPaymentFlag").value ;
-		inst.tokenize(function (tokenizeErr, payload) {
-							
-							console.error("tokenizeErr:",tokenizeErr)
-			 				 if (tokenizeErr) {
-			   					 var tokenizeErrMsg="";
-								 switch (tokenizeErr.code) {
-			      					case 'HOSTED_FIELDS_FIELDS_EMPTY':
-			       						 console.error('All fields are empty! Please fill out the form.');
-										 tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_EMPTY"];
-			        					 break;
-			    				  	case 'HOSTED_FIELDS_FIELDS_INVALID':
-			       						 console.error('Some fields are invalid:', tokenizeErr.details.invalidFieldKeys);
-										 tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_INVALID"];
-			        					 break;
-			      					case 'HOSTED_FIELDS_TOKENIZATION_FAIL_ON_DUPLICATE':
-			        					 console.error('This payment method already exists in your vault.');
-										 tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_FAIL_ON_DUPLICATE"];
-			        					break;
-						      		case 'HOSTED_FIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED':
-						        		console.error('CVV did not pass verification');
-										tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_TOKENIZATION_CVV_VERIFICATION_FAILED"];
-										break;
-								      case 'HOSTED_FIELDS_FAILED_TOKENIZATION':
-								       console.error('Tokenization failed server side. Is the card valid?');
-									  tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_FAILED_TOKENIZATION"];
-								        break;
-								      case 'HOSTED_FIELDS_TOKENIZATION_NETWORK_ERROR':
-								        console.error('Network error occurred when tokenizing.');
-										tokenizeErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_NETWORK_ERROR"];
-								        break;	
-								      default:
-								        console.error('Something bad happened!', tokenizeErr);
-										tokenizeErrMsg= BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_DEFAULT_ERROR"];
-								   }
-										var errorMessageField = "hostedFieldsErrorMessage";
-
-										if(fromSavedPaymentFlag == "true"){
-											errorMessageField = "CVVhostedFieldsErrorMessage";
-											
-											if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_EMPTY'){
-											tokenizeErrMsg = BrainTreeMobilePayments.errorMessages["BT_CVV_FIELD_EMPTY"];
-											}
-											else if(tokenizeErr.code == 'HOSTED_FIELDS_FIELDS_INVALID'){
-												tokenizeErrMsg = BrainTreeMobilePayments.errorMessages["BT_CVV_FIELD_INVALID"];
-											}
-										}
-										
-										$("#"+errorMessageField).css("display", "block");
-										document.getElementById(errorMessageField).innerHTML=tokenizeErrMsg;
-										
-
-								} else {
-										
-										// for saved payments
-										if(fromSavedPaymentFlag == "true"){
-											document.querySelector('#cvv_nonce').value = payload.nonce;
-											
-											//do card verification and do 3dsecure check if property is enabled in properties file
-											var params = [];
-											params["storeId"] = WCParamJS.storeId;
-											params["catalogId"] = WCParamJS.catalogId;
-											params["langId"] = WCParamJS.langId;
-											params["pay_token"]=document.querySelector('#pay_token').value;
-											params["cvv_nonce"]=document.querySelector('#cvv_nonce').value;
-											params["payment_method_id"]=document.querySelector('#payMethodId_BT').value;
-											params["device_session_id"]=document.querySelector('#deviceSessionId').value; 
-											params["fraud_merchant_id"]=document.querySelector('#fraudMerchantId').value;
-											wcService.invoke('AjaxRESTVaultedCreditCardVerificationForMobilePayments', params);
-											
-											
-										}else{ //for new payments
-											
-											document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; //"ZVenmo";
-											 document.getElementById("pay_nonce").value =  payload.nonce;
-										 	 document.getElementById("pay_type").value = payload.details.cardType;
-										 	 document.getElementById("account").value ="**************"+payload.details.lastTwo;
-										  	document.getElementById("fromSavedPaymentFlag").value = "false";
-											
-											if(document.getElementById("saveCardCheckBox")!=null){
-												if(document.getElementById("saveCardCheckBox").checked == true){
-													document.getElementById("save_card").value = "true";
-												}
-											}
-											var paynonce=payload.nonce;
-											if(threeDSecureEnable == 'true')
-												BrainTreeMobilePayments.threeDSecureCheck(paynonce);
-											else
-												document.getElementById("payment_method_form_BrainTree_NewPayments").submit();
-										}
-										
-									}
-			  			 });
-	},
-	/**
-	 * on click of google pay button in mobile page
-	 */
-	googlePayOnClick:function(amount){
-		var googlePayInstance=instances_BT["googlePay"];
-		var paymentsClient=gPayPaymentsClient_BT["googlePay"];
-		var paymentDataRequest = googlePayInstance.createPaymentDataRequest({
-						//merchantId: googlePayPaymentMerchantId, //not needed for sandbox testing
-						transactionInfo: {
-						  currencyCode: WCParamJS.commandContextCurrency,
-						  totalPriceStatus: 'FINAL',
-						  totalPrice: amount
-						},
-						cardRequirements: {
-						  // We recommend collecting billing address information, at minimum
-						  // billing postal code, and passing that billing postal code with all
-						  // Google Pay transactions as a best practice
-						  billingAddressRequired: true
-						}
-					  });
-					  paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData) {
-						  
-						googlePayInstance.parseResponse(paymentData, function (err, result) {
-						  if (err) {
-							console.error("err parsing::",err);
-							MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_PARSING_ERROR"]);	
-							
-							return ;
-						  }
-						  // Send result.nonce to your server
-							
-							document.querySelector('#pay_nonce').value = result.nonce;
-							document.querySelector('#pay_type').value = result.type;
-							document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; 
-							document.getElementById("fromSavedPaymentFlag").value = "false";
-							document.getElementById("save_card").value =  "false";
-							document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
-										
-								
-						});
-					  }).catch(function (err) {
-						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GOOGLEPAY_ERROR_AT_LOADPAYMENTDATA"]);	
-						console.error("error when loadPaymentData is failed:",err);
-						return;
-					  });
-					  
-	},
-	/**
-	 * to display the selected saved payment in mobile page
-	 */
-	displaySelectedPayment:function(clientToken,listInfo){
-		
-		//close  new payments that are open
-		 var paymentMethod = document.getElementById("payment_method");
-		  document.getElementById("payment_method").value="";
-		$("#payment_method_BrainTree_Venmo").css("display", "none");
-		$("#payment_method_BrainTree_CreditCard").css("display", "none");
-		$("#payment_method_BrainTree_GooglePay").css("display", "none");
-		$("#payment_method_BrainTree_PayPal").css("display", "none");
-		$("#payment_method_BrainTree_ApplePay").css("display", "none");
-		
-		var continueCheckoutBtnId = document.getElementById("continueCheckoutBtn");
-		continueCheckoutBtnId.classList.remove("btn-disabled-BT");
-		
-		
-		
-		var savedCardsList = document.getElementById("savedCardsList");
-			var selectedCardpayToken = savedCardsList.options[savedCardsList.selectedIndex].value;
-
-			//appending values in div and dispaying the div
-			var parsedListInfo=JSON.parse(listInfo);
-			
-			if(selectedCardpayToken!=""){
-				for(i=0;i<parsedListInfo.length;i++)
-				{
-					var cardToken=parsedListInfo[i].payTokenId;
-					
-					if(cardToken==selectedCardpayToken){
-						var cardInfo=parsedListInfo[i];
- 
-							// if selected payment is paypal
-							if(cardInfo.cardType=="PayPalAccount" || cardInfo.cardType=="PayPalCredit"){
-								
-								
-								document.getElementById("paymentAccountMail").innerHTML=cardInfo.maskedCreditCardNumber;
-								document.querySelector('#pay_token').value = cardToken;
-								document.querySelector('#pay_type').value = cardInfo.cardType;
-								document.querySelector('#payMethodId_BT').value = "ZPayPal"; //get this from table
-								if(cardInfo.cardType=="PayPalCredit"){
-									document.querySelector('#payMethodId_BT').value = "ZPayPalCredit"; //get this from table
-								}
-								$("#showSavedCard").css("display", "block");
-								$("#deleteCard").css("display", "block");
-								$("#savedPaymentInfo").css("display", "block");
-								$("#savedCreditCardInfo").css("display", "none");
-									
-								
-							}else{ // is selected payment is card, (because  we are giving option to user to save only PayPal and Card)
-								var cardNum=cardInfo.maskedCreditCardNumber;
-								var expiryDate=cardInfo.expirationDate;
-								
-								// adding the data to the div
-								document.getElementById("maskedcardNumber").innerHTML=cardNum;
-								document.getElementById("expiryDate").innerHTML=expiryDate;
-								
-								$("#showSavedCard").css("display", "block");
-								$("#deleteCard").css("display", "block");
-								$("#savedCreditCardInfo").css("display", "block");
-								$("#savedPaymentInfo").css("display", "none");
-								document.getElementById("onlyCvv").innerHTML = "";
-								this.displayCVV(clientToken);
-								//assigning values to hidden params, which are passed to PIAdd execution
-								document.querySelector('#pay_token').value = cardToken;
-								document.querySelector('#account').value = cardInfo.maskedCreditCardNumber;
-								document.querySelector('#pay_type').value = cardInfo.cardType;
-								document.querySelector('#payMethodId_BT').value = "ZCreditCard"; //get this from table
-							}
-
-								document.querySelector('#fromSavedPaymentFlag').value = "true"; 
-					}
-				}
-			}
-			else
-			{
-				$("#showSavedCard").css("display", "none");	
-			}
-		
-	},
-	/**
-	 *to display CVV field when selected saved card is displayed 
-	 */
-	displayCVV:function(clientToken){
-		braintree.client.create({
-								 authorization: clientToken
-								 }).then( function(clientInstance) {
-											
-										// device data	
-										if(advancedFraudTools == "true"){
-											
-											braintree.dataCollector.create({
-													client: clientInstance,
-													kount: true
-												  }).then(function(dataCollectorInstance) {
-													var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-													document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-													document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-													
-												  }).catch(function (err){
-														console.error(" device data error for displaying CVV field  :",err);
-														MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);		
-														  return;
-														
-												});
-										}
-											
-											
-											//hosted fields
-											braintree.hostedFields.create({
-											client: clientInstance,
-											styles: {
-												'input': {
-												   'font-size': '14px'
-																							
-												},
-												'input.invalid': {
-												   'color': 'red'
-												},
-												'input.valid': {
-												   'color': 'green'
-												}
-											},
-											fields: {
-												
-												cvv: {
-													selector: '#onlyCvv'
-												}
-												
-											}
-																			  
-											}).then(function (hostedFieldsInstance) {
-																				 
-												var keyforInst="cvvInst";
-												instances_BT[keyforInst]=hostedFieldsInstance;
-												console.log("hostedFieldsInstance"+hostedFieldsInstance);
-												console.log(hostedFieldsInstance);
-											}).catch( function (hostedFieldsErr){
-												
-												console.error("hostedFieldsErr:",hostedFieldsErr);
-												var hostedFieldsErrMsg="";
-												if(hostedFieldsErr){
-													$("#hostedFieldsErrorMessage").css("display", "block"); 
-													switch (hostedFieldsErr.code) {
-														case 'HOSTED_FIELDS_TIMEOUT':
-															hostedFieldsErrMsg= "Please try placing order after sometime"; //unknown error .
-															//Occurs when Hosted Fields does not finish setting up within 60 seconds.
-															 break;
-														case 'HOSTED_FIELDS_INVALID_FIELD_KEY':
-															 hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
-															 break;
-														case 'HOSTED_FIELDS_INVALID_FIELD_SELECTOR':
-															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
-															break;
-														case 'HOSTED_FIELDS_FIELD_DUPLICATE_IFRAME':  
-															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
-															break;
-														case 'HOSTED_FIELDS_FIELD_PROPERTY_INVALID':
-															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
-															break;  
-														default:
-															hostedFieldsErrMsg= "Please try placing order after sometime"; //merchant error
-													}
-												}
-																				  
-													hostedFieldsErrMsg=BrainTreeMobilePayments.errorMessages["BT_HOSTEDFIELDS_HOSTEDFIELDSERR_FOR_CVV"];							  
-													document.getElementById("hostedFieldsErrorMessage").innerHTML=hostedFieldsErrMsg;
-													
-													return;
-												
-									});
-																			
-																	   
-							}).catch( function(clientErr) {
-																			
-								 
-								console.error("clientErr:",clientErr);
-								var createErrMsg="";
-								$("#hostedFieldsWrapper").css("display", "none"); //if error occurs don't displaywrapper
-								MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-								cursor_clear();
-									return;
-							 });
-	},
-
-/**
- * to display apple pay button in mobile page
- */
-applePayPayment:function(applePaybuttonId,clientToken){
-
-
-var button = applePaybuttonId;
-				
-			// apple pay
-					if (!window.ApplePaySession) {
-					  MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_SUPPORTED"]);	
-					  return;
-					}
-
-					if (!ApplePaySession.canMakePayments()) {
-					  console.error('This device is not capable of making Apple Pay payments');
-					  MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_DEVICE_NOT_CAPABLE"]);	
-					  return;
-					}
-					else
-				braintree.client.create({
-				  authorization: clientToken
-				}).then( function (clientInstance) {
-				  
-				
-					//device data
-				if(advancedFraudTools == "true"){
-						braintree.dataCollector.create({
-							client: clientInstance,
-							kount: true
-						  }).then(function( dataCollectorInstance) {
-							// At this point, you should access the
-							// dataCollectorInstance.deviceData value and
-							// provide it
-							// to your server, e.g. by injecting it into your
-							// form as a hidden input.
-							var deviceData = JSON.parse(dataCollectorInstance.deviceData);
-							document.querySelector('#deviceSessionId').value = deviceData.device_session_id;
-							document.querySelector('#fraudMerchantId').value = deviceData.fraud_merchant_id;
-
-						  }).catch(function (err){
-								
-								console.error("device data error apple pay",err);
-								MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_DEVICE_DATA_ERROR"]);		
-								 return;
-								
-							});
-				}
-							
-				// apple pay
-							braintree.applePay.create({
-							client: clientInstance
-						  }, function (applePayErr, applePayInstance) {
-							if (applePayErr) {
-							  console.error('Error creating applePayInstance:', applePayErr);
-							 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_APPLEPAY_ERR"]);	
-							  return;
-							}
-
-							var promise = ApplePaySession.canMakePaymentsWithActiveCard(applePayInstance.merchantIdentifier);
-							promise.then(function (canMakePaymentsWithActiveCard) {
-							  if (canMakePaymentsWithActiveCard) {
-									// Set up Apple Pay buttons
-									//displaying apple pay button only if the instance is created
-									$("#applePay").css("display","block");
-									$("#"+applePaybuttonId).css("display", "block");
-									var keyForInst="applePay";
-									instances_BT[keyForInst]=applePayInstance;
-							  }
-							});
-						  });
-
-				}).catch(function(clienterr){
-					console.log("clienterr",clienterr);
-					MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-				});
-		},
-		/**
-		 * on click of apple pay button in mobile page
-		 */
-		applePayOnClick:function(amount){
-					var applePayInstance=instances_BT["applePay"];
-					var paymentRequest = applePayInstance.createPaymentRequest({
-				  total: {
-					label: 'My Store',
-					amount: amount
-				  },
-
-				  // We recommend collecting billing address information, at
-					// minimum
-				  // billing postal code, and passing that billing postal code
-					// with
-				  // all Apple Pay transactions as a best practice.
-				  requiredBillingContactFields: ["postalAddress"]
-				});
-				console.log(paymentRequest.countryCode);
-				console.log(paymentRequest.currencyCode);
-				console.log(paymentRequest.merchantCapabilities);
-				console.log(paymentRequest.supportedNetworks);
-				
-				var session = new ApplePaySession(2, paymentRequest);
-					session.onvalidatemerchant = function (event) {
-				  applePayInstance.performValidation({
-					validationURL: event.validationURL,
-					displayName: 'My Store'
-				  }, function (err, merchantSession) {
-					if (err) {
-						console.log("apple pay failed to load",err);
-						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_PERFORM_VALIDATION_ERR"]);	
-					  return;
-					}
-					session.completeMerchantValidation(merchantSession);
-					
-				  });
-				};
-						
-						session.onpaymentauthorized = function (event) {
-					  applePayInstance.tokenize({
-						token: event.payment.token
-					  }, function (tokenizeErr, payload) {
-						if (tokenizeErr) {
-						  console.error('Error tokenizing Apple Pay:', tokenizeErr);
-						 MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_APPLEPAY_TOKENIZEERR"]);	
-						  session.completePayment(ApplePaySession.STATUS_FAILURE);
-						  return;
-						}
-						
-						session.completePayment(ApplePaySession.STATUS_SUCCESS);
-
-						// Send payload.nonce to your server.
-						console.log('nonce:', payload.nonce);
-						document.querySelector('#pay_nonce').value = payload.nonce;
-						document.querySelector('#pay_type').value = payload.type;
-							document.getElementById("payMethodId_BT").value =document.getElementById("payment_method").value; 
-							document.getElementById("fromSavedPaymentFlag").value = "false";
-							document.getElementById("save_card").value =  "false";
-							document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
-						// If requested, address information is accessible in
-						// event.payment
-						// and may also be sent to your server.
-						console.log('billingPostalCode:', event.payment.billingContact.postalCode);
-					  });
-					};
-					session.begin();
-					
-	},
-	/***
-	 * 3D secure check in mobile page
-	 */
-	threeDSecureCheck : function(paynonce){
-			
-			var bankFrame = document.querySelector('.bt-modal-body');
-			braintree.client.create({
-			  // Use the generated client token to instantiate the Braintree client.
-			  authorization: btClientToken
-			}, function (clientErr, clientInstance) {
-			  if (clientErr) {
-				console.log("clientErr",clientErr);
-				MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_GENERIC_CLIENT_TOKEN_ERROR"]);	
-				return;
-			  }
-
-			  braintree.threeDSecure.create({
-				client: clientInstance
-			  }, function (threeDSecureErr, threeDSecureInstance) {
-				if (threeDSecureErr) {
-				  // Handle error in 3D Secure component creation
-				  console.error("threeDSecureErr:",threeDSecureErr);
-				  MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_THREE_D_SECURE_ERROR"]);	
-				  return;
-				}
-				console.log("threeDSecureInstance",threeDSecureInstance);
-				
-				threeDSecureInstance.verifyCard({
-				  amount: grandTotalAmount,
-				  nonce:  paynonce ,// NONCE_FROM_INTEGRATION,
-				  addFrame: function (err, iframe) {
-					// Set up your UI and add the iframe.
-					 bankFrame.appendChild(iframe);
-					$(".threeDsecureWindow").css("display", "flex"); 
-				  },
-				  removeFrame: function () {
-					// Remove UI that you added in addFrame.
-					
-					var iframe = bankFrame.querySelector('iframe');
-					$(".threeDsecureWindow").css("display", "none");
-					iframe.parentNode.removeChild(iframe);
-				  }
-				}, function (err, response) {
-				  // Send response.nonce to use in your transaction
-					if (err) {
-						console.error("error when response failed to generate:",err);
-						MessageHelper.displayErrorMessage(BrainTreeMobilePayments.errorMessages["BT_THREE_D_SECURE_RESPONSE_FAILED_ERROR"]);	
-						return;
-					  }
-					var threeDNonce = response.nonce;
-					document.getElementById('3Dsecure_nonce').value = threeDNonce;
-					document.getElementById("payment_method_form_BrainTree_NewPayments").submit(); 
-					
-				});
-					//when clicked on close button of frame
-					 var closeFrame = document.getElementById('text-close');
-					 closeFrame.addEventListener('click', function () {
-						threeDSecureInstance.cancelVerifyCard(removeFrame());
-						});
-					 function removeFrame() {
-					// Remove UI that you added in addFrame.
-						var iframe = bankFrame.querySelector('iframe');
-						$(".threeDsecureWindow").css("display", "none");
-						iframe.parentNode.removeChild(iframe);
-					 }
-			  });
-			});
-		}
 }

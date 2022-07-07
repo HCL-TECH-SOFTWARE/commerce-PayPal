@@ -1,21 +1,14 @@
 <!DOCTYPE HTML>
 
 <%--
-=================================================================
-Copyright [2021] [HCL Technologies]
+ =================================================================
+  Licensed Materials - Property of HCL Technologies
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  HCL Commerce
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  (C) Copyright HCL Technologies Limited 1996, 2020
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
+ =================================================================
 --%>
 
 <%--
@@ -106,6 +99,7 @@ xmlns:waistate="http://www.w3.org/2005/07/aaa" lang="${shortLocale}" xml:lang="$
 		<wcf:param name="pageSize" value="${pageSize}"/>
 		<wcf:param name="pageNumber" value="${currentPage}"/>
 		<wcf:param name="sortOrderItemBy" value="orderItemID"/>
+		<wcf:param name="langId" value="${langId}" />
 	</wcf:rest>
 	<c:set var="shippingInfo" value="${order}"/>
 </c:if>
@@ -118,6 +112,7 @@ xmlns:waistate="http://www.w3.org/2005/07/aaa" lang="${shortLocale}" xml:lang="$
 		<wcf:param name="pageSize" value="${pageSize}"/>
 		<wcf:param name="pageNumber" value="${currentPage}"/>
 		<wcf:param name="sortOrderItemBy" value="orderItemID"/>
+		<wcf:param name="langId" value="${langId}" />
 	</wcf:rest>
 	<c:set var="shippingInfo" value="${order}"/>
 </c:if>
@@ -139,6 +134,7 @@ xmlns:waistate="http://www.w3.org/2005/07/aaa" lang="${shortLocale}" xml:lang="$
 			<wcf:param name="pageSize" value="${maxOrderItemsToInspect}"/>
 			<wcf:param name="pageNumber" value="1"/>
 			<wcf:param name="sortOrderItemBy" value="orderItemID"/>
+			<wcf:param name="langId" value="${langId}" />
 		</wcf:rest>
 	</c:if>
 	<c:if test="${empty shippingInfoInCart || shippingInfoInCart == null}">
@@ -449,9 +445,8 @@ need to first assign a valid address id to these order items before proceeding w
 	<div id="page" class="nonRWDPage">
 		<div id="grayOut"></div>
 		<%-- This file includes the progressBar mark-up and success/error message display markup --%>
-		
-				<%@ include file="../../Common/CommonJSPFToInclude.jspf"%>
-		
+		<%@ include file="../../Common/CommonJSPFToInclude.jspf"%>
+
 		<!-- Import Header Widget -->
 		<div class="header_wrapper_position" id="headerWidget">
 			<%out.flush();%>
@@ -621,6 +616,7 @@ need to first assign a valid address id to these order items before proceeding w
 						<wcf:param name="orderId" value="${order.orderId}"/>
 					</wcf:rest>
 				</c:if>	
+
 				<c:set var="paymentInstruction" value="${orderInCart}"/>
 
 				<c:set var="totalExistingPaymentMethods" value="1"/>

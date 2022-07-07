@@ -1,20 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-=================================================================
-Copyright [2021] [HCL Technologies]
+<?xml version="1.0" encoding="UTF-8"?><!--
+ =================================================================
+  Licensed Materials - Property of
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  HCL Commerce
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  (C) Copyright HCL Technologies 1996,2020 All Rights Reserved.
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
+  US Government Users Restricted Rights - Use, duplication or
+  disclosure restricted by GSA ADP Schedule Contract with
+  HCL Technologies
+ =================================================================
 -->
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">   
   <bean id="ajaxOrderItemAdd" class="com.ibm.commerce.store.mvc.controller.spring.AjaxRESTActionController"> 
@@ -25,6 +20,11 @@ limitations under the License.
   <bean id="orderItemAdd" class="com.ibm.commerce.store.mvc.controller.spring.RESTActionController"> 
     <property name="authenticate" value="0"/>  
     <property name="parameter" value="orderlist.addOrderItem"/>  
+    <property name="https" value="1"/> 
+  </bean>  
+  <bean id="orderItemAddWithPromotion" class="com.ibm.commerce.store.mvc.controller.spring.RESTActionController"> 
+    <property name="authenticate" value="0"/>  
+    <property name="parameter" value="orderlist.addOrderItemWithPromotion"/>  
     <property name="https" value="1"/> 
   </bean>  
   <bean id="orderCalculate" class="com.ibm.commerce.store.mvc.controller.spring.RESTActionController"> 
@@ -249,6 +249,10 @@ limitations under the License.
   <bean id="orderAddPreConfigurationToCart" class="com.ibm.commerce.store.mvc.controller.spring.RESTActionController"> 
     <property name="authenticate" value="0"/>  
     <property name="parameter" value="orderlist.addPreConfigurationToCart"/> 
+  </bean>  
+   <bean id="ajaxOrderUpdateConfigurationInCart" class="com.ibm.commerce.store.mvc.controller.spring.AjaxRESTActionController"> 
+    <property name="authenticate" value="0"/>  
+    <property name="parameter" value="orderlist.updateConfigurationInCart"/>
   </bean>  
   <bean id="orderUpdateConfigurationInCart" class="com.ibm.commerce.store.mvc.controller.spring.RESTActionController"> 
     <property name="authenticate" value="0"/>  
@@ -496,7 +500,7 @@ limitations under the License.
     <property name="parameter" value="orderlist.repay"/>
     <property name="csrfProtected" value="1"/>
   </bean> 
-  <bean id="punchoutPaymentCallBack" class="com.ibm.commerce.store.mvc.controller.spring.AjaxRESTActionController"> 
+  <bean id="punchoutPaymentCallBack" class="com.ibm.commerce.store.mvc.controller.spring.PunchoutPaymentCallBackController"> 
     <property name="authenticate" value="0"/>
     <property name="parameter" value="orderlist.callback"/>
   </bean>   

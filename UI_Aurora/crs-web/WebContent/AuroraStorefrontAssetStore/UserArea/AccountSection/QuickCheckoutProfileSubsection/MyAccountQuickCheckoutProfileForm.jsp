@@ -1,20 +1,3 @@
-<%--
-=================================================================
-Copyright [2021] [HCL Technologies]
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
---%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib uri="http://commerce.ibm.com/base" prefix="wcbase" %>
@@ -37,6 +20,7 @@ limitations under the License.
 </c:if>	
 <wcf:rest var="order" url="store/{storeId}/cart/@self">
 	<wcf:var name="storeId" value="${WCParam.storeId}" encode="true"/>
+	<wcf:param name="langId" value="${langId}" />
 </wcf:rest>
 
 <c:catch var="error">
@@ -176,15 +160,12 @@ limitations under the License.
 
 <%--
  =================================================================
-  Licensed Materials - Property of IBM
+  Licensed Materials - Property of HCL Technologies
 
-  WebSphere Commerce
+  HCL Commerce
 
-  (C) Copyright IBM Corp. 2008, 2017 All Rights Reserved.
+  (C) Copyright HCL Technologies Limited 1996, 2020
 
-  US Government Users Restricted Rights - Use, duplication or
-  disclosure restricted by GSA ADP Schedule Contract with
-  IBM Corp.
  =================================================================
 --%>
 <!-- BEGIN MyAccountQuickCheckoutProfileForm.jsp -->

@@ -1,19 +1,12 @@
 <%--
-=================================================================
-Copyright [2021] [HCL Technologies]
+ =================================================================
+  Licensed Materials - Property of HCL Technologies
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  HCL Commerce
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  (C) Copyright HCL Technologies Limited 1996, 2020
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
+ =================================================================
 --%>
 
 <!-- BEGIN OrderDetail_Billing_UI.jsp -->
@@ -61,7 +54,7 @@ limitations under the License.
 							</c:otherwise>
 						</c:choose>
 					</c:if>
-					<c:set var="contact" value="${order.orderItem[0]}" />	
+					<c:set var="contact" value="${paymentInstance}" />	
 					<%@ include file="/Widgets_801/Common/Address/AddressDisplay.jspf" %>
 				</c:when>
 				<c:otherwise>
@@ -71,13 +64,6 @@ limitations under the License.
 			
 			<%-- payment method --%>
 			<br />
-			<%-- display potocol data for payment method --%>
-			<c:remove var="protocolDataMap"/>
-			<jsp:useBean id="protocolDataMap" class="java.util.HashMap" type="java.util.Map"/>
-			<c:forEach var="protocolDataItem" items="${paymentInstance.protocolData}">
-				<c:set target="${protocolDataMap}" property="${protocolDataItem.name}" value="${protocolDataItem.value}"/>
-			</c:forEach>
-			
 			<c:choose>
 				<c:when test = "${paymentInstance.piDescription == null}">
 					<wcst:message var="piDesc" key="MO_NOT_AVAILABLE" bundle="${widgetText}" />
@@ -95,7 +81,12 @@ limitations under the License.
 				<wcst:param><c:out value="${piDesc}"/></wcst:param>
 			</wcst:message>
 			<br />
-			
+			<%-- display potocol data for payment method --%>
+			<c:remove var="protocolDataMap"/>
+			<jsp:useBean id="protocolDataMap" class="java.util.HashMap" type="java.util.Map"/>
+			<c:forEach var="protocolDataItem" items="${paymentInstance.protocolData}">
+				<c:set target="${protocolDataMap}" property="${protocolDataItem.name}" value="${protocolDataItem.value}"/>
+			</c:forEach>
 			<c:forTokens var="knownProtocolDataItem" delims="," items="${knownProtocolData}">
 				<c:if test="${!empty protocolDataMap[knownProtocolDataItem]}">
 					<c:if test="${paymentInstance.payMethodId !='LineOfCredit'}">

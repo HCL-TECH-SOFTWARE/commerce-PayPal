@@ -1,21 +1,14 @@
 <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
 
 <%--
-=================================================================
- Copyright [2021] [HCL Technologies]
+ =================================================================
+  Licensed Materials - Property of HCL Technologies
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  HCL Commerce
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  (C) Copyright HCL Technologies Limited 1996, 2020
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
+ =================================================================
 --%>
 
 <%--
@@ -186,6 +179,7 @@ $(document).ready(function(){
 	<wcf:param name="sortOrderItemBy" value="orderItemID"/>
 	<wcf:param name="pageSize" value="${pageSize}"/>
 	<wcf:param name="pageNumber" value="1"/>
+	<wcf:param name="langId" value="${langId}" />
 </wcf:rest>
 <!-- BRAINTREE START-->
 <fmt:formatNumber var="totalAmount" value="${order.grandTotal}" type="number" maxFractionDigits="2" />
@@ -409,8 +403,6 @@ $(document).ready(function(){
 											</c:if>
 										</c:forEach>
 									</c:if>
-									
-									
 
 									<%-- Enable credit card payment types --%>
 									<option value="credit_card"><fmt:message bundle="${storeText}" key="CREDIT_CARD"/></option>
@@ -641,7 +633,6 @@ $(document).ready(function(){
 						<form id="payment_method_form_creditcard" method="post" action="${paymentFormAction}">
 							<fieldset>
 								<div><label for="card_type"><fmt:message bundle="${storeText}" key="CARD_TYPE"/></label></div>
-								
 								<div class="dropdown_container">
 									<select id="card_type" class="inputfield input_width_full" name="cc_brand">
 										<c:forEach items="${paymentPolicyListDataBean.resultList[0].paymentPolicyInfoUsableWithoutTA}" var="paymentPolicyInfo" varStatus="status">
@@ -703,7 +694,7 @@ $(document).ready(function(){
 								<input type="hidden" name="storeId" value="${fn:escapeXml(WCParam.storeId)}" />
 								<input type="hidden" name="catalogId" value="${fn:escapeXml(WCParam.catalogId)}" />
 								<c:if test="${removeExistingPI}"><input type="hidden" name="piId" value=""/></c:if>
-								<input type="hidden" name="payMethodId" value="" id="payMethodId_creditcard" /> 
+								<input type="hidden" name="payMethodId" value="" id="payMethodId_creditcard" />
 								<input type="hidden" name="URL" value="${nextURL}"/>
 								<input type="hidden" name="piAmount" value="${order.grandTotal}"/>
 								<input type="hidden" name="billing_address_id" value="${fn:escapeXml(WCParam.addressId)}"/>
@@ -712,10 +703,6 @@ $(document).ready(function(){
 								<input type="hidden" name="authToken" value="${authToken}"/>
 							</fieldset>
 							<div class="item_spacer"></div>
-							
-							
-							
-							
 						</form>
 					</div> -->
 				

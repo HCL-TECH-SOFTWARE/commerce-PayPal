@@ -1,19 +1,12 @@
 <%--
-=================================================================
-Copyright [2021] [HCL Technologies]
+ =================================================================
+  Licensed Materials - Property of HCL Technologies
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  HCL Commerce
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  (C) Copyright HCL Technologies Limited 1996, 2020
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-=================================================================
+ =================================================================
 --%>
 
 <c:set var="search" value='"'/>
@@ -26,7 +19,7 @@ limitations under the License.
 	<c:set var="miniCartDropDownOverrideWidthClass" value="class=cartDropDown_CSR"/>
 </c:if>
 <%-- START MiniShopCartContents_UI.jsp --%>
-	
+
 	<div id="quick_cart_container">
 	<span class="spanacce" id="quick_cart_container_ACCE_Label"><fmt:message bundle="${storeText}" key="ACCE_MSC_SHOPPING_CART_POPUP_REGION"/></span>
 		<div id="quick_cart">
@@ -92,7 +85,7 @@ limitations under the License.
 									</c:when>
 									<c:otherwise>
 										<!-- BRAINTREE START -->
-										<c:set var="displayPalPalCheckout" value="false" />
+										<c:set var="displayPalPalCheckout" value="true" />
 										<!-- BRAINTREE END -->
 										<div><fmt:message bundle="${storeText}" key="MSC_EMPTY_SHOP_CART"/></div>
 									</c:otherwise>
