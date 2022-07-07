@@ -23,3 +23,6 @@
  
  ### Step - 3: Frontend - Emerald Storefront
 Please refer `README.md` file under `UI/README.md`  as a installation guide for the React store frontend code
+
+##SUPPORT 
+If you have questions or encounter problems with an HCL Commerce open source asset, please open an issue in the asset's GitHub repository. For more information about GitHub issues, including creating an issue, please refer to GitHub Docs. The HCL Commerce Innovation Factory Team, who develops HCL Commerce open source assets, monitors GitHub issues and will do their best to address them. 
