@@ -15,13 +15,13 @@
  
 2. Add **paypal** folder inside the component folder.It has payapal.tsx file which renders the PayPal button on UI.
   
-3. Refer the readme file for the Changes in Payment.tsx placed inside 'component/pages/checkout/payment' folder     
+3. Refer the readme file for the Changes in use-checkout-payment.tsx placed inside 'react-store/src/_foundation/hooks/use-checkout-payment.tsx' folder     
             
-4. Refer the readme file for the Changes in PaymentMethodContainer.tsx placed inside 'UI/components/widgets/payment-method-container' folder
+4. Refer the readme file for the Changes in PaymentMethodContainer.tsx placed inside 'react-store/src/components/widgets/payment-method-container/PaymentMethodContainer.tsx' folder
 
-5. Refer the readme file for the Changes in PaymentMethodSelection.tsx placed inside 'UI/components/widgets/payment-method-selection' folder
+5. Refer the readme file for the Changes in PaymentMethodSelection.tsx placed inside 'react-store/src/components/widgets/payment-method-selection/PaymentMethodSelection.tsx' folder
  
- 6. Add **paypal** folder inside the 'UI/components/foundation/apis' folder.It contains paypal.service.tsx file
+ 6. Add **paypal** folder inside the 'react-store/src/_foundation/apis/paypal/paypal.service.ts' folder.It contains paypal.service.tsx file
  
 7. Add the below entry of PayPal in src/constant/order.js
       ```ruby
