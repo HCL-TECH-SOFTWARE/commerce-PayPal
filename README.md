@@ -20,7 +20,7 @@ If you have questions or encounter problems with an HCL Commerce open source ass
  
  ### Step - 1: Integrating PayPal Backend to HCL Commerce V9.1.11
  
- Installation instructions are available in README.md file under Plugin-Files Folder. Word document [PayPal_Installation_Guide.docx](https://github.com/HCL-Commerce-Assets-Repository/HCLCommerce-Paypal-POC/tree/master/Documents) with instructions available under Documents folder.
+ Installation instructions are available in README.md file under Plugin-Files Folder. Word document [PayPal_Installation_Guide.docx](https://github.com/HCL-TECH-SOFTWARE/commerce-PayPal/blob/paypal_9_1_11/Documents/Aurora_UI_Guide.docx) with instructions available under Documents folder.
  
  ### Step - 2: Frontend - Aurora Storefront
  
